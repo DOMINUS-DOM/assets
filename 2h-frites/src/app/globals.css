@@ -118,3 +118,15 @@
 .animate-slideOutRight {
   animation: slideOutRight 0.25s ease-in forwards;
 }
+
+@keyframes tapFinger {
+  0%, 100% { opacity: 1; transform: translateY(0); }
+  50% { opacity: 0.8; transform: translateY(-6px) scale(0.9); }
+}
+
+.animate-tapFinger {
+  animation: tapFinger 1.2s ease-in-out infinite;
+  animation-delay: 1.5s;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
