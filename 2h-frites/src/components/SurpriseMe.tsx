@@ -5,7 +5,9 @@ import { categories } from '@/data/menu';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { MenuItem, Category } from '@/types';
 
-const EMOJIS = ['🍟', '🍔', '🥩', '🌭', '🥖', '🥤', '🎁', '🔥', '🥗', '🫙'];
+const EMOJIS = ['🍟', '🍔', '🥩', '🌭', '🥖', '🔥', '🥗', '🎁'];
+
+const FOOD_CATEGORIES = ['frites', 'magic_box', 'viandes', 'pains_ronds', 'assiettes', 'grillades', 'sandwichs', 'salades'];
 
 interface SurpriseMeProps {
   onClose: () => void;
@@ -18,10 +20,12 @@ export default function SurpriseMe({ onClose }: SurpriseMeProps) {
   const [pick, setPick] = useState<{ item: MenuItem; category: Category } | null>(null);
 
   const pickRandom = useCallback(() => {
-    const allItems = categories.flatMap((cat) =>
-      cat.items.filter((i) => i.price != null).map((item) => ({ item, category: cat }))
-    );
-    return allItems[Math.floor(Math.random() * allItems.length)];
+    const foodItems = categories
+      .filter((cat) => FOOD_CATEGORIES.includes(cat.id))
+      .flatMap((cat) =>
+        cat.items.filter((i) => i.price != null).map((item) => ({ item, category: cat }))
+      );
+    return foodItems[Math.floor(Math.random() * foodItems.length)];
   }, []);
 
   useEffect(() => {

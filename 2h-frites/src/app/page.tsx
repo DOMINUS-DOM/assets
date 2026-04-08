@@ -62,6 +62,10 @@ export default function HomePage() {
     setShowOnboarding(false);
   }, []);
 
+  const handleReplayTutorial = useCallback(() => {
+    setShowOnboarding(true);
+  }, []);
+
   const handleSelectCategory = useCallback((slug: string) => {
     setActiveSlug(slug);
     setView('category');
@@ -102,6 +106,7 @@ export default function HomePage() {
         categoryName={activeCategory ? getCategory(activeCategory.nameKey) : undefined}
         onBack={handleBack}
         onFavorites={handleFavorites}
+        onReplayTutorial={handleReplayTutorial}
         favoriteCount={favCount}
       />
 
