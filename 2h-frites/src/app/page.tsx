@@ -30,15 +30,17 @@ export default function HomePage() {
   const [showSurprise, setShowSurprise] = useState(false);
 
   useEffect(() => {
-    const done = localStorage.getItem('2h-onboarded');
-    if (!done) {
-      setShowOnboarding(true);
-    }
+    try {
+      const done = localStorage.getItem('2h-onboarded');
+      if (!done) {
+        setShowOnboarding(true);
+      }
+    } catch {}
     setReady(true);
   }, []);
 
   const handleOnboardingComplete = useCallback(() => {
-    localStorage.setItem('2h-onboarded', 'true');
+    try { localStorage.setItem('2h-onboarded', 'true'); } catch {}
     setShowOnboarding(false);
   }, []);
 

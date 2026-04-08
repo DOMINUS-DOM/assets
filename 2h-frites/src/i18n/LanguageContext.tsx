@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Locale } from '@/types';
 import { translations, Translations } from './translations';
 
@@ -17,20 +17,26 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | null>(null);
 
+const VALID_LOCALES: Locale[] = ['fr', 'en', 'es', 'nl'];
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(() => {
-    if (typeof window !== 'undefined') {
+  const [locale, setLocaleState] = useState<Locale>('fr');
+
+  // Read stored locale after mount (avoids SSR/hydration mismatch)
+  useEffect(() => {
+    try {
       const stored = localStorage.getItem('2h-locale') as Locale | null;
-      if (stored && ['fr', 'en', 'es', 'nl'].includes(stored)) return stored;
-    }
-    return 'fr';
-  });
+      if (stored && VALID_LOCALES.includes(stored)) {
+        setLocaleState(stored);
+      }
+    } catch {}
+  }, []);
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
-    if (typeof window !== 'undefined') {
+    try {
       localStorage.setItem('2h-locale', newLocale);
-    }
+    } catch {}
   }, []);
 
   const t = translations[locale];
