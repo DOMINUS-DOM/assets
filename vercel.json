@@ -1,0 +1,5 @@
+{
+  "installCommand": "cd 2h-frites && npm install",
+  "buildCommand": "cd 2h-frites && npm run build",
+  "outputDirectory": "2h-frites/out"
+}
