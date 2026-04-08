@@ -15,6 +15,7 @@ export interface MenuItem {
   sizes?: SizeVariant[];
   currency: string;
   tags?: Tag[];
+  allergens?: number[];
   subcategory?: string;
   priceLabel?: string;
 }

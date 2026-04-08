@@ -35,16 +35,21 @@ export default function SauceGrid({ category }: SauceGridProps) {
             className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800/50
               hover:border-zinc-700 transition-colors"
           >
-            <span className="text-sm text-zinc-200 truncate pr-2">{item.name}</span>
-            {item.tags && item.tags.length > 0 && (
-              <div className="flex gap-0.5 shrink-0">
-                {item.tags.map((tag) => (
-                  <span key={tag} className="text-[10px]">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-zinc-200 truncate">{item.name}</span>
+                {item.tags && item.tags.map((tag) => (
+                  <span key={tag} className="text-[10px] shrink-0">
                     {tag === 'spicy' ? '🌶️' : tag === 'popular' ? '★' : ''}
                   </span>
                 ))}
               </div>
-            )}
+              {item.allergens && item.allergens.length > 0 && (
+                <span className="text-[10px] text-orange-400/60 font-medium">
+                  {item.allergens.join('·')}
+                </span>
+              )}
+            </div>
           </div>
         ))}
       </div>

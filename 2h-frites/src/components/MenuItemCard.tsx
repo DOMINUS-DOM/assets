@@ -4,6 +4,7 @@ import { MenuItem } from '@/types';
 import { useLanguage } from '@/i18n/LanguageContext';
 import Badge from './Badge';
 import FavoriteButton from './FavoriteButton';
+import AllergenBadges from './AllergenBadges';
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -37,6 +38,9 @@ export default function MenuItemCard({ item, isFavorite, onToggleFavorite }: Men
         </div>
         {description && (
           <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">{description}</p>
+        )}
+        {item.allergens && item.allergens.length > 0 && (
+          <AllergenBadges allergenIds={item.allergens} />
         )}
       </div>
       <div className="flex items-center gap-1 shrink-0">

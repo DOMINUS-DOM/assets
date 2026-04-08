@@ -12,6 +12,7 @@ import CategoryGrid from '@/components/CategoryGrid';
 import CategoryView from '@/components/CategoryView';
 import MenuItemCard from '@/components/MenuItemCard';
 import BackToTop from '@/components/BackToTop';
+import AllergenLegend from '@/components/AllergenLegend';
 
 type View = 'home' | 'category' | 'favorites';
 
@@ -109,6 +110,7 @@ export default function HomePage() {
       {/* CATEGORY VIEW */}
       {view === 'category' && activeCategory && (
         <div className="pt-4 animate-fade-in">
+          <AllergenLegend />
           <CategoryView
             category={activeCategory}
             isFavorite={isFavorite}

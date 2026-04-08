@@ -7,6 +7,7 @@ export interface Translations {
   sizes: Record<string, string>;
   items: Record<string, string>;
   descriptions: Record<string, string>;
+  allergens: Record<string, string>;
 }
 
 const fr: Translations = {
@@ -128,6 +129,24 @@ const fr: Translations = {
     salade_italienne_desc: 'Salade, oignons, tomates cerises, boules de mozzarella',
     salade_grecque_desc: 'Salade, olives noires, concombre, feta',
     salade_poulet_desc: 'Salade, oignons, chou, maïs, dés de poulet mariné, oignons boule',
+  },
+  allergens: {
+    title: 'Allergènes',
+    disclaimer: 'Information indicative — consultez notre équipe pour plus de détails.',
+    gluten: 'Gluten',
+    crustaceans: 'Crustacés',
+    eggs: 'Œufs',
+    fish: 'Poisson',
+    peanuts: 'Arachides',
+    soy: 'Soja',
+    milk: 'Lait',
+    nuts: 'Fruits à coque',
+    celery: 'Céleri',
+    mustard: 'Moutarde',
+    sesame: 'Sésame',
+    sulfites: 'Sulfites',
+    lupin: 'Lupin',
+    mollusks: 'Mollusques',
   },
 };
 
@@ -251,6 +270,24 @@ const en: Translations = {
     salade_grecque_desc: 'Lettuce, black olives, cucumber, feta',
     salade_poulet_desc: 'Lettuce, onions, cabbage, corn, marinated chicken pieces, pearl onions',
   },
+  allergens: {
+    title: 'Allergens',
+    disclaimer: 'Indicative information — please ask our staff for details.',
+    gluten: 'Gluten',
+    crustaceans: 'Crustaceans',
+    eggs: 'Eggs',
+    fish: 'Fish',
+    peanuts: 'Peanuts',
+    soy: 'Soy',
+    milk: 'Milk',
+    nuts: 'Tree nuts',
+    celery: 'Celery',
+    mustard: 'Mustard',
+    sesame: 'Sesame',
+    sulfites: 'Sulfites',
+    lupin: 'Lupin',
+    mollusks: 'Mollusks',
+  },
 };
 
 const es: Translations = {
@@ -373,6 +410,24 @@ const es: Translations = {
     salade_grecque_desc: 'Lechuga, aceitunas negras, pepino, feta',
     salade_poulet_desc: 'Lechuga, cebollas, col, maíz, pollo marinado, cebollitas',
   },
+  allergens: {
+    title: 'Alérgenos',
+    disclaimer: 'Información indicativa — consulte a nuestro equipo para más detalles.',
+    gluten: 'Gluten',
+    crustaceans: 'Crustáceos',
+    eggs: 'Huevos',
+    fish: 'Pescado',
+    peanuts: 'Cacahuetes',
+    soy: 'Soja',
+    milk: 'Leche',
+    nuts: 'Frutos de cáscara',
+    celery: 'Apio',
+    mustard: 'Mostaza',
+    sesame: 'Sésamo',
+    sulfites: 'Sulfitos',
+    lupin: 'Altramuces',
+    mollusks: 'Moluscos',
+  },
 };
 
 const nl: Translations = {
@@ -494,6 +549,24 @@ const nl: Translations = {
     salade_italienne_desc: 'Sla, uien, kerstomaatjes, mozzarella bolletjes',
     salade_grecque_desc: 'Sla, zwarte olijven, komkommer, feta',
     salade_poulet_desc: 'Sla, uien, kool, maïs, gemarineerde kip, zilveruitjes',
+  },
+  allergens: {
+    title: 'Allergenen',
+    disclaimer: 'Indicatieve informatie — raadpleeg ons team voor meer details.',
+    gluten: 'Gluten',
+    crustaceans: 'Schaaldieren',
+    eggs: 'Eieren',
+    fish: 'Vis',
+    peanuts: 'Pinda\'s',
+    soy: 'Soja',
+    milk: 'Melk',
+    nuts: 'Noten',
+    celery: 'Selderij',
+    mustard: 'Mosterd',
+    sesame: 'Sesam',
+    sulfites: 'Sulfieten',
+    lupin: 'Lupine',
+    mollusks: 'Weekdieren',
   },
 };
 
