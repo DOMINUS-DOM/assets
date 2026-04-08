@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { categories } from '@/data/menu';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useSearch } from '@/hooks/useSearch';
@@ -14,6 +14,7 @@ import MenuItemCard from '@/components/MenuItemCard';
 import BackToTop from '@/components/BackToTop';
 import AllergenLegend from '@/components/AllergenLegend';
 import SurpriseMe from '@/components/SurpriseMe';
+import Onboarding from '@/components/Onboarding';
 
 type View = 'home' | 'category' | 'favorites';
 
@@ -21,10 +22,31 @@ export default function HomePage() {
   const { locale, t, getCategory } = useLanguage();
   const { isFavorite, toggleFavorite, count: favCount } = useFavorites();
 
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [ready, setReady] = useState(false);
   const [view, setView] = useState<View>('home');
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSurprise, setShowSurprise] = useState(false);
+
+  useEffect(() => {
+    const done = localStorage.getItem('2h-onboarded');
+    if (!done) {
+      setShowOnboarding(true);
+    }
+    setReady(true);
+  }, []);
+
+  const handleOnboardingComplete = useCallback(() => {
+    localStorage.setItem('2h-onboarded', 'true');
+    setShowOnboarding(false);
+  }, []);
+
+  if (!ready) return null;
+
+  if (showOnboarding) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
+  }
 
   const searchResults = useSearch(searchQuery, locale);
 

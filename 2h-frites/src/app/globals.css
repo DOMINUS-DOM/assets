@@ -91,3 +91,30 @@
 .animate-particle {
   animation: particle 0.5s ease-out forwards;
 }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideOutLeft {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-40px); }
+}
+
+@keyframes slideOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(40px); }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-slideOutLeft {
+  animation: slideOutLeft 0.25s ease-in forwards;
+}
+
+.animate-slideOutRight {
+  animation: slideOutRight 0.25s ease-in forwards;
+}
