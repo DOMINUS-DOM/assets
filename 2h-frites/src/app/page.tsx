@@ -13,16 +13,18 @@ import CategoryView from '@/components/CategoryView';
 import MenuItemCard from '@/components/MenuItemCard';
 import BackToTop from '@/components/BackToTop';
 import AllergenLegend from '@/components/AllergenLegend';
+import SurpriseMe from '@/components/SurpriseMe';
 
 type View = 'home' | 'category' | 'favorites';
 
 export default function HomePage() {
-  const { locale, t, getCategory, getItemName } = useLanguage();
+  const { locale, t, getCategory } = useLanguage();
   const { isFavorite, toggleFavorite, count: favCount } = useFavorites();
 
   const [view, setView] = useState<View>('home');
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSurprise, setShowSurprise] = useState(false);
 
   const searchResults = useSearch(searchQuery, locale);
 
@@ -54,7 +56,6 @@ export default function HomePage() {
     }
   }, [view, handleBack]);
 
-  // Gather all favorite items across categories
   const favoriteItems = categories.flatMap((cat) =>
     cat.items
       .filter((item) => isFavorite(item.id))
@@ -102,7 +103,21 @@ export default function HomePage() {
               )}
             </section>
           ) : (
-            <CategoryGrid onSelect={handleSelectCategory} />
+            <>
+              {/* Surprise Me button */}
+              <div className="px-4 mb-6">
+                <button
+                  onClick={() => setShowSurprise(true)}
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500
+                    text-zinc-950 font-bold text-sm active:scale-[0.97] transition-transform
+                    shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+                >
+                  <span className="text-lg">🎲</span>
+                  {t.ui.surprise}
+                </button>
+              </div>
+              <CategoryGrid onSelect={handleSelectCategory} />
+            </>
           )}
         </>
       )}
@@ -147,6 +162,9 @@ export default function HomePage() {
       )}
 
       <BackToTop />
+
+      {/* Surprise Me Modal */}
+      {showSurprise && <SurpriseMe onClose={() => setShowSurprise(false)} />}
     </div>
   );
 }
