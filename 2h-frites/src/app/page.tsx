@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { categories } from '@/data/menu';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useSearch } from '@/hooks/useSearch';
@@ -29,6 +29,24 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSurprise, setShowSurprise] = useState(false);
 
+  // ALL hooks must be called before any conditional return
+  const searchResults = useSearch(searchQuery, locale);
+
+  const activeCategory = useMemo(
+    () => (activeSlug ? categories.find((c) => c.slug === activeSlug) || null : null),
+    [activeSlug]
+  );
+
+  const favoriteItems = useMemo(
+    () =>
+      categories.flatMap((cat) =>
+        cat.items
+          .filter((item) => isFavorite(item.id))
+          .map((item) => ({ item, category: cat }))
+      ),
+    [isFavorite]
+  );
+
   useEffect(() => {
     try {
       const done = localStorage.getItem('2h-onboarded');
@@ -43,18 +61,6 @@ export default function HomePage() {
     try { localStorage.setItem('2h-onboarded', 'true'); } catch {}
     setShowOnboarding(false);
   }, []);
-
-  if (!ready) return null;
-
-  if (showOnboarding) {
-    return <Onboarding onComplete={handleOnboardingComplete} />;
-  }
-
-  const searchResults = useSearch(searchQuery, locale);
-
-  const activeCategory = activeSlug
-    ? categories.find((c) => c.slug === activeSlug) || null
-    : null;
 
   const handleSelectCategory = useCallback((slug: string) => {
     setActiveSlug(slug);
@@ -71,20 +77,23 @@ export default function HomePage() {
 
   const handleFavorites = useCallback(() => {
     if (view === 'favorites') {
-      handleBack();
+      setView('home');
+      setActiveSlug(null);
+      setSearchQuery('');
     } else {
       setView('favorites');
       setActiveSlug(null);
       setSearchQuery('');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [view, handleBack]);
+  }, [view]);
 
-  const favoriteItems = categories.flatMap((cat) =>
-    cat.items
-      .filter((item) => isFavorite(item.id))
-      .map((item) => ({ item, category: cat }))
-  );
+  // Conditional renders AFTER all hooks
+  if (!ready) return null;
+
+  if (showOnboarding) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
+  }
 
   return (
     <div className="min-h-screen max-w-lg mx-auto pb-20">
@@ -128,7 +137,6 @@ export default function HomePage() {
             </section>
           ) : (
             <>
-              {/* Surprise Me button */}
               <div className="px-4 mb-6">
                 <button
                   onClick={() => setShowSurprise(true)}
@@ -186,8 +194,6 @@ export default function HomePage() {
       )}
 
       <BackToTop />
-
-      {/* Surprise Me Modal */}
       {showSurprise && <SurpriseMe onClose={() => setShowSurprise(false)} />}
     </div>
   );
