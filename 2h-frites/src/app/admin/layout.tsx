@@ -19,6 +19,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     { href: '/admin/orders', label: t.ui.admin_orders, exact: false, roles: ['patron', 'manager', 'employe'] },
     { href: '/admin/kitchen', label: t.ui.kds_nav, exact: false, roles: ['patron', 'manager', 'employe'] },
     { href: '/admin/menu', label: t.ui.cms_nav, exact: false, roles: ['patron', 'manager'] },
+    { href: '/admin/zones', label: t.ui.zone_nav, exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'] },
     { href: '/admin/inventory', label: t.ui.inv_nav, exact: false, roles: ['patron', 'manager'] },
     { href: '/admin/crm', label: t.ui.crm_nav, exact: false, roles: ['patron', 'manager'] },
     { href: '/admin/staff', label: t.ui.staff_title, exact: false, roles: ['patron', 'manager'] },
