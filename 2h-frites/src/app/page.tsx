@@ -15,6 +15,7 @@ import BackToTop from '@/components/BackToTop';
 import AllergenLegend from '@/components/AllergenLegend';
 import SurpriseMe from '@/components/SurpriseMe';
 import Onboarding from '@/components/Onboarding';
+import NotificationPrompt from '@/components/NotificationPrompt';
 
 type View = 'home' | 'category' | 'favorites';
 
@@ -205,6 +206,7 @@ export default function HomePage() {
 
       <BackToTop />
       {showSurprise && <SurpriseMe onClose={() => setShowSurprise(false)} />}
+      <NotificationPrompt />
     </div>
   );
 }

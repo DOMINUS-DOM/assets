@@ -26,6 +26,10 @@ export default function CheckoutPage() {
   const [postalCode, setPostalCode] = useState('');
   const [instructions, setInstructions] = useState('');
   const [pickupTime, setPickupTime] = useState('');
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [loyaltyRedeem, setLoyaltyRedeem] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('on_pickup');
   const [submitting, setSubmitting] = useState(false);
 
@@ -120,6 +124,42 @@ export default function CheckoutPage() {
           <section className="animate-fade-in">
             <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">{t.ui.checkout_pickupTime}</h2>
             <input className={ic} type="time" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} />
+          </section>
+        )}
+
+        {/* Scheduling */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t.ui.sched_title}</h2>
+            <button type="button" onClick={() => setIsScheduled(!isScheduled)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${isScheduled ? 'bg-amber-500/15 text-amber-400' : 'bg-zinc-900 text-zinc-500'}`}>
+              {isScheduled ? t.ui.sched_later : t.ui.sched_now}
+            </button>
+          </div>
+          {isScheduled && (
+            <div className="grid grid-cols-2 gap-2 animate-fade-in">
+              <input className={ic} type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} min={new Date().toISOString().slice(0, 10)} required />
+              <input className={ic} type="time" value={scheduledTime} onChange={(e) => setScheduledTime(e.target.value)} required />
+            </div>
+          )}
+        </section>
+
+        {/* Loyalty points */}
+        {user && (
+          <section className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-amber-400">⭐ {t.ui.loyalty_title}</p>
+                <p className="text-[10px] text-zinc-500">{t.ui.loyalty_earn}: {Math.floor(grandTotal)} pts</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setLoyaltyRedeem(Math.min(loyaltyRedeem + 10, 100))}
+                  className="px-2 py-1 rounded-lg bg-zinc-800 text-amber-400 text-xs font-bold">+10 pts</button>
+                {loyaltyRedeem > 0 && (
+                  <span className="text-xs text-emerald-400 font-bold">-{formatPrice(loyaltyRedeem / 20)} €</span>
+                )}
+              </div>
+            </div>
           </section>
         )}
 

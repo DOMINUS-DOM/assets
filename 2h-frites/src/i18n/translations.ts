@@ -215,6 +215,13 @@ const fr: Translations = {
     zone_outOfZone: 'Désolé, hors zone de livraison', zone_outOfZoneDesc: 'Vous pouvez toujours commander en retrait.',
     zone_orderNow: 'Commander maintenant',
     track_onTheWay: 'Votre livreur est en route !', track_driverOnWay: 'En route vers vous...',
+    // Scheduling
+    sched_title: 'Quand ?', sched_now: '⚡ Maintenant', sched_later: '📅 Plus tard',
+    // Loyalty
+    loyalty_title: 'Points fidélité', loyalty_earn: 'Vous gagnez',
+    // Push
+    push_title: 'Activer les notifications ?', push_desc: 'Soyez prévenu quand votre commande est prête ou en route.',
+    push_allow: 'Activer', push_later: 'Plus tard',
   },
   categories: {
     frites: 'Frites',
@@ -516,6 +523,10 @@ const en: Translations = {
     zone_outOfZone: 'Sorry, outside delivery zone', zone_outOfZoneDesc: 'You can still order for pickup.',
     zone_orderNow: 'Order now',
     track_onTheWay: 'Your driver is on the way!', track_driverOnWay: 'On the way to you...',
+    sched_title: 'When?', sched_now: '⚡ Now', sched_later: '📅 Later',
+    loyalty_title: 'Loyalty points', loyalty_earn: 'You earn',
+    push_title: 'Enable notifications?', push_desc: 'Get notified when your order is ready or on its way.',
+    push_allow: 'Enable', push_later: 'Later',
   },
   categories: {
     frites: 'Fries',
@@ -817,6 +828,10 @@ const es: Translations = {
     zone_outOfZone: 'Fuera de zona de entrega', zone_outOfZoneDesc: 'Puedes pedir para recoger.',
     zone_orderNow: 'Pedir ahora',
     track_onTheWay: '¡Tu repartidor está en camino!', track_driverOnWay: 'De camino hacia ti...',
+    sched_title: '¿Cuándo?', sched_now: '⚡ Ahora', sched_later: '📅 Más tarde',
+    loyalty_title: 'Puntos fidelidad', loyalty_earn: 'Ganas',
+    push_title: '¿Activar notificaciones?', push_desc: 'Recibe alertas cuando tu pedido esté listo.',
+    push_allow: 'Activar', push_later: 'Más tarde',
   },
   categories: {
     frites: 'Patatas fritas',
@@ -1118,6 +1133,10 @@ const nl: Translations = {
     zone_outOfZone: 'Helaas, buiten bezorggebied', zone_outOfZoneDesc: 'Je kunt wel afhalen.',
     zone_orderNow: 'Nu bestellen',
     track_onTheWay: 'Je bezorger is onderweg!', track_driverOnWay: 'Onderweg naar jou...',
+    sched_title: 'Wanneer?', sched_now: '⚡ Nu', sched_later: '📅 Later',
+    loyalty_title: 'Loyaliteitspunten', loyalty_earn: 'Je verdient',
+    push_title: 'Meldingen inschakelen?', push_desc: 'Ontvang een melding wanneer je bestelling klaar is.',
+    push_allow: 'Inschakelen', push_later: 'Later',
   },
   categories: {
     frites: 'Friet',
