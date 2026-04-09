@@ -6,6 +6,7 @@ import { useLanguage } from '@/i18n/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import UserMenu from '@/components/auth/UserMenu';
+import NotificationBell from '@/components/NotificationBell';
 
 function AdminContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -15,7 +16,10 @@ function AdminContent({ children }: { children: React.ReactNode }) {
   const NAV = [
     { href: '/admin', label: t.ui.admin_dashboard, exact: true, roles: ['patron', 'manager', 'employe'] },
     { href: '/admin/orders', label: t.ui.admin_orders, exact: false, roles: ['patron', 'manager', 'employe'] },
+    { href: '/admin/kitchen', label: t.ui.kds_nav, exact: false, roles: ['patron', 'manager', 'employe'] },
     { href: '/admin/menu', label: t.ui.cms_nav, exact: false, roles: ['patron', 'manager'] },
+    { href: '/admin/inventory', label: t.ui.inv_nav, exact: false, roles: ['patron', 'manager'] },
+    { href: '/admin/crm', label: t.ui.crm_nav, exact: false, roles: ['patron', 'manager'] },
     { href: '/admin/staff', label: t.ui.staff_title, exact: false, roles: ['patron', 'manager'] },
     { href: '/admin/drivers', label: t.ui.admin_drivers, exact: false, roles: ['patron', 'manager'] },
     { href: '/admin/recruitment', label: t.ui.admin_recruitment, exact: false, roles: ['patron', 'manager'] },
@@ -37,6 +41,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
           </Link>
           <div className="flex items-center gap-2">
             <Link href="/" className="text-xs text-zinc-500 hover:text-amber-400 transition-colors">{t.ui.admin_clientMenu}</Link>
+            <NotificationBell />
             <UserMenu />
           </div>
         </div>
