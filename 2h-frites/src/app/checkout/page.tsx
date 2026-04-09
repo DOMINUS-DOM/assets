@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { store } from '@/stores/store';
+import { settingsStore } from '@/stores/settingsStore';
 import { formatPrice } from '@/utils/format';
 import { OrderType, PaymentMethod } from '@/types/order';
 
@@ -37,7 +38,8 @@ export default function CheckoutPage() {
     );
   }
 
-  const deliveryFee = orderType === 'delivery' ? 2.50 : 0;
+  const biz = settingsStore.get();
+  const deliveryFee = orderType === 'delivery' ? settingsStore.getDeliveryFee(postalCode || '') : 0;
   const grandTotal = total + deliveryFee;
 
   const handleSubmit = (e: React.FormEvent) => {
