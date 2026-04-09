@@ -7,27 +7,70 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── Auth ───
+// ═══════════════════════════════════════
+// MULTI-LOCATION / FRANCHISE
+// ═══════════════════════════════════════
+
+model Location {
+  id          String   @id @default(cuid())
+  name        String   // "2H Frites — La Louvière Centre"
+  slug        String   @unique
+  address     String
+  city        String
+  postalCode  String
+  phone       String
+  email       String
+  lat         Float?
+  lng         Float?
+  active      Boolean  @default(true)
+  settingsJson String  @default("{}") // hours, zones, fees as JSON
+  createdAt   DateTime @default(now())
+
+  users         User[]
+  employees     Employee[]
+  orders        Order[]
+  drivers       Driver[]
+  ingredients   Ingredient[]
+  shifts        Shift[]
+  tasks         Task[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  payPeriods    PayPeriod[]
+}
+
+// ═══════════════════════════════════════
+// AUTH — Extended for franchise roles
+// ═══════════════════════════════════════
+
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String    @id @default(cuid())
+  email        String    @unique
   passwordHash String
   name         String
   phone        String
-  role         String   @default("client")
-  active       Boolean  @default(true)
+  // Roles: franchisor_admin, franchisee_owner, location_manager, employe, livreur, client
+  role         String    @default("client")
+  active       Boolean   @default(true)
   driverId     String?
-  createdAt    DateTime @default(now())
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
+  createdAt    DateTime  @default(now())
 
-  employee Employee?
-  orders   Order[]
+  employee  Employee?
+  orders    Order[]
+  auditLogs AuditLog[]
 }
 
-// ─── Staff ───
+// ═══════════════════════════════════════
+// STAFF / HR
+// ═══════════════════════════════════════
+
 model Employee {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id])
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id])
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
   name         String
   phone        String
   email        String
@@ -35,8 +78,8 @@ model Employee {
   contractType String
   hourlyRate   Float
   hireDate     String
-  active       Boolean  @default(true)
-  notes        String   @default("")
+  active       Boolean   @default(true)
+  notes        String    @default("")
 
   shifts        Shift[]
   timeEntries   TimeEntry[]
@@ -46,14 +89,16 @@ model Employee {
 }
 
 model Shift {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   employeeId String
-  employee   Employee @relation(fields: [employeeId], references: [id])
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
   date       String
   startTime  String
   endTime    String
   position   String
-  notes      String   @default("")
+  notes      String    @default("")
 }
 
 model TimeEntry {
@@ -82,18 +127,25 @@ model Task {
   id         String    @id @default(cuid())
   employeeId String?
   employee   Employee? @relation(fields: [employeeId], references: [id])
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
   title      String
   date       String
   completed  Boolean   @default(false)
   category   String
 }
 
-// ─── Orders ───
+// ═══════════════════════════════════════
+// ORDERS — with locationId
+// ═══════════════════════════════════════
+
 model Order {
-  id             String   @id @default(cuid())
-  orderNumber    String   @unique
+  id             String    @id @default(cuid())
+  orderNumber    String    @unique
+  locationId     String?
+  location       Location? @relation(fields: [locationId], references: [id])
   type           String
-  status         String   @default("received")
+  status         String    @default("received")
   customerName   String
   customerPhone  String
   customerEmail  String?
@@ -103,12 +155,13 @@ model Order {
   deliveryNotes  String?
   pickupTime     String?
   paymentMethod  String
-  paymentStatus  String   @default("pending")
+  paymentStatus  String    @default("pending")
+  stripePaymentId String?  // Stripe payment intent ID
   total          Float
   driverId       String?
   userId         String?
-  user           User?    @relation(fields: [userId], references: [id])
-  createdAt      DateTime @default(now())
+  user           User?     @relation(fields: [userId], references: [id])
+  createdAt      DateTime  @default(now())
 
   items         OrderItem[]
   statusHistory StatusEntry[]
@@ -136,19 +189,28 @@ model StatusEntry {
   at      DateTime @default(now())
 }
 
-// ─── Drivers ───
+// ═══════════════════════════════════════
+// DRIVERS — with locationId
+// ═══════════════════════════════════════
+
 model Driver {
-  id              String  @id @default(cuid())
+  id              String    @id @default(cuid())
   userId          String?
+  locationId      String?
+  location        Location? @relation(fields: [locationId], references: [id])
   name            String
   phone           String
   email           String
-  active          Boolean @default(true)
+  active          Boolean   @default(true)
   contractType    String
   zone            String
-  notes           String  @default("")
+  notes           String    @default("")
   ratePerDelivery Float
-  bonusRate       Float   @default(0)
+  bonusRate       Float     @default(0)
+  // GPS tracking
+  lastLat         Float?
+  lastLng         Float?
+  lastLocationAt  DateTime?
 }
 
 model DriverApplication {
@@ -163,22 +225,27 @@ model DriverApplication {
   createdAt    DateTime @default(now())
 }
 
-// ─── Payments ───
+// ═══════════════════════════════════════
+// PAYMENTS — Stripe-ready
+// ═══════════════════════════════════════
+
 model Transaction {
-  id        String   @id @default(cuid())
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id])
-  amount    Float
-  method    String
-  status    String   @default("pending")
-  reference String?
-  createdAt DateTime @default(now())
+  id              String   @id @default(cuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id])
+  amount          Float
+  method          String   // cash, card, online, bancontact
+  status          String   @default("pending") // pending, completed, failed, refunded
+  reference       String?  // Stripe/Mollie payment ID
+  stripeSessionId String?
+  createdAt       DateTime @default(now())
 }
 
 model Invoice {
   id              String   @id @default(cuid())
   orderId         String   @unique
   order           Order    @relation(fields: [orderId], references: [id])
+  invoiceNumber   String?  @unique
   customerName    String
   customerPhone   String
   customerAddress String?
@@ -193,9 +260,14 @@ model Invoice {
   createdAt       DateTime @default(now())
 }
 
-// ─── Inventory ───
+// ═══════════════════════════════════════
+// INVENTORY — with locationId
+// ═══════════════════════════════════════
+
 model Ingredient {
-  id           String  @id @default(cuid())
+  id           String    @id @default(cuid())
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
   name         String
   unit         String
   currentStock Float
@@ -226,13 +298,18 @@ model StockMovement {
   date         String
 }
 
-// ─── Payroll ───
+// ═══════════════════════════════════════
+// PAYROLL — with locationId
+// ═══════════════════════════════════════
+
 model PayPeriod {
-  id        String @id @default(cuid())
-  label     String
-  startDate String
-  endDate   String
-  status    String @default("draft")
+  id         String    @id @default(cuid())
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
+  label      String
+  startDate  String
+  endDate    String
+  status     String    @default("draft")
 
   payslips Payslip[]
 }
@@ -260,19 +337,45 @@ model Payslip {
   createdAt        DateTime  @default(now())
 }
 
-// ─── Notifications ───
+// ═══════════════════════════════════════
+// NOTIFICATIONS — with locationId
+// ═══════════════════════════════════════
+
 model Notification {
-  id        String   @id @default(cuid())
-  type      String
-  title     String
-  message   String
-  read      Boolean  @default(false)
-  link      String?
-  createdAt DateTime @default(now())
+  id         String    @id @default(cuid())
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
+  type       String
+  title      String
+  message    String
+  read       Boolean   @default(false)
+  link       String?
+  createdAt  DateTime  @default(now())
 }
 
-// ─── Settings ───
+// ═══════════════════════════════════════
+// SETTINGS (global + per-location)
+// ═══════════════════════════════════════
+
 model Setting {
   key   String @id
   value String
+}
+
+// ═══════════════════════════════════════
+// AUDIT TRAIL — tracks all changes
+// ═══════════════════════════════════════
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id])
+  action     String    // create, update, delete
+  entity     String    // Order, Employee, MenuItem, etc.
+  entityId   String
+  changes    String    @default("{}") // JSON of old → new values
+  ip         String?
+  createdAt  DateTime  @default(now())
 }

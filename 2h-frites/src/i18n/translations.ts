@@ -204,6 +204,10 @@ const fr: Translations = {
     crm_loyaltyHint: '1€ dépensé = 1 point de fidélité.',
     // Notifications
     notif_title: 'Notifications', notif_markAll: 'Tout lire', notif_empty: 'Aucune notification.', notif_now: 'maintenant',
+    // Locations / Franchise
+    loc_nav: '🏢 Sites', loc_title: 'Gestion multi-sites', loc_add: '+ Nouveau site', loc_name: 'Nom du site',
+    loc_sites: 'Sites', loc_totalRevenue: 'CA total', loc_totalOrders: 'Commandes totales',
+    role_franchisor_admin: 'Admin franchise', role_franchisee_owner: 'Franchisé', role_location_manager: 'Manager site',
   },
   categories: {
     frites: 'Frites',
@@ -496,6 +500,9 @@ const en: Translations = {
     crm_orders: 'orders', crm_totalClients: 'Total customers', crm_totalRevenue: 'Total revenue', crm_noCustomers: 'No customers.',
     crm_loyaltyHint: '€1 spent = 1 loyalty point.',
     notif_title: 'Notifications', notif_markAll: 'Mark all read', notif_empty: 'No notifications.', notif_now: 'now',
+    loc_nav: '🏢 Sites', loc_title: 'Multi-site management', loc_add: '+ New site', loc_name: 'Site name',
+    loc_sites: 'Sites', loc_totalRevenue: 'Total revenue', loc_totalOrders: 'Total orders',
+    role_franchisor_admin: 'Franchise admin', role_franchisee_owner: 'Franchisee', role_location_manager: 'Site manager',
   },
   categories: {
     frites: 'Fries',
@@ -788,6 +795,9 @@ const es: Translations = {
     crm_orders: 'pedidos', crm_totalClients: 'Total clientes', crm_totalRevenue: 'Facturación total', crm_noCustomers: 'Sin clientes.',
     crm_loyaltyHint: '1€ gastado = 1 punto de fidelidad.',
     notif_title: 'Notificaciones', notif_markAll: 'Marcar todo leído', notif_empty: 'Sin notificaciones.', notif_now: 'ahora',
+    loc_nav: '🏢 Sitios', loc_title: 'Gestión multi-sitios', loc_add: '+ Nuevo sitio', loc_name: 'Nombre del sitio',
+    loc_sites: 'Sitios', loc_totalRevenue: 'Ingresos totales', loc_totalOrders: 'Pedidos totales',
+    role_franchisor_admin: 'Admin franquicia', role_franchisee_owner: 'Franquiciado', role_location_manager: 'Manager sitio',
   },
   categories: {
     frites: 'Patatas fritas',
@@ -1080,6 +1090,9 @@ const nl: Translations = {
     crm_orders: 'bestellingen', crm_totalClients: 'Totaal klanten', crm_totalRevenue: 'Totale omzet', crm_noCustomers: 'Geen klanten.',
     crm_loyaltyHint: '€1 besteed = 1 loyaliteitspunt.',
     notif_title: 'Meldingen', notif_markAll: 'Alles gelezen', notif_empty: 'Geen meldingen.', notif_now: 'nu',
+    loc_nav: '🏢 Locaties', loc_title: 'Multi-locatie beheer', loc_add: '+ Nieuwe locatie', loc_name: 'Locatienaam',
+    loc_sites: 'Locaties', loc_totalRevenue: 'Totale omzet', loc_totalOrders: 'Totaal bestellingen',
+    role_franchisor_admin: 'Franchise admin', role_franchisee_owner: 'Franchisenemer', role_location_manager: 'Locatiemanager',
   },
   categories: {
     frites: 'Friet',

@@ -14,7 +14,8 @@ function AdminContent({ children }: { children: React.ReactNode }) {
   const { hasRole } = useAuth();
 
   const NAV = [
-    { href: '/admin', label: t.ui.admin_dashboard, exact: true, roles: ['patron', 'manager', 'employe'] },
+    { href: '/admin', label: t.ui.admin_dashboard, exact: true, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'] },
+    { href: '/admin/locations', label: t.ui.loc_nav, exact: false, roles: ['franchisor_admin'] },
     { href: '/admin/orders', label: t.ui.admin_orders, exact: false, roles: ['patron', 'manager', 'employe'] },
     { href: '/admin/kitchen', label: t.ui.kds_nav, exact: false, roles: ['patron', 'manager', 'employe'] },
     { href: '/admin/menu', label: t.ui.cms_nav, exact: false, roles: ['patron', 'manager'] },
@@ -66,7 +67,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ProtectedRoute allowedRoles={['patron', 'manager', 'employe']}>
+    <ProtectedRoute allowedRoles={['patron', 'manager', 'employe', 'franchisor_admin', 'franchisee_owner', 'location_manager']}>
       <AdminContent>{children}</AdminContent>
     </ProtectedRoute>
   );
