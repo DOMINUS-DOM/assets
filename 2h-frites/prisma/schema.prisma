@@ -157,6 +157,7 @@ model Order {
   paymentMethod  String
   paymentStatus  String    @default("pending")
   stripePaymentId String?  // Stripe payment intent ID
+  channel         String   @default("website") // website, uber_eats, deliveroo, phone
   total          Float
   driverId       String?
   userId         String?
@@ -378,4 +379,48 @@ model AuditLog {
   changes    String    @default("{}") // JSON of old → new values
   ip         String?
   createdAt  DateTime  @default(now())
+}
+
+// ═══════════════════════════════════════
+// REVIEWS
+// ═══════════════════════════════════════
+
+model Review {
+  id           String   @id @default(cuid())
+  orderId      String
+  customerName String
+  customerPhone String
+  rating       Int      // 1-5
+  comment      String   @default("")
+  reply        String?
+  published    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+// ═══════════════════════════════════════
+// REFERRALS
+// ═══════════════════════════════════════
+
+model Referral {
+  id            String    @id @default(cuid())
+  referrerPhone String
+  referrerName  String
+  code          String    @unique
+  usedBy        String?
+  usedAt        DateTime?
+  rewardGiven   Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+}
+
+// ═══════════════════════════════════════
+// ORDER CHANNELS (3rd-party platforms)
+// ═══════════════════════════════════════
+
+model OrderChannel {
+  id         String  @id @default(cuid())
+  name       String  // uber_eats, deliveroo, just_eat, website, phone
+  active     Boolean @default(true)
+  apiKey     String?
+  webhookUrl String?
+  commission Float   @default(0)
 }

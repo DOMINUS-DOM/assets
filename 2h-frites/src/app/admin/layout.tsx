@@ -27,6 +27,9 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     { href: '/admin/recruitment', label: t.ui.admin_recruitment, exact: false, roles: ['patron', 'manager'] },
     { href: '/admin/payments', label: t.ui.pmt_nav, exact: false, roles: ['patron', 'manager'] },
     { href: '/admin/analytics', label: t.ui.ana_nav, exact: false, roles: ['patron', 'manager'] },
+    { href: '/admin/forecast', label: t.ui.fc_nav, exact: false, roles: ['patron', 'manager'] },
+    { href: '/admin/channels', label: t.ui.ch_nav, exact: false, roles: ['patron'] },
+    { href: '/admin/reviews', label: t.ui.rev_nav, exact: false, roles: ['patron', 'manager'] },
     { href: '/admin/payroll', label: t.ui.admin_payroll, exact: false, roles: ['patron'] },
     { href: '/admin/settings', label: t.ui.set_nav, exact: false, roles: ['patron'] },
   ];
