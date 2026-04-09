@@ -1,0 +1,278 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth ───
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String
+  role         String   @default("client")
+  active       Boolean  @default(true)
+  driverId     String?
+  createdAt    DateTime @default(now())
+
+  employee Employee?
+  orders   Order[]
+}
+
+// ─── Staff ───
+model Employee {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  name         String
+  phone        String
+  email        String
+  position     String
+  contractType String
+  hourlyRate   Float
+  hireDate     String
+  active       Boolean  @default(true)
+  notes        String   @default("")
+
+  shifts        Shift[]
+  timeEntries   TimeEntry[]
+  leaveRequests LeaveRequest[]
+  tasks         Task[]
+  payslips      Payslip[]
+}
+
+model Shift {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  date       String
+  startTime  String
+  endTime    String
+  position   String
+  notes      String   @default("")
+}
+
+model TimeEntry {
+  id          String    @id @default(cuid())
+  employeeId  String
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+  date        String
+  clockIn     DateTime
+  clockOut    DateTime?
+  hoursWorked Float?
+}
+
+model LeaveRequest {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  type       String
+  startDate  String
+  endDate    String
+  reason     String   @default("")
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+}
+
+model Task {
+  id         String    @id @default(cuid())
+  employeeId String?
+  employee   Employee? @relation(fields: [employeeId], references: [id])
+  title      String
+  date       String
+  completed  Boolean   @default(false)
+  category   String
+}
+
+// ─── Orders ───
+model Order {
+  id             String   @id @default(cuid())
+  orderNumber    String   @unique
+  type           String
+  status         String   @default("received")
+  customerName   String
+  customerPhone  String
+  customerEmail  String?
+  deliveryStreet String?
+  deliveryCity   String?
+  deliveryPostal String?
+  deliveryNotes  String?
+  pickupTime     String?
+  paymentMethod  String
+  paymentStatus  String   @default("pending")
+  total          Float
+  driverId       String?
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id])
+  createdAt      DateTime @default(now())
+
+  items         OrderItem[]
+  statusHistory StatusEntry[]
+  transactions  Transaction[]
+  invoice       Invoice?
+}
+
+model OrderItem {
+  id         String @id @default(cuid())
+  orderId    String
+  order      Order  @relation(fields: [orderId], references: [id])
+  menuItemId String
+  name       String
+  price      Float
+  quantity   Int
+  sizeKey    String?
+  categoryId String
+}
+
+model StatusEntry {
+  id      String   @id @default(cuid())
+  orderId String
+  order   Order    @relation(fields: [orderId], references: [id])
+  status  String
+  at      DateTime @default(now())
+}
+
+// ─── Drivers ───
+model Driver {
+  id              String  @id @default(cuid())
+  userId          String?
+  name            String
+  phone           String
+  email           String
+  active          Boolean @default(true)
+  contractType    String
+  zone            String
+  notes           String  @default("")
+  ratePerDelivery Float
+  bonusRate       Float   @default(0)
+}
+
+model DriverApplication {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String
+  email        String
+  city         String
+  transport    String
+  availability String
+  status       String   @default("new")
+  createdAt    DateTime @default(now())
+}
+
+// ─── Payments ───
+model Transaction {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  amount    Float
+  method    String
+  status    String   @default("pending")
+  reference String?
+  createdAt DateTime @default(now())
+}
+
+model Invoice {
+  id              String   @id @default(cuid())
+  orderId         String   @unique
+  order           Order    @relation(fields: [orderId], references: [id])
+  customerName    String
+  customerPhone   String
+  customerAddress String?
+  subtotal        Float
+  totalVat        Float
+  deliveryFee     Float    @default(0)
+  grandTotal      Float
+  vatNumber       String
+  businessName    String
+  businessAddress String
+  linesJson       String
+  createdAt       DateTime @default(now())
+}
+
+// ─── Inventory ───
+model Ingredient {
+  id           String  @id @default(cuid())
+  name         String
+  unit         String
+  currentStock Float
+  minStock     Float
+  costPerUnit  Float
+  supplierId   String?
+  expiryDate   String?
+  category     String
+
+  movements StockMovement[]
+}
+
+model Supplier {
+  id    String @id @default(cuid())
+  name  String
+  phone String
+  email String
+  notes String @default("")
+}
+
+model StockMovement {
+  id           String     @id @default(cuid())
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+  type         String
+  quantity     Float
+  note         String     @default("")
+  date         String
+}
+
+// ─── Payroll ───
+model PayPeriod {
+  id        String @id @default(cuid())
+  label     String
+  startDate String
+  endDate   String
+  status    String @default("draft")
+
+  payslips Payslip[]
+}
+
+model Payslip {
+  id               String    @id @default(cuid())
+  periodId         String
+  period           PayPeriod @relation(fields: [periodId], references: [id])
+  employeeId       String
+  employee         Employee  @relation(fields: [employeeId], references: [id])
+  employeeName     String
+  regularHours     Float
+  overtimeHours    Float
+  hourlyRate       Float
+  overtimeRate     Float
+  grossRegular     Float
+  grossOvertime    Float
+  grossTotal       Float
+  deductions       Float
+  netTotal         Float
+  bonus            Float     @default(0)
+  deliveryCount    Int?
+  deliveryEarnings Float?
+  status           String    @default("draft")
+  createdAt        DateTime  @default(now())
+}
+
+// ─── Notifications ───
+model Notification {
+  id        String   @id @default(cuid())
+  type      String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+}
+
+// ─── Settings ───
+model Setting {
+  key   String @id
+  value String
+}

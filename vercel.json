@@ -1,5 +1,6 @@
 {
+  "framework": "nextjs",
   "installCommand": "cd 2h-frites && npm install",
-  "buildCommand": "cd 2h-frites && npm run build && cp -r out/ ../out/",
-  "outputDirectory": "out"
+  "buildCommand": "cd 2h-frites && npx prisma generate && npm run build",
+  "outputDirectory": "2h-frites/.next"
 }
