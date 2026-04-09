@@ -1,6 +1,7 @@
 'use client';
 
 import { Component, ReactNode } from 'react';
+import { captureException } from '@/lib/sentry';
 
 interface Props {
   children: ReactNode;
@@ -18,6 +19,10 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(): State {
     return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    captureException(error, { component: 'ErrorBoundary' });
   }
 
   render() {

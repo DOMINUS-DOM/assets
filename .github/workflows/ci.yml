@@ -1,0 +1,37 @@
+name: CI — Tests & Build
+
+on:
+  push:
+    branches: [master, claude/mobile-menu-frites-app-jRtBw]
+    paths: ['2h-frites/**']
+  pull_request:
+    branches: [master]
+    paths: ['2h-frites/**']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: 2h-frites/package-lock.json
+
+      - name: Install dependencies
+        working-directory: 2h-frites
+        run: npm ci
+
+      - name: Run tests
+        working-directory: 2h-frites
+        run: npm test
+
+      - name: Generate Prisma client
+        working-directory: 2h-frites
+        run: npx prisma generate
+
+      - name: Build
+        working-directory: 2h-frites
+        run: npm run build
