@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { useCart } from '@/contexts/CartContext';
+import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
 import CartItemRow from '@/components/cart/CartItemRow';
 
 export default function CartPage() {
   const { items, total, count, clearCart } = useCart();
+  const { t } = useLanguage();
 
   return (
     <div className="min-h-screen max-w-lg mx-auto pb-20 bg-zinc-950">
@@ -18,10 +20,10 @@ export default function CartPage() {
             </svg>
             Menu
           </Link>
-          <h1 className="text-sm font-bold text-white">Panier ({count})</h1>
+          <h1 className="text-sm font-bold text-white">{t.ui.cart_title} ({count})</h1>
           {items.length > 0 && (
             <button onClick={clearCart} className="text-xs text-zinc-500 hover:text-red-400 transition-colors">
-              Vider
+              {t.ui.cart_clear}
             </button>
           )}
         </div>
@@ -31,9 +33,9 @@ export default function CartPage() {
         {items.length === 0 ? (
           <div className="text-center py-20">
             <span className="text-5xl block mb-4">🛒</span>
-            <p className="text-zinc-400 text-sm mb-6">Votre panier est vide</p>
+            <p className="text-zinc-400 text-sm mb-6">{t.ui.cart_empty}</p>
             <Link href="/" className="inline-block px-6 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm">
-              Voir le menu
+              {t.ui.cart_seeMenu}
             </Link>
           </div>
         ) : (
@@ -46,7 +48,7 @@ export default function CartPage() {
 
             <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 mb-6">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Total</span>
+                <span className="text-sm text-zinc-400">{t.ui.cart_total}</span>
                 <span className="text-2xl font-extrabold text-amber-400">{formatPrice(total)} €</span>
               </div>
             </div>
@@ -57,7 +59,7 @@ export default function CartPage() {
                 text-zinc-950 font-bold text-center text-sm active:scale-[0.97] transition-transform
                 shadow-lg shadow-amber-500/20"
             >
-              Commander ({formatPrice(total)} €)
+              {t.ui.cart_order} ({formatPrice(total)} €)
             </Link>
           </>
         )}

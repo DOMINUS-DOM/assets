@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { store } from '@/stores/store';
 import { Order } from '@/types/order';
+import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
 import Link from 'next/link';
 
@@ -18,54 +19,43 @@ function StatCard({ label, value, emoji }: { label: string; value: string | numb
 
 export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const { t } = useLanguage();
 
-  useEffect(() => {
-    setOrders(store.getOrders());
-    return store.subscribe(() => setOrders(store.getOrders()));
-  }, []);
+  useEffect(() => { setOrders(store.getOrders()); return store.subscribe(() => setOrders(store.getOrders())); }, []);
 
-  const today = orders; // All demo orders are "today"
-  const revenue = today.reduce((sum, o) => sum + o.total, 0);
-  const pending = today.filter((o) => o.status === 'received').length;
-  const preparing = today.filter((o) => o.status === 'preparing').length;
-  const delivering = today.filter((o) => o.status === 'delivering').length;
-  const done = today.filter((o) => ['delivered', 'picked_up'].includes(o.status)).length;
-
-  const recent = [...orders].slice(0, 5);
+  const revenue = orders.reduce((sum, o) => sum + o.total, 0);
+  const pending = orders.filter((o) => o.status === 'received').length;
+  const preparing = orders.filter((o) => o.status === 'preparing').length;
+  const delivering = orders.filter((o) => o.status === 'delivering').length;
+  const done = orders.filter((o) => ['delivered', 'picked_up'].includes(o.status)).length;
 
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold text-white">Dashboard</h1>
-
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <StatCard emoji="📋" label="Commandes du jour" value={today.length} />
-        <StatCard emoji="💰" label="Chiffre du jour" value={`${formatPrice(revenue)} €`} />
-        <StatCard emoji="⏳" label="En attente" value={pending} />
-        <StatCard emoji="👨‍🍳" label="En préparation" value={preparing} />
-        <StatCard emoji="🛵" label="En livraison" value={delivering} />
-        <StatCard emoji="✅" label="Terminées" value={done} />
+        <StatCard emoji="📋" label={t.ui.admin_ordersToday} value={orders.length} />
+        <StatCard emoji="💰" label={t.ui.admin_revenueToday} value={`${formatPrice(revenue)} €`} />
+        <StatCard emoji="⏳" label={t.ui.admin_pending} value={pending} />
+        <StatCard emoji="👨‍🍳" label={t.ui.admin_preparing} value={preparing} />
+        <StatCard emoji="🛵" label={t.ui.admin_inDelivery} value={delivering} />
+        <StatCard emoji="✅" label={t.ui.admin_completed} value={done} />
       </div>
-
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">Dernières commandes</h2>
-          <Link href="/admin/orders" className="text-xs text-amber-400">Voir tout →</Link>
+          <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">{t.ui.admin_latestOrders}</h2>
+          <Link href="/admin/orders" className="text-xs text-amber-400">{t.ui.admin_seeAll}</Link>
         </div>
         <div className="space-y-2">
-          {recent.map((o) => (
-            <Link
-              key={o.id}
-              href={`/admin/orders/detail?id=${o.id}`}
-              className="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50
-                hover:border-zinc-700 transition-colors"
-            >
+          {orders.slice(0, 5).map((o) => (
+            <Link key={o.id} href={`/admin/orders/detail?id=${o.id}`}
+              className="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50 hover:border-zinc-700 transition-colors">
               <div>
                 <p className="text-sm font-semibold text-white">{o.id}</p>
                 <p className="text-xs text-zinc-500">{o.customer.name} — {o.type === 'pickup' ? '🏪' : '🛵'}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold text-amber-400">{formatPrice(o.total)} €</p>
-                <p className="text-xs text-zinc-500">{o.status}</p>
+                <p className="text-xs text-zinc-500">{t.ui[`status_${o.status}`]}</p>
               </div>
             </Link>
           ))}

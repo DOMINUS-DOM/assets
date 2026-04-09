@@ -3,62 +3,47 @@
 import { useState, useEffect } from 'react';
 import { store } from '@/stores/store';
 import { Order, Driver } from '@/types/order';
+import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
 
 export default function PayrollPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const { t } = useLanguage();
 
   useEffect(() => {
-    setOrders(store.getOrders());
-    setDrivers(store.getDrivers());
-    return store.subscribe(() => {
-      setOrders(store.getOrders());
-      setDrivers(store.getDrivers());
-    });
+    setOrders(store.getOrders()); setDrivers(store.getDrivers());
+    return store.subscribe(() => { setOrders(store.getOrders()); setDrivers(store.getDrivers()); });
   }, []);
 
   const deliveredOrders = orders.filter((o) => ['delivered', 'picked_up'].includes(o.status));
 
   const driverStats = drivers.map((driver) => {
     const driverOrders = deliveredOrders.filter((o) => o.driverId === driver.id);
-    const deliveryCount = driverOrders.length;
-    const baseEarnings = deliveryCount * driver.ratePerDelivery;
-    const bonusEarnings = deliveryCount * driver.bonusRate;
-    const totalEarnings = baseEarnings + bonusEarnings;
-
-    return {
-      driver,
-      deliveryCount,
-      baseEarnings,
-      bonusEarnings,
-      totalEarnings,
-      orders: driverOrders,
-    };
+    const count = driverOrders.length;
+    const base = count * driver.ratePerDelivery;
+    const bonus = count * driver.bonusRate;
+    return { driver, count, base, bonus, total: base + bonus };
   });
 
-  const totalPaid = driverStats.reduce((sum, s) => sum + s.totalEarnings, 0);
-  const totalDeliveries = driverStats.reduce((sum, s) => sum + s.deliveryCount, 0);
+  const totalPaid = driverStats.reduce((sum, s) => sum + s.total, 0);
+  const totalDeliveries = driverStats.reduce((sum, s) => sum + s.count, 0);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-white">Paye livreurs</h1>
-
-      {/* Totals */}
+      <h1 className="text-xl font-bold text-white">{t.ui.admin_driverPayroll}</h1>
       <div className="grid grid-cols-2 gap-3">
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
           <p className="text-2xl font-extrabold text-amber-400">{formatPrice(totalPaid)} €</p>
-          <p className="text-xs text-zinc-500">Total à payer</p>
+          <p className="text-xs text-zinc-500">{t.ui.admin_totalToPay}</p>
         </div>
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
           <p className="text-2xl font-extrabold text-white">{totalDeliveries}</p>
-          <p className="text-xs text-zinc-500">Livraisons effectuées</p>
+          <p className="text-xs text-zinc-500">{t.ui.admin_deliveriesDone}</p>
         </div>
       </div>
-
-      {/* Per driver */}
       <div className="space-y-3">
-        {driverStats.map(({ driver, deliveryCount, baseEarnings, bonusEarnings, totalEarnings }) => (
+        {driverStats.map(({ driver, count, base, bonus, total }) => (
           <div key={driver.id} className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
             <div className="flex items-start justify-between">
               <div>
@@ -69,20 +54,20 @@ export default function PayrollPage() {
                 <p className="text-xs text-zinc-500 mt-1">{driver.contractType} — {driver.zone}</p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-extrabold text-amber-400">{formatPrice(totalEarnings)} €</p>
-                <p className="text-xs text-zinc-500">{deliveryCount} livraison(s)</p>
+                <p className="text-lg font-extrabold text-amber-400">{formatPrice(total)} €</p>
+                <p className="text-xs text-zinc-500">{count} {t.ui.admin_deliveryCount}</p>
               </div>
             </div>
-            {deliveryCount > 0 && (
+            {count > 0 && (
               <div className="mt-3 pt-3 border-t border-zinc-800 space-y-1 text-xs">
                 <div className="flex justify-between text-zinc-400">
-                  <span>Base ({deliveryCount} × {formatPrice(driver.ratePerDelivery)} €)</span>
-                  <span>{formatPrice(baseEarnings)} €</span>
+                  <span>{t.ui.admin_base} ({count} × {formatPrice(driver.ratePerDelivery)} €)</span>
+                  <span>{formatPrice(base)} €</span>
                 </div>
-                {bonusEarnings > 0 && (
+                {bonus > 0 && (
                   <div className="flex justify-between text-zinc-400">
-                    <span>Bonus ({deliveryCount} × {formatPrice(driver.bonusRate)} €)</span>
-                    <span>{formatPrice(bonusEarnings)} €</span>
+                    <span>{t.ui.admin_bonusLabel} ({count} × {formatPrice(driver.bonusRate)} €)</span>
+                    <span>{formatPrice(bonus)} €</span>
                   </div>
                 )}
               </div>
