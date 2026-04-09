@@ -1,7 +1,9 @@
 'use client';
 
+import { memo } from 'react';
 import { MenuItem } from '@/types';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { formatPrice } from '@/utils/format';
 import Badge from './Badge';
 import FavoriteButton from './FavoriteButton';
 import AllergenBadges from './AllergenBadges';
@@ -12,11 +14,7 @@ interface MenuItemCardProps {
   onToggleFavorite: () => void;
 }
 
-function formatPrice(price: number): string {
-  return price.toFixed(2).replace('.', ',');
-}
-
-export default function MenuItemCard({ item, isFavorite, onToggleFavorite }: MenuItemCardProps) {
+export default memo(function MenuItemCard({ item, isFavorite, onToggleFavorite }: MenuItemCardProps) {
   const { t, getItemName, getDescription } = useLanguage();
 
   const name = getItemName(item.id, item.name);
@@ -58,4 +56,4 @@ export default function MenuItemCard({ item, isFavorite, onToggleFavorite }: Men
       </div>
     </div>
   );
-}
+});

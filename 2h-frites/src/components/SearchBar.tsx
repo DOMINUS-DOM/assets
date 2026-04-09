@@ -39,8 +39,8 @@ export default function SearchBar({ value, onChange }: SearchBarProps) {
         {value && (
           <button
             onClick={() => onChange('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center
-              rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors text-xs"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center
+              rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors text-sm"
             aria-label={t.ui.clearSearch}
           >
             ✕

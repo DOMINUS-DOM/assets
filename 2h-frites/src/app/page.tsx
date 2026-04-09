@@ -119,7 +119,7 @@ export default function HomePage() {
           {searchQuery.length >= 2 ? (
             <section className="px-4 pb-8 animate-fade-in">
               <h2 className="text-sm font-semibold text-zinc-400 mb-3">
-                {searchResults.length} {searchResults.length === 1 ? 'résultat' : 'résultats'}
+                {searchResults.length} {t.ui.results}
               </h2>
               {searchResults.length > 0 ? (
                 <div className="space-y-2">

@@ -11,9 +11,7 @@ interface MagicBoxCardProps {
   onToggleFavorite: (id: string) => void;
 }
 
-function formatPrice(price: number): string {
-  return price.toFixed(2).replace('.', ',');
-}
+import { formatPrice } from '@/utils/format';
 
 export default function MagicBoxCard({ items, isFavorite, onToggleFavorite }: MagicBoxCardProps) {
   const { getItemName, getDescription } = useLanguage();

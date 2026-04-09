@@ -8,9 +8,7 @@ interface SauceGridProps {
   category: Category;
 }
 
-function formatPrice(price: number): string {
-  return price.toFixed(2).replace('.', ',');
-}
+import { formatPrice } from '@/utils/format';
 
 export default function SauceGrid({ category }: SauceGridProps) {
   const { t } = useLanguage();

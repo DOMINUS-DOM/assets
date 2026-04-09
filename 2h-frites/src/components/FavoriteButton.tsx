@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface FavoriteButtonProps {
   isFavorite: boolean;
@@ -9,8 +10,9 @@ interface FavoriteButtonProps {
 }
 
 export default function FavoriteButton({ isFavorite, onToggle, size = 'sm' }: FavoriteButtonProps) {
+  const { t } = useLanguage();
   const [burst, setBurst] = useState(false);
-  const sizeClass = size === 'md' ? 'w-10 h-10 text-xl' : 'w-8 h-8 text-base';
+  const sizeClass = size === 'md' ? 'w-11 h-11 text-xl' : 'w-11 h-11 text-base';
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -28,7 +30,7 @@ export default function FavoriteButton({ isFavorite, onToggle, size = 'sm' }: Fa
         ${isFavorite ? 'text-red-500 scale-110' : 'text-zinc-500 hover:text-zinc-300'}
         active:scale-75`}
       style={{ transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s' }}
-      aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+      aria-label={isFavorite ? (t.ui.removeFavorite || 'Remove') : (t.ui.addFavorite || 'Add')}
     >
       <span className={isFavorite ? 'inline-block animate-heartPop' : ''}>
         {isFavorite ? '♥' : '♡'}

@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { ALLERGENS } from '@/data/allergens';
 import { useLanguage } from '@/i18n/LanguageContext';
 
@@ -8,7 +9,7 @@ interface AllergenBadgesProps {
   compact?: boolean;
 }
 
-export default function AllergenBadges({ allergenIds, compact = false }: AllergenBadgesProps) {
+export default memo(function AllergenBadges({ allergenIds, compact = false }: AllergenBadgesProps) {
   const { t } = useLanguage();
 
   if (!allergenIds || allergenIds.length === 0) return null;
@@ -48,4 +49,4 @@ export default function AllergenBadges({ allergenIds, compact = false }: Allerge
       })}
     </div>
   );
-}
+});

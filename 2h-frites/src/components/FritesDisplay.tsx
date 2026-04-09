@@ -10,9 +10,7 @@ interface FritesDisplayProps {
   onToggleFavorite: (id: string) => void;
 }
 
-function formatPrice(price: number): string {
-  return price.toFixed(2).replace('.', ',');
-}
+import { formatPrice } from '@/utils/format';
 
 export default function FritesDisplay({ items, isFavorite, onToggleFavorite }: FritesDisplayProps) {
   const { getItemName, getSize } = useLanguage();

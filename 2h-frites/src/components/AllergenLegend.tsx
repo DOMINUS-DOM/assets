@@ -12,6 +12,7 @@ export default function AllergenLegend() {
     <div className="mx-4 mb-4">
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
         className="flex items-center gap-2 px-4 py-2.5 rounded-xl w-full
           bg-zinc-900 border border-zinc-800/50 hover:border-zinc-700 transition-colors
           text-sm font-medium text-zinc-300 active:scale-[0.98]"

@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Tag } from '@/types';
 import { useLanguage } from '@/i18n/LanguageContext';
 
@@ -10,7 +11,7 @@ const tagConfig: Record<Tag, { bg: string; text: string; icon: string }> = {
   new: { bg: 'bg-blue-500/20', text: 'text-blue-400', icon: '✦' },
 };
 
-export default function Badge({ tag }: { tag: Tag }) {
+export default memo(function Badge({ tag }: { tag: Tag }) {
   const { t } = useLanguage();
   const config = tagConfig[tag];
 
@@ -22,4 +23,4 @@ export default function Badge({ tag }: { tag: Tag }) {
       {t.ui[tag]}
     </span>
   );
-}
+});

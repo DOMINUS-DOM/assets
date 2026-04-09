@@ -1,0 +1,19 @@
+{
+  "name": "2H Frites Artisanales",
+  "short_name": "2H Frites",
+  "description": "Menu interactif — Les Deux Haine",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "orientation": "portrait",
+  "categories": ["food"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

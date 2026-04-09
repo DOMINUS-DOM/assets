@@ -12,6 +12,7 @@
     @apply bg-zinc-950 text-white antialiased;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   ::-webkit-scrollbar {
