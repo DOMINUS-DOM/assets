@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { store as orderStore } from '@/stores/store';
+import { api } from '@/lib/api';
 import { menuStore } from '@/stores/menuStore';
 import { Order } from '@/types/order';
 import { useLanguage } from '@/i18n/LanguageContext';
@@ -9,12 +9,9 @@ import { formatPrice } from '@/utils/format';
 
 export default function AnalyticsPage() {
   const { t } = useLanguage();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
 
-  useEffect(() => {
-    setOrders(orderStore.getOrders());
-    return orderStore.subscribe(() => setOrders(orderStore.getOrders()));
-  }, []);
+  useEffect(() => { api.get<any[]>('/orders').then(setOrders).catch(() => {}); }, []);
 
   const completed = orders.filter((o) => ['delivered', 'picked_up'].includes(o.status));
   const totalRevenue = completed.reduce((sum, o) => sum + o.total, 0);
@@ -25,7 +22,7 @@ export default function AnalyticsPage() {
   // Best sellers
   const bestSellers = useMemo(() => {
     const counts: Record<string, { name: string; count: number; revenue: number }> = {};
-    completed.forEach((o) => o.items.forEach((item) => {
+    completed.forEach((o: any) => (o.items || []).forEach((item: any) => {
       const key = item.menuItemId;
       if (!counts[key]) counts[key] = { name: item.name, count: 0, revenue: 0 };
       counts[key].count += item.quantity;
@@ -38,7 +35,7 @@ export default function AnalyticsPage() {
   const bestCategories = useMemo(() => {
     const counts: Record<string, { name: string; count: number; revenue: number }> = {};
     const cats = menuStore.getCategories();
-    completed.forEach((o) => o.items.forEach((item) => {
+    completed.forEach((o: any) => (o.items || []).forEach((item: any) => {
       const cat = cats.find((c) => c.id === item.categoryId);
       const key = item.categoryId;
       if (!counts[key]) counts[key] = { name: cat?.icon + ' ' + (cat?.nameKey || key), count: 0, revenue: 0 };

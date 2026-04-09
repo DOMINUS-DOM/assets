@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { settingsStore } from '@/stores/settingsStore';
-import { BusinessSettings } from '@/types/settings';
+import { api } from '@/lib/api';
+import { useApiData } from '@/hooks/useApiData';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
 
@@ -12,7 +12,7 @@ type Tab = 'general' | 'hours' | 'delivery' | 'closedDays';
 
 export default function SettingsPage() {
   const { t } = useLanguage();
-  const [settings, setSettings] = useState<BusinessSettings>(settingsStore.get());
+  const [settings, setSettings] = useState<any>({});
   const [tab, setTab] = useState<Tab>('general');
   const [saved, setSaved] = useState(false);
   const [newDate, setNewDate] = useState('');
@@ -20,14 +20,15 @@ export default function SettingsPage() {
   const [showZoneForm, setShowZoneForm] = useState(false);
 
   useEffect(() => {
-    setSettings(settingsStore.get());
-    return settingsStore.subscribe(() => setSettings(settingsStore.get()));
+    api.get<any>('/settings').then(setSettings).catch(() => {});
   }, []);
 
   const ic = 'w-full px-3 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm focus:outline-none focus:border-amber-500/50';
 
-  const save = (data: Partial<BusinessSettings>) => {
-    settingsStore.update(data);
+  const save = (data: Partial<any>) => {
+    const updated = { ...settings, ...data };
+    setSettings(updated);
+    api.post('/settings', updated).catch(() => {});
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   };
@@ -44,7 +45,7 @@ export default function SettingsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-white">{t.ui.set_title}</h1>
         {/* Quick toggle: accepting orders */}
-        <button onClick={() => settingsStore.toggleAcceptingOrders()}
+        <button onClick={() => save({ acceptingOrders: !settings.acceptingOrders })}
           className={`px-4 py-2 rounded-xl font-bold text-sm active:scale-95 transition-all ${
             settings.acceptingOrders ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
           }`}>
@@ -108,20 +109,20 @@ export default function SettingsPage() {
       {/* ─── HOURS ─── */}
       {tab === 'hours' && (
         <div className="space-y-2">
-          {settings.hours.map((h) => (
+          {(settings.hours || []).map((h: any) => (
             <div key={h.day} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900 border border-zinc-800/50">
               <span className="text-sm font-medium text-white w-24">{DAY_NAMES[h.day]}</span>
-              <button onClick={() => settingsStore.updateHours(h.day, { closed: !h.closed })}
+              <button onClick={() => save({ hours: (settings.hours || []).map((x: any) => x.day === h.day ? { ...x, closed: !x.closed } : x) })}
                 className={`px-2 py-1 rounded-lg text-xs font-medium ${h.closed ? 'bg-red-500/15 text-red-400' : 'bg-emerald-500/15 text-emerald-400'}`}>
                 {h.closed ? t.ui.set_closed : t.ui.set_open}
               </button>
               {!h.closed && (
                 <>
                   <input className="px-2 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm w-20 text-center"
-                    type="time" value={h.open} onChange={(e) => settingsStore.updateHours(h.day, { open: e.target.value })} />
+                    type="time" value={h.open} onChange={(e) => save({ hours: (settings.hours || []).map((x: any) => x.day === h.day ? { ...x, open: e.target.value } : x) })} />
                   <span className="text-zinc-500">→</span>
                   <input className="px-2 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm w-20 text-center"
-                    type="time" value={h.close} onChange={(e) => settingsStore.updateHours(h.day, { close: e.target.value })} />
+                    type="time" value={h.close} onChange={(e) => save({ hours: (settings.hours || []).map((x: any) => x.day === h.day ? { ...x, close: e.target.value } : x) })} />
                 </>
               )}
             </div>
@@ -154,7 +155,7 @@ export default function SettingsPage() {
           {showZoneForm && (
             <form onSubmit={(e) => {
               e.preventDefault();
-              settingsStore.addZone({ name: zoneForm.name, postalCodes: zoneForm.postalCodes.split(',').map((s) => s.trim()), fee: +zoneForm.fee, minOrder: +zoneForm.minOrder, active: true });
+              save({ deliveryZones: [...(settings.deliveryZones || []), { id: `zone-${Date.now()}`, name: zoneForm.name, postalCodes: zoneForm.postalCodes.split(',').map((s: string) => s.trim()), fee: +zoneForm.fee, minOrder: +zoneForm.minOrder, active: true }] });
               setZoneForm({ name: '', postalCodes: '', fee: '3', minOrder: '15' });
               setShowZoneForm(false);
             }} className="p-3 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-3 animate-slide-up">
@@ -169,7 +170,7 @@ export default function SettingsPage() {
           )}
 
           <div className="space-y-2">
-            {settings.deliveryZones.map((z) => (
+            {(settings.deliveryZones || []).map((z: any) => (
               <div key={z.id} className={`flex items-center justify-between p-3 rounded-xl border ${z.active ? 'bg-zinc-900 border-zinc-800/50' : 'bg-zinc-900/50 border-zinc-800/30 opacity-60'}`}>
                 <div>
                   <p className="text-sm font-medium text-white">{z.name}</p>
@@ -177,7 +178,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-amber-400">{formatPrice(z.fee)} €</span>
-                  <button onClick={() => settingsStore.toggleZone(z.id)}
+                  <button onClick={() => save({ deliveryZones: (settings.deliveryZones || []).map((x: any) => x.id === z.id ? { ...x, active: !x.active } : x) })}
                     className={`px-2 py-1 rounded-lg text-xs font-medium ${z.active ? 'bg-emerald-500/15 text-emerald-400' : 'bg-zinc-800 text-zinc-500'}`}>
                     {z.active ? '✓' : '✗'}
                   </button>
@@ -193,14 +194,14 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <div className="flex gap-2">
             <input className={ic} type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} />
-            <button onClick={() => { if (newDate) { settingsStore.addClosedDate(newDate); setNewDate(''); } }}
+            <button onClick={() => { if (newDate) { save({ closedDates: [...(settings.closedDates || []), newDate].sort() }); setNewDate(''); } }}
               className="px-4 py-2 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm shrink-0">{t.ui.admin_add}</button>
           </div>
           <div className="space-y-2">
-            {settings.closedDates.map((d) => (
+            {(settings.closedDates || []).map((d: string) => (
               <div key={d} className="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50">
                 <span className="text-sm text-white">{d}</span>
-                <button onClick={() => settingsStore.removeClosedDate(d)}
+                <button onClick={() => save({ closedDates: (settings.closedDates || []).filter((x: string) => x !== d) })}
                   className="text-xs text-red-400 hover:text-red-300">✕</button>
               </div>
             ))}

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { store } from '@/stores/store';
-import { Order, Driver } from '@/types/order';
+import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatPrice } from '@/utils/format';
@@ -10,8 +9,8 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Link from 'next/link';
 
 function DriverContent() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [drivers, setDrivers] = useState<any[]>([]);
   const { user } = useAuth();
   const [selectedDriver, setSelectedDriver] = useState('');
   const { t } = useLanguage();
@@ -21,10 +20,13 @@ function DriverContent() {
     if (user?.driverId) setSelectedDriver(user.driverId);
   }, [user]);
 
-  useEffect(() => {
-    setOrders(store.getOrders()); setDrivers(store.getDrivers().filter((d) => d.active));
-    return store.subscribe(() => { setOrders(store.getOrders()); setDrivers(store.getDrivers().filter((d) => d.active)); });
-  }, []);
+  const refresh = async () => {
+    try {
+      const [ordersData, driversData] = await Promise.all([api.get<any[]>('/orders'), api.get<{ drivers: any[] }>('/drivers')]);
+      setOrders(ordersData); setDrivers(driversData.drivers.filter((d: any) => d.active));
+    } catch {}
+  };
+  useEffect(() => { refresh(); const i = setInterval(refresh, 10000); return () => clearInterval(i); }, []);
 
   const myOrders = selectedDriver ? orders.filter((o) => o.driverId === selectedDriver && o.type === 'delivery') : [];
   const active = myOrders.filter((o) => ['ready', 'delivering'].includes(o.status));
@@ -77,13 +79,13 @@ function DriverContent() {
                       {o.deliveryAddress?.instructions && <p className="text-xs text-zinc-500 mb-3 italic">💬 {o.deliveryAddress.instructions}</p>}
                       <div className="flex gap-2">
                         {o.status === 'ready' && (
-                          <button onClick={() => store.updateOrderStatus(o.id, 'delivering')}
+                          <button onClick={() => api.post('/orders', { action: 'updateStatus', orderId: o.id, status: 'delivering' }).then(refresh)}
                             className="flex-1 py-2 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm active:scale-95">
                             {t.ui.driver_departed}
                           </button>
                         )}
                         {o.status === 'delivering' && (
-                          <button onClick={() => store.updateOrderStatus(o.id, 'delivered')}
+                          <button onClick={() => api.post('/orders', { action: 'updateStatus', orderId: o.id, status: 'delivered' }).then(refresh)}
                             className="flex-1 py-2 rounded-xl bg-emerald-500 text-white font-bold text-sm active:scale-95">
                             {t.ui.driver_markDelivered}
                           </button>

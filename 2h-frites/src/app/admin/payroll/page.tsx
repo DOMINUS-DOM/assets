@@ -1,10 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { payrollStore } from '@/stores/payrollStore';
-import { staffStore } from '@/stores/staffStore';
-import { PayPeriod, Payslip, TimesheetLine } from '@/types/payroll';
-import { Employee } from '@/types/staff';
+import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
 
@@ -19,29 +16,31 @@ const STATUS_COLORS: Record<string, string> = {
 export default function PayrollPage() {
   const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>('periods');
-  const [periods, setPeriods] = useState<PayPeriod[]>([]);
-  const [payslips, setPayslips] = useState<Payslip[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [periods, setPeriods] = useState<any[]>([]);
+  const [payslips, setPayslips] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
   const [activePeriod, setActivePeriod] = useState<string | null>(null);
-  const [timesheets, setTimesheets] = useState<TimesheetLine[]>([]);
+  const [timesheets, setTimesheets] = useState<any[]>([]);
 
-  useEffect(() => {
-    const refresh = () => {
-      setPeriods(payrollStore.getPeriods());
-      setPayslips(payrollStore.getPayslips());
-      setEmployees(staffStore.getEmployees());
-    };
-    refresh();
-    const unsub1 = payrollStore.subscribe(refresh);
-    const unsub2 = staffStore.subscribe(refresh);
-    return () => { unsub1(); unsub2(); };
-  }, []);
+  const refresh = async () => {
+    try {
+      const [payData, staffData] = await Promise.all([
+        api.get<{ periods: any[]; payslips: any[] }>('/payroll'),
+        api.get<{ employees: any[] }>('/staff'),
+      ]);
+      setPeriods(payData.periods);
+      setPayslips(payData.payslips);
+      setEmployees(staffData.employees);
+    } catch {}
+  };
+
+  useEffect(() => { refresh(); }, []);
 
   useEffect(() => {
     if (activePeriod) {
       const period = periods.find((p) => p.id === activePeriod);
       if (period) {
-        setTimesheets(payrollStore.getTimesheets(period.startDate, period.endDate));
+        setTimesheets([] /* timesheets computed server-side during generatePayslips */);
       }
     }
   }, [activePeriod, periods]);
@@ -101,18 +100,18 @@ export default function PayrollPage() {
             <div className="flex gap-2 flex-wrap">
               {period.status === 'draft' && (
                 <>
-                  <button onClick={() => payrollStore.generatePayslips(activePeriod)}
+                  <button onClick={() => api.post('/payroll', { action: 'generatePayslips', periodId: activePeriod }).then(refresh)}
                     className="px-4 py-2 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm active:scale-95">
                     ⚙️ {t.ui.pay_generate}
                   </button>
-                  <button onClick={() => payrollStore.updatePeriodStatus(activePeriod, 'validated')}
+                  <button onClick={() => api.post('/payroll', { action: 'updatePeriodStatus', id: activePeriod, status: 'validated' }).then(refresh)}
                     className="px-4 py-2 rounded-xl bg-emerald-500/15 text-emerald-400 font-bold text-sm active:scale-95">
                     ✅ {t.ui.pay_validate}
                   </button>
                 </>
               )}
               {period.status === 'validated' && (
-                <button onClick={() => payrollStore.updatePeriodStatus(activePeriod, 'paid')}
+                <button onClick={() => api.post('/payroll', { action: 'updatePeriodStatus', id: activePeriod, status: 'paid' }).then(refresh)}
                   className="px-4 py-2 rounded-xl bg-emerald-500 text-white font-bold text-sm active:scale-95">
                   💶 {t.ui.pay_markPaid}
                 </button>
@@ -159,7 +158,7 @@ export default function PayrollPage() {
           {periodSlips.length === 0 && (
             <div className="text-center py-8">
               <p className="text-zinc-500 text-sm mb-3">{t.ui.pay_noPayslips}</p>
-              <button onClick={() => payrollStore.generatePayslips(activePeriod)}
+              <button onClick={() => api.post('/payroll', { action: 'generatePayslips', periodId: activePeriod }).then(refresh)}
                 className="px-4 py-2 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm active:scale-95">
                 ⚙️ {t.ui.pay_generate}
               </button>
@@ -215,13 +214,13 @@ export default function PayrollPage() {
               {/* Actions */}
               <div className="flex gap-2">
                 {slip.status === 'draft' && (
-                  <button onClick={() => payrollStore.validatePayslip(slip.id)}
+                  <button onClick={() => api.post('/payroll', { action: 'validatePayslip', id: slip.id }).then(refresh)}
                     className="px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-medium active:scale-95">
                     ✅ {t.ui.pay_validate}
                   </button>
                 )}
                 {slip.status === 'validated' && (
-                  <button onClick={() => payrollStore.markPayslipPaid(slip.id)}
+                  <button onClick={() => api.post('/payroll', { action: 'markPayslipPaid', id: slip.id }).then(refresh)}
                     className="px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 text-xs font-medium active:scale-95">
                     💶 {t.ui.pay_markPaid}
                   </button>

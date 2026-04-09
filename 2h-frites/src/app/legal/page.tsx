@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { settingsStore } from '@/stores/settingsStore';
+import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
 import Link from 'next/link';
 
@@ -10,12 +10,9 @@ type Tab = 'terms' | 'privacy' | 'cookies';
 export default function LegalPage() {
   const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>('terms');
-  const [biz, setBiz] = useState(settingsStore.get());
+  const [biz, setBiz] = useState<any>({ name: '2H Frites', address: '', phone: '', email: '', vatNumber: '' });
 
-  useEffect(() => {
-    setBiz(settingsStore.get());
-    return settingsStore.subscribe(() => setBiz(settingsStore.get()));
-  }, []);
+  useEffect(() => { api.get<any>('/settings').then(setBiz).catch(() => {}); }, []);
 
   const TABS: { key: Tab; label: string }[] = [
     { key: 'terms', label: t.ui.legal_terms },

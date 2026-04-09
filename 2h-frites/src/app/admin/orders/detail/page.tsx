@@ -2,8 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState, useEffect } from 'react';
-import { store } from '@/stores/store';
-import { Order, OrderStatus, Driver } from '@/types/order';
+import { OrderStatus } from '@/types/order';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useApiData } from '@/hooks/useApiData';
 import { api } from '@/lib/api';

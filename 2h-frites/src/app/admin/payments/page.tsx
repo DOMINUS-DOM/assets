@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { paymentStore } from '@/stores/paymentStore';
-import { store as orderStore } from '@/stores/store';
-import { Transaction, DailyReport } from '@/types/payment';
+import { api } from '@/lib/api';
 import { Order } from '@/types/order';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
@@ -19,25 +17,25 @@ type Tab = 'transactions' | 'report' | 'invoices';
 export default function PaymentsPage() {
   const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>('report');
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const today = new Date().toISOString().slice(0, 10);
   const [reportDate, setReportDate] = useState(today);
-  const [report, setReport] = useState<DailyReport | null>(null);
+  const [report, setReport] = useState<any>(null);
+
+  const refresh = async () => {
+    try { const o = await api.get<any[]>('/orders'); setOrders(o); } catch {}
+  };
 
   useEffect(() => {
-    const refresh = () => {
-      setTransactions(paymentStore.getTransactions());
-      setOrders(orderStore.getOrders());
-    };
     refresh();
-    const u1 = paymentStore.subscribe(refresh);
-    const u2 = orderStore.subscribe(refresh);
-    return () => { u1(); u2(); };
   }, []);
 
   useEffect(() => {
-    setReport(paymentStore.getDailyReport(reportDate));
+    // Compute basic report from orders
+    const paid = orders.filter((o: any) => o.paymentStatus === 'paid');
+    const total = paid.reduce((s: number, o: any) => s + o.total, 0);
+    setReport({ totalRevenue: total, orderCount: paid.length, totalVat: Math.round(total * 0.06 * 100) / 100, cashTotal: 0, onlineTotal: total, refundTotal: 0, avgOrderValue: paid.length > 0 ? Math.round(total / paid.length * 100) / 100 : 0 });
   }, [reportDate, transactions]);
 
   const ic = 'px-3 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm focus:outline-none focus:border-amber-500/50';
@@ -132,7 +130,7 @@ export default function PaymentsPage() {
                     {formatPrice(txn.amount)} €
                   </p>
                   {txn.status === 'completed' && (
-                    <button onClick={() => paymentStore.refundTransaction(txn.id)}
+                    <button onClick={() => alert('Refund — TODO: integrate with payment API')}
                       className="text-[10px] text-zinc-600 hover:text-red-400 transition-colors mt-1">
                       {t.ui.pmt_refund}
                     </button>
@@ -149,7 +147,7 @@ export default function PaymentsPage() {
         <div className="space-y-3">
           <p className="text-xs text-zinc-500">{t.ui.pmt_invoicesHint}</p>
           {orders.filter((o) => o.payment.status === 'paid').map((order) => {
-            const invoice = paymentStore.getInvoiceByOrder(order.id);
+            const invoice: any = null; // TODO: fetch from API
             return (
               <div key={order.id} className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
                 <div className="flex items-center justify-between mb-2">
@@ -162,7 +160,7 @@ export default function PaymentsPage() {
                       {invoice.id}
                     </span>
                   ) : (
-                    <button onClick={() => paymentStore.generateInvoice(order.id)}
+                    <button onClick={() => alert('Invoice generation — TODO: integrate with API')}
                       className="px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-medium active:scale-95">
                       {t.ui.pmt_generateInvoice}
                     </button>
@@ -170,7 +168,7 @@ export default function PaymentsPage() {
                 </div>
                 {invoice && (
                   <div className="text-xs space-y-1 pt-2 border-t border-zinc-800 text-zinc-400">
-                    {invoice.lines.map((l, i) => (
+                    {(invoice.lines || []).map((l: any, i: number) => (
                       <div key={i} className="flex justify-between">
                         <span>{l.description} ×{l.quantity}</span>
                         <span>{formatPrice(l.total)} € <span className="text-zinc-600">(TVA {Math.round(l.vatRate * 100)}%: {formatPrice(l.vatAmount)} €)</span></span>

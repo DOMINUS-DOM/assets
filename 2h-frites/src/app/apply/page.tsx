@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { store } from '@/stores/store';
+import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
 import Link from 'next/link';
 
@@ -10,10 +10,10 @@ export default function ApplyPage() {
   const [form, setForm] = useState({ name: '', phone: '', email: '', city: '', transport: '', availability: '' });
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.phone || !form.city || !form.transport) return;
-    store.addApplication(form);
+    await api.post('/drivers', { action: 'addApplication', data: form });
     setSubmitted(true);
   };
 

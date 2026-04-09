@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { staffStore } from '@/stores/staffStore';
-import { Employee, Shift, TimeEntry, LeaveRequest, Task } from '@/types/staff';
+import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatPrice } from '@/utils/format';
@@ -18,24 +17,25 @@ export default function StaffPage() {
   const { t } = useLanguage();
   const { hasRole } = useAuth();
   const [tab, setTab] = useState<Tab>('employees');
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [shifts, setShifts] = useState<Shift[]>([]);
-  const [entries, setEntries] = useState<TimeEntry[]>([]);
-  const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [shifts, setShifts] = useState<any[]>([]);
+  const [entries, setEntries] = useState<any[]>([]);
+  const [leaves, setLeaves] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
   const today = new Date().toISOString().slice(0, 10);
 
-  useEffect(() => {
-    const refresh = () => {
-      setEmployees(staffStore.getEmployees());
-      setShifts(staffStore.getShifts(today));
-      setEntries(staffStore.getTimeEntries(undefined, today));
-      setLeaves(staffStore.getLeaveRequests());
-      setTasks(staffStore.getTasks(today));
-    };
-    refresh();
-    return staffStore.subscribe(refresh);
-  }, [today]);
+  const refresh = async () => {
+    try {
+      const data = await api.get<{ employees: any[]; shifts: any[]; timeEntries: any[]; leaveRequests: any[]; tasks: any[] }>('/staff');
+      setEmployees(data.employees);
+      setShifts(data.shifts.filter((s: any) => s.date === today));
+      setEntries(data.timeEntries.filter((e: any) => e.date === today));
+      setLeaves(data.leaveRequests);
+      setTasks(data.tasks.filter((t: any) => t.date === today));
+    } catch {}
+  };
+
+  useEffect(() => { refresh(); }, [today]);
 
   const TABS: { key: Tab; label: string; roles: string[] }[] = [
     { key: 'employees', label: t.ui.staff_employees, roles: ['patron', 'manager'] },
@@ -137,7 +137,7 @@ export default function StaffPage() {
         <div className="space-y-2">
           {tasks.map((tk) => (
             <div key={tk.id} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900 border border-zinc-800/50">
-              <button onClick={() => staffStore.toggleTask(tk.id)}
+              <button onClick={() => api.post('/staff', { action: 'toggleTask', id: tk.id }).then(refresh)}
                 className={`w-6 h-6 rounded-md border-2 flex items-center justify-center text-xs shrink-0 transition-colors ${tk.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-600 text-transparent'}`}>
                 ✓
               </button>
@@ -170,11 +170,11 @@ export default function StaffPage() {
               </div>
               {lr.status === 'pending' && hasRole('patron', 'manager') && (
                 <div className="flex gap-2 mt-2">
-                  <button onClick={() => staffStore.updateLeaveStatus(lr.id, 'approved')}
+                  <button onClick={() => api.post('/staff', { action: 'updateLeaveStatus', id: lr.id, status: 'approved' }).then(refresh)}
                     className="px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 text-xs font-medium">
                     ✅ {t.ui.staff_approve}
                   </button>
-                  <button onClick={() => staffStore.updateLeaveStatus(lr.id, 'rejected')}
+                  <button onClick={() => api.post('/staff', { action: 'updateLeaveStatus', id: lr.id, status: 'rejected' }).then(refresh)}
                     className="px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 text-xs font-medium">
                     ❌ {t.ui.staff_reject}
                   </button>

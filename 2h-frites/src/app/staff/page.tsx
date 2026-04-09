@@ -1,10 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { staffStore } from '@/stores/staffStore';
-import { payrollStore } from '@/stores/payrollStore';
-import { Employee, TimeEntry, Shift, Task, LeaveRequest } from '@/types/staff';
-import { Payslip } from '@/types/payroll';
+import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
@@ -16,32 +13,37 @@ const CAT_EMOJI: Record<string, string> = { prep: '🔪', cleaning: '🧹', rest
 function StaffContent() {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null);
-  const [todayShifts, setTodayShifts] = useState<Shift[]>([]);
-  const [myTasks, setMyTasks] = useState<Task[]>([]);
-  const [myLeaves, setMyLeaves] = useState<LeaveRequest[]>([]);
-  const [myPayslips, setMyPayslips] = useState<Payslip[]>([]);
+  const [employee, setEmployee] = useState<any>(null);
+  const [activeEntry, setActiveEntry] = useState<any>(null);
+  const [todayShifts, setTodayShifts] = useState<any[]>([]);
+  const [myTasks, setMyTasks] = useState<any[]>([]);
+  const [myLeaves, setMyLeaves] = useState<any[]>([]);
+  const [myPayslips, setMyPayslips] = useState<any[]>([]);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
   const [leaveForm, setLeaveForm] = useState({ type: 'vacation' as const, startDate: '', endDate: '', reason: '' });
   const today = new Date().toISOString().slice(0, 10);
 
-  useEffect(() => {
-    const refresh = () => {
-      if (!user) return;
-      const emp = staffStore.getEmployeeByUserId(user.id);
+  const refresh = async () => {
+    if (!user) return;
+    try {
+      const [staffData, payData] = await Promise.all([
+        api.get<{ employees: any[]; shifts: any[]; timeEntries: any[]; leaveRequests: any[]; tasks: any[] }>('/staff'),
+        api.get<{ payslips: any[] }>('/payroll'),
+      ]);
+      const emp = staffData.employees.find((e: any) => e.userId === user.id);
       setEmployee(emp || null);
       if (emp) {
-        setActiveEntry(staffStore.getActiveEntry(emp.id) || null);
-        setTodayShifts(staffStore.getShifts(today).filter((s) => s.employeeId === emp.id));
-        setMyTasks(staffStore.getTasks(today, emp.id));
-        setMyLeaves(staffStore.getLeaveRequests(emp.id));
-        setMyPayslips(payrollStore.getPayslipsByEmployee(emp.id));
+        const active = staffData.timeEntries.find((t: any) => t.employeeId === emp.id && !t.clockOut);
+        setActiveEntry(active || null);
+        setTodayShifts(staffData.shifts.filter((s: any) => s.date === today && s.employeeId === emp.id));
+        setMyTasks(staffData.tasks.filter((t: any) => t.date === today && (t.employeeId === emp.id || !t.employeeId)));
+        setMyLeaves(staffData.leaveRequests.filter((l: any) => l.employeeId === emp.id));
+        setMyPayslips(payData.payslips.filter((p: any) => p.employeeId === emp.id));
       }
-    };
-    refresh();
-    return staffStore.subscribe(refresh);
-  }, [user, today]);
+    } catch {}
+  };
+
+  useEffect(() => { refresh(); }, [user, today]);
 
   if (!employee) {
     return (
@@ -52,18 +54,18 @@ function StaffContent() {
     );
   }
 
-  const handleClock = () => {
+  const handleClock = async () => {
     if (activeEntry) {
-      staffStore.clockOut(activeEntry.id);
+      await api.post('/staff', { action: 'clockOut', id: activeEntry.id });
     } else {
-      staffStore.clockIn(employee.id);
+      await api.post('/staff', { action: 'clockIn', employeeId: employee.id });
     }
   };
 
-  const handleLeaveSubmit = (e: React.FormEvent) => {
+  const handleLeaveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!leaveForm.startDate || !leaveForm.endDate) return;
-    staffStore.addLeaveRequest({ employeeId: employee.id, ...leaveForm });
+    await api.post('/staff', { action: 'addLeaveRequest', data: { employeeId: employee.id, ...leaveForm } });
     setLeaveForm({ type: 'vacation', startDate: '', endDate: '', reason: '' });
     setShowLeaveForm(false);
   };
@@ -110,7 +112,7 @@ function StaffContent() {
         <div className="space-y-2">
           {myTasks.map((tk) => (
             <div key={tk.id} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900 border border-zinc-800/50">
-              <button onClick={() => staffStore.toggleTask(tk.id)}
+              <button onClick={() => api.post('/staff', { action: 'toggleTask', id: tk.id }).then(refresh)}
                 className={`w-6 h-6 rounded-md border-2 flex items-center justify-center text-xs shrink-0 ${tk.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-600'}`}>
                 {tk.completed ? '✓' : ''}
               </button>
