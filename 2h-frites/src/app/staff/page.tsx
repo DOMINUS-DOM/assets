@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { staffStore } from '@/stores/staffStore';
+import { payrollStore } from '@/stores/payrollStore';
 import { Employee, TimeEntry, Shift, Task, LeaveRequest } from '@/types/staff';
+import { Payslip } from '@/types/payroll';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { formatPrice } from '@/utils/format';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Link from 'next/link';
 
@@ -18,6 +21,7 @@ function StaffContent() {
   const [todayShifts, setTodayShifts] = useState<Shift[]>([]);
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [myLeaves, setMyLeaves] = useState<LeaveRequest[]>([]);
+  const [myPayslips, setMyPayslips] = useState<Payslip[]>([]);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
   const [leaveForm, setLeaveForm] = useState({ type: 'vacation' as const, startDate: '', endDate: '', reason: '' });
   const today = new Date().toISOString().slice(0, 10);
@@ -32,6 +36,7 @@ function StaffContent() {
         setTodayShifts(staffStore.getShifts(today).filter((s) => s.employeeId === emp.id));
         setMyTasks(staffStore.getTasks(today, emp.id));
         setMyLeaves(staffStore.getLeaveRequests(emp.id));
+        setMyPayslips(payrollStore.getPayslipsByEmployee(emp.id));
       }
     };
     refresh();
@@ -157,6 +162,27 @@ function StaffContent() {
           })}
         </div>
       </div>
+
+      {/* Payslips */}
+      {myPayslips.length > 0 && (
+        <div>
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">{t.ui.pay_myPayslips}</h2>
+          <div className="space-y-2">
+            {myPayslips.map((slip) => {
+              const colors: Record<string, string> = { draft: 'text-zinc-400', validated: 'text-amber-400', paid: 'text-emerald-400' };
+              return (
+                <div key={slip.id} className="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50">
+                  <div>
+                    <p className="text-sm text-white font-medium">{slip.regularHours.toFixed(1)}h + {slip.overtimeHours.toFixed(1)}h sup</p>
+                    <p className="text-xs text-zinc-500">{t.ui[`pay_status_${slip.status}`]}</p>
+                  </div>
+                  <span className={`text-lg font-extrabold ${colors[slip.status]}`}>{formatPrice(slip.netTotal)} €</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
