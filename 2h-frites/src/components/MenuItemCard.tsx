@@ -7,14 +7,16 @@ import { formatPrice } from '@/utils/format';
 import Badge from './Badge';
 import FavoriteButton from './FavoriteButton';
 import AllergenBadges from './AllergenBadges';
+import AddToCartButton from './cart/AddToCartButton';
 
 interface MenuItemCardProps {
   item: MenuItem;
+  categoryId: string;
   isFavorite: boolean;
   onToggleFavorite: () => void;
 }
 
-export default memo(function MenuItemCard({ item, isFavorite, onToggleFavorite }: MenuItemCardProps) {
+export default memo(function MenuItemCard({ item, categoryId, isFavorite, onToggleFavorite }: MenuItemCardProps) {
   const { t, getItemName, getDescription } = useLanguage();
 
   const name = getItemName(item.id, item.name);
@@ -28,9 +30,7 @@ export default memo(function MenuItemCard({ item, isFavorite, onToggleFavorite }
           <h3 className="text-sm font-semibold text-white leading-tight">{name}</h3>
           {item.tags && item.tags.length > 0 && (
             <div className="flex gap-1 shrink-0 flex-wrap">
-              {item.tags.map((tag) => (
-                <Badge key={tag} tag={tag} />
-              ))}
+              {item.tags.map((tag) => <Badge key={tag} tag={tag} />)}
             </div>
           )}
         </div>
@@ -41,18 +41,17 @@ export default memo(function MenuItemCard({ item, isFavorite, onToggleFavorite }
           <AllergenBadges allergenIds={item.allergens} />
         )}
       </div>
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0">
         {item.price != null && (
-          <span className="text-base font-bold text-amber-400">
-            {formatPrice(item.price)}&nbsp;{item.currency}
-          </span>
+          <span className="text-sm font-bold text-amber-400">{formatPrice(item.price)} €</span>
         )}
         {item.priceLabel && (
-          <span className="text-xs font-medium text-zinc-400 italic">
-            {t.ui[item.priceLabel] || item.priceLabel}
-          </span>
+          <span className="text-xs font-medium text-zinc-400 italic">{t.ui[item.priceLabel] || item.priceLabel}</span>
         )}
-        <FavoriteButton isFavorite={isFavorite} onToggle={onToggleFavorite} />
+        {item.price != null && (
+          <AddToCartButton menuItemId={item.id} name={name} price={item.price} categoryId={categoryId} />
+        )}
+        <FavoriteButton isFavorite={isFavorite} onToggle={onToggleFavorite} size="sm" />
       </div>
     </div>
   );

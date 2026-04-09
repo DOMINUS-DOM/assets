@@ -2,6 +2,7 @@
 
 import { useLanguage } from '@/i18n/LanguageContext';
 import LanguageSelector from './LanguageSelector';
+import CartButton from './cart/CartButton';
 
 interface HeaderProps {
   view: 'home' | 'category' | 'favorites';
@@ -77,6 +78,7 @@ export default function Header({ view, categoryName, onBack, onFavorites, onRepl
               </span>
             )}
           </button>
+          <CartButton />
           <LanguageSelector />
         </div>
       </div>

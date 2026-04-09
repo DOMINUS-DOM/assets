@@ -68,6 +68,7 @@ export default function CategoryView({ category, isFavorite, onToggleFavorite }:
                   <MenuItemCard
                     key={item.id}
                     item={item}
+                    categoryId={category.id}
                     isFavorite={isFavorite(item.id)}
                     onToggleFavorite={() => onToggleFavorite(item.id)}
                   />
@@ -113,6 +114,7 @@ export default function CategoryView({ category, isFavorite, onToggleFavorite }:
           <MenuItemCard
             key={item.id}
             item={item}
+            categoryId={category.id}
             isFavorite={isFavorite(item.id)}
             onToggleFavorite={() => onToggleFavorite(item.id)}
           />

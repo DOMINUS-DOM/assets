@@ -130,6 +130,7 @@ export default function HomePage() {
                       </span>
                       <MenuItemCard
                         item={item}
+                        categoryId={category.id}
                         isFavorite={isFavorite(item.id)}
                         onToggleFavorite={() => toggleFavorite(item.id)}
                       />
@@ -183,6 +184,7 @@ export default function HomePage() {
                   </span>
                   <MenuItemCard
                     item={item}
+                    categoryId={category.id}
                     isFavorite={isFavorite(item.id)}
                     onToggleFavorite={() => toggleFavorite(item.id)}
                   />
