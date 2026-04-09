@@ -2,9 +2,9 @@
 
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState, useEffect } from 'react';
-import { store } from '@/stores/store';
-import { Order, OrderStatus } from '@/types/order';
+import { OrderStatus } from '@/types/order';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { api } from '@/lib/api';
 import { formatPrice } from '@/utils/format';
 import Link from 'next/link';
 
@@ -21,13 +21,19 @@ function OrderContent() {
   const params = useSearchParams();
   const orderId = params.get('id');
   const { t } = useLanguage();
-  const [order, setOrder] = useState<Order | undefined>();
+  const [order, setOrder] = useState<any>(undefined);
 
   useEffect(() => {
-    if (orderId) {
-      setOrder(store.getOrder(orderId));
-      return store.subscribe(() => setOrder(store.getOrder(orderId)));
-    }
+    if (!orderId) return;
+    const fetchOrder = async () => {
+      try {
+        const orders = await api.get<any[]>('/orders');
+        setOrder(orders.find((o) => o.orderNumber === orderId || o.id === orderId));
+      } catch {}
+    };
+    fetchOrder();
+    const interval = setInterval(fetchOrder, 10000); // poll every 10s
+    return () => clearInterval(interval);
   }, [orderId]);
 
   if (!orderId || !order) {
@@ -54,8 +60,8 @@ function OrderContent() {
 
       <div className="px-4 pt-6 space-y-6">
         <div className="text-center py-6">
-          <span className="text-6xl block mb-3">{STATUS_EMOJI[order.status]}</span>
-          <p className={`text-xl font-bold ${STATUS_COLOR[order.status]}`}>{t.ui[statusKey(order.status)]}</p>
+          <span className="text-6xl block mb-3">{(STATUS_EMOJI as any)[order.status]}</span>
+          <p className={`text-xl font-bold ${(STATUS_COLOR as any)[order.status] || ''}`}>{t.ui[statusKey(order.status)]}</p>
           <p className="text-xs text-zinc-500 mt-1">
             {order.type === 'pickup' ? t.ui.order_pickupLabel : t.ui.order_deliveryLabel}
           </p>
@@ -63,12 +69,12 @@ function OrderContent() {
 
         <div className="space-y-3">
           <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t.ui.order_tracking}</h2>
-          {order.statusHistory.map((entry, i) => {
+          {(order.statusHistory || []).map((entry: any, i: number) => {
             const time = new Date(entry.at).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' });
             return (
               <div key={i} className="flex items-center gap-3">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${i === order.statusHistory.length - 1 ? 'bg-amber-500/20' : 'bg-zinc-800'}`}>
-                  {STATUS_EMOJI[entry.status]}
+                  {(STATUS_EMOJI as any)[entry.status]}
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-white font-medium">{t.ui[statusKey(entry.status)]}</p>
@@ -81,7 +87,7 @@ function OrderContent() {
 
         <div className="space-y-2">
           <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t.ui.order_articles}</h2>
-          {order.items.map((item, i) => (
+          {(order.items || []).map((item: any, i: number) => (
             <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50">
               <div>
                 <p className="text-sm text-white font-medium">{item.name}</p>
@@ -98,16 +104,16 @@ function OrderContent() {
             <span className="text-xl font-extrabold text-amber-400">{formatPrice(order.total)} €</span>
           </div>
           <p className="text-xs text-zinc-500 mt-1">
-            {order.payment.method === 'online' ? t.ui.order_online : order.payment.method === 'on_delivery' ? t.ui.order_onDelivery : t.ui.order_onPickup}
-            {' — '}{order.payment.status === 'paid' ? t.ui.order_paid : t.ui.order_pendingPay}
+            {order.paymentMethod === 'online' ? t.ui.order_online : order.paymentMethod === 'on_delivery' ? t.ui.order_onDelivery : t.ui.order_onPickup}
+            {' — '}{order.paymentStatus === 'paid' ? t.ui.order_paid : t.ui.order_pendingPay}
           </p>
         </div>
 
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 text-sm space-y-1">
-          <p className="text-white font-medium">{order.customer.name}</p>
-          <p className="text-zinc-400">{order.customer.phone}</p>
-          {order.deliveryAddress && (
-            <p className="text-zinc-400">{order.deliveryAddress.street}, {order.deliveryAddress.city} {order.deliveryAddress.postalCode}</p>
+          <p className="text-white font-medium">{order.customerName}</p>
+          <p className="text-zinc-400">{order.customerPhone}</p>
+          {order.deliveryStreet && (
+            <p className="text-zinc-400">{order.deliveryStreet}, {order.deliveryCity} {order.deliveryPostal}</p>
           )}
         </div>
       </div>

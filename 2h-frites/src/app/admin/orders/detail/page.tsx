@@ -18,20 +18,24 @@ function OrderDetail() {
   const params = useSearchParams();
   const id = params.get('id');
   const { t } = useLanguage();
-  const [order, setOrder] = useState<Order | undefined>();
-  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [order, setOrder] = useState<any>(undefined);
+  const [drivers, setDrivers] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (id) {
-      setOrder(store.getOrder(id));
-      setDrivers(store.getDrivers().filter((d) => d.active));
-      return store.subscribe(() => { setOrder(store.getOrder(id)); setDrivers(store.getDrivers().filter((d) => d.active)); });
-    }
-  }, [id]);
+  const refresh = async () => {
+    if (!id) return;
+    const [orders, driversData] = await Promise.all([
+      api.get<any[]>('/orders'),
+      api.get<{ drivers: any[] }>('/drivers'),
+    ]);
+    setOrder(orders.find((o: any) => o.id === id || o.orderNumber === id));
+    setDrivers(driversData.drivers.filter((d: any) => d.active));
+  };
+
+  useEffect(() => { refresh(); }, [id]);
 
   if (!order) return <p className="text-center text-zinc-500 py-20">{t.ui.order_notFound}</p>;
 
-  const next = order.type === 'pickup' && order.status === 'ready' ? 'picked_up' as OrderStatus : NEXT_STATUS[order.status];
+  const next = order.type === 'pickup' && order.status === 'ready' ? 'picked_up' : (NEXT_STATUS as any)[order.status];
 
   return (
     <div className="space-y-6">
@@ -45,19 +49,19 @@ function OrderDetail() {
 
       <div className="flex gap-2 flex-wrap">
         {next && (
-          <button onClick={() => store.updateOrderStatus(order.id, next)}
+          <button onClick={() => api.post('/orders', { action: 'updateStatus', orderId: order.id, status: next }).then(refresh)}
             className="px-4 py-2 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm active:scale-95 transition-transform">
             {t.ui.admin_moveTo} {t.ui[`status_${next}`]}
           </button>
         )}
         {order.status !== 'cancelled' && !['delivered', 'picked_up'].includes(order.status) && (
-          <button onClick={() => store.updateOrderStatus(order.id, 'cancelled')}
+          <button onClick={() => api.post('/orders', { action: 'updateStatus', orderId: order.id, status: 'cancelled' }).then(refresh)}
             className="px-4 py-2 rounded-xl bg-zinc-800 text-red-400 font-bold text-sm active:scale-95">
             {t.ui.admin_cancel}
           </button>
         )}
-        {order.payment.status === 'pending' && (
-          <button onClick={() => store.updatePaymentStatus(order.id, 'paid')}
+        {order.paymentStatus === 'pending' && (
+          <button onClick={() => api.post('/orders', { action: 'updatePayment', orderId: order.id, paymentStatus: 'paid' }).then(refresh)}
             className="px-4 py-2 rounded-xl bg-emerald-500/15 text-emerald-400 font-bold text-sm active:scale-95">
             {t.ui.admin_markPaid}
           </button>
@@ -67,7 +71,7 @@ function OrderDetail() {
       {order.type === 'delivery' && (
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
           <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">{t.ui.admin_driver}</h2>
-          <select value={order.driverId || ''} onChange={(e) => store.assignDriver(order.id, e.target.value)}
+          <select value={order.driverId || ''} onChange={(e) => { const v = e.target.value; api.post('/orders', { action: 'assignDriver', orderId: order.id, driverId: v }).then(refresh); }}
             className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm">
             <option value="">{t.ui.admin_unassigned}</option>
             {drivers.map((d) => <option key={d.id} value={d.id}>{d.name} — {d.zone}</option>)}
@@ -77,16 +81,16 @@ function OrderDetail() {
 
       <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-1 text-sm">
         <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">{t.ui.admin_customer}</h2>
-        <p className="text-white font-medium">{order.customer.name}</p>
-        <p className="text-zinc-400">{order.customer.phone}</p>
-        {order.deliveryAddress && <p className="text-zinc-400">📍 {order.deliveryAddress.street}, {order.deliveryAddress.city} {order.deliveryAddress.postalCode}</p>}
-        {order.deliveryAddress?.instructions && <p className="text-zinc-500 italic">💬 {order.deliveryAddress.instructions}</p>}
+        <p className="text-white font-medium">{order.customerName}</p>
+        <p className="text-zinc-400">{order.customerPhone}</p>
+        {order.deliveryStreet && <p className="text-zinc-400">📍 {order.deliveryStreet}, {order.deliveryCity} {order.deliveryPostal}</p>}
+        {order.deliveryNotes && <p className="text-zinc-500 italic">💬 {order.deliveryNotes}</p>}
         {order.pickupTime && <p className="text-zinc-400">🕐 {order.pickupTime}</p>}
       </div>
 
       <div className="space-y-2">
         <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t.ui.order_articles}</h2>
-        {order.items.map((item, i) => (
+        {order.items.map((item: any, i: number) => (
           <div key={i} className="flex justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50 text-sm">
             <span className="text-white">{item.name} {item.sizeKey ? `(${item.sizeKey})` : ''} × {item.quantity}</span>
             <span className="text-amber-400 font-bold">{formatPrice(item.price * item.quantity)} €</span>
@@ -100,7 +104,7 @@ function OrderDetail() {
 
       <div className="space-y-2">
         <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t.ui.admin_history}</h2>
-        {order.statusHistory.map((e, i) => (
+        {order.statusHistory.map((e: any, i: number) => (
           <div key={i} className="flex items-center gap-3 text-sm">
             <span className="text-zinc-500 text-xs w-12">{new Date(e.at).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' })}</span>
             <span className="text-white">{t.ui[`status_${e.status}`]}</span>

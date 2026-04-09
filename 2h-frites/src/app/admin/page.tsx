@@ -47,7 +47,7 @@ export default function AdminDashboard() {
               className="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50 hover:border-zinc-700 transition-colors">
               <div>
                 <p className="text-sm font-semibold text-white">{o.id}</p>
-                <p className="text-xs text-zinc-500">{o.customer.name} — {o.type === 'pickup' ? '🏪' : '🛵'}</p>
+                <p className="text-xs text-zinc-500">{o.customerName} — {o.type === 'pickup' ? '🏪' : '🛵'}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold text-amber-400">{formatPrice(o.total)} €</p>

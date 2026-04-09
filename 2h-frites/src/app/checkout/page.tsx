@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/i18n/LanguageContext';
-import { store } from '@/stores/store';
-import { settingsStore } from '@/stores/settingsStore';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
+import { useApiData } from '@/hooks/useApiData';
 import { formatPrice } from '@/utils/format';
 import { OrderType, PaymentMethod } from '@/types/order';
 
@@ -13,6 +14,8 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { items, total, clearCart } = useCart();
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const { data: settings } = useApiData<any>('/settings', {});
 
   const [orderType, setOrderType] = useState<OrderType>('pickup');
   const [name, setName] = useState('');
@@ -38,25 +41,30 @@ export default function CheckoutPage() {
     );
   }
 
-  const biz = settingsStore.get();
-  const deliveryFee = orderType === 'delivery' ? settingsStore.getDeliveryFee(postalCode || '') : 0;
+  const deliveryFee = orderType === 'delivery' ? (settings.defaultDeliveryFee || 2.50) : 0;
   const grandTotal = total + deliveryFee;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !phone) return;
     if (orderType === 'delivery' && (!street || !city)) return;
     setSubmitting(true);
-    const order = store.createOrder({
-      items, type: orderType,
-      customer: { name, phone, email: email || undefined },
-      deliveryAddress: orderType === 'delivery' ? { street, city, postalCode, instructions: instructions || undefined } : undefined,
-      pickupTime: orderType === 'pickup' ? pickupTime || undefined : undefined,
-      payment: { method: paymentMethod, status: paymentMethod === 'online' ? 'paid' : 'pending' },
-      total: grandTotal,
-    });
-    clearCart();
-    router.push(`/order?id=${order.id}`);
+    try {
+      const order = await api.post<any>('/orders', {
+        action: 'create', type: orderType,
+        customerName: name, customerPhone: phone, customerEmail: email || null,
+        deliveryStreet: orderType === 'delivery' ? street : null,
+        deliveryCity: orderType === 'delivery' ? city : null,
+        deliveryPostal: orderType === 'delivery' ? postalCode : null,
+        deliveryNotes: orderType === 'delivery' ? instructions : null,
+        pickupTime: orderType === 'pickup' ? pickupTime : null,
+        paymentMethod, paymentStatus: paymentMethod === 'online' ? 'paid' : 'pending',
+        total: grandTotal, userId: user?.id || null,
+        items: items.map((i) => ({ menuItemId: i.menuItemId, name: i.name, price: i.price, quantity: i.quantity, sizeKey: i.sizeKey || null, categoryId: i.categoryId })),
+      });
+      clearCart();
+      router.push(`/order?id=${order.orderNumber}`);
+    } catch { setSubmitting(false); }
   };
 
   const ic = 'w-full px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-amber-500/50';

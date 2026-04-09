@@ -42,12 +42,12 @@ export default function OrdersPage() {
                   {o.type === 'pickup' ? t.ui.admin_pickup : t.ui.admin_deliveryMode}
                 </span>
               </div>
-              <p className="text-xs text-zinc-500 mt-0.5">{o.customer.name} — {o.customer.phone}</p>
+              <p className="text-xs text-zinc-500 mt-0.5">{o.customerName} — {o.customerPhone}</p>
             </div>
             <div className="text-right shrink-0 ml-3">
               <p className="text-sm font-bold text-amber-400">{formatPrice(o.total)} €</p>
               <p className="text-xs text-zinc-500">{t.ui[`status_${o.status}`]}</p>
-              <p className="text-xs text-zinc-600">{o.payment.status === 'paid' ? t.ui.admin_paidLabel : t.ui.admin_unpaidLabel}</p>
+              <p className="text-xs text-zinc-600">{o.paymentStatus === 'paid' ? t.ui.admin_paidLabel : t.ui.admin_unpaidLabel}</p>
             </div>
           </Link>
         ))}
