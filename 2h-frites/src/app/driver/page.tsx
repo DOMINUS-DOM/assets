@@ -4,14 +4,22 @@ import { useState, useEffect } from 'react';
 import { store } from '@/stores/store';
 import { Order, Driver } from '@/types/order';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatPrice } from '@/utils/format';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Link from 'next/link';
 
-export default function DriverPage() {
+function DriverContent() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const { user } = useAuth();
   const [selectedDriver, setSelectedDriver] = useState('');
   const { t } = useLanguage();
+
+  // Auto-select driver linked to logged-in user
+  useEffect(() => {
+    if (user?.driverId) setSelectedDriver(user.driverId);
+  }, [user]);
 
   useEffect(() => {
     setOrders(store.getOrders()); setDrivers(store.getDrivers().filter((d) => d.active));
@@ -111,5 +119,13 @@ export default function DriverPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function DriverPage() {
+  return (
+    <ProtectedRoute allowedRoles={['livreur']}>
+      <DriverContent />
+    </ProtectedRoute>
   );
 }

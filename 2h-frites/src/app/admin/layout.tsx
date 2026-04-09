@@ -3,18 +3,24 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import UserMenu from '@/components/auth/UserMenu';
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+function AdminContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const { hasRole } = useAuth();
 
   const NAV = [
-    { href: '/admin', label: t.ui.admin_dashboard, exact: true },
-    { href: '/admin/orders', label: t.ui.admin_orders, exact: false },
-    { href: '/admin/drivers', label: t.ui.admin_drivers, exact: false },
-    { href: '/admin/recruitment', label: t.ui.admin_recruitment, exact: false },
-    { href: '/admin/payroll', label: t.ui.admin_payroll, exact: false },
+    { href: '/admin', label: t.ui.admin_dashboard, exact: true, roles: ['patron', 'manager', 'employe'] },
+    { href: '/admin/orders', label: t.ui.admin_orders, exact: false, roles: ['patron', 'manager', 'employe'] },
+    { href: '/admin/drivers', label: t.ui.admin_drivers, exact: false, roles: ['patron', 'manager'] },
+    { href: '/admin/recruitment', label: t.ui.admin_recruitment, exact: false, roles: ['patron', 'manager'] },
+    { href: '/admin/payroll', label: t.ui.admin_payroll, exact: false, roles: ['patron'] },
   ];
+
+  const visibleNav = NAV.filter((n) => hasRole(...(n.roles as any)));
 
   return (
     <div className="min-h-screen bg-zinc-950">
@@ -24,11 +30,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span className="text-lg">🍟</span>
             <span className="font-bold text-sm"><span className="text-amber-400">2H</span> Admin</span>
           </Link>
-          <Link href="/" className="text-xs text-zinc-500 hover:text-amber-400 transition-colors">{t.ui.admin_clientMenu}</Link>
+          <div className="flex items-center gap-2">
+            <Link href="/" className="text-xs text-zinc-500 hover:text-amber-400 transition-colors">{t.ui.admin_clientMenu}</Link>
+            <UserMenu />
+          </div>
         </div>
         <nav className="overflow-x-auto px-4 max-w-4xl mx-auto">
           <div className="flex gap-1 pb-2">
-            {NAV.map((n) => {
+            {visibleNav.map((n) => {
               const active = n.exact ? pathname === n.href : pathname.startsWith(n.href);
               return (
                 <Link key={n.href} href={n.href}
@@ -42,5 +51,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </header>
       <main className="max-w-4xl mx-auto px-4 py-6">{children}</main>
     </div>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute allowedRoles={['patron', 'manager', 'employe']}>
+      <AdminContent>{children}</AdminContent>
+    </ProtectedRoute>
   );
 }
