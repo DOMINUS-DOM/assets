@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { crmStore } from '@/stores/crmStore';
+import { api } from '@/lib/api';
 import { CustomerProfile, LoyaltyReward } from '@/types/crm';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
@@ -13,17 +13,20 @@ type Tab = 'customers' | 'loyalty' | 'segments';
 export default function CRMPage() {
   const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>('customers');
-  const [customers, setCustomers] = useState<CustomerProfile[]>([]);
-  const [rewards, setRewards] = useState<LoyaltyReward[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [rewards] = useState([
+    { id: 'rw-1', name: 'Frites gratuites', pointsCost: 50, description: 'Un cornet de frites moyen offert', active: true },
+    { id: 'rw-2', name: 'Sauce offerte', pointsCost: 20, description: 'Une sauce au choix', active: true },
+    { id: 'rw-3', name: '-5€ sur la commande', pointsCost: 100, description: 'Réduction de 5€', active: true },
+  ]);
   const [filter, setFilter] = useState<string>('all');
 
   useEffect(() => {
-    const refresh = () => { setCustomers(crmStore.getCustomers()); setRewards(crmStore.getRewards()); };
-    refresh();
-    return crmStore.subscribe(refresh);
+    const fetchCRM = async () => { try { const d = await api.get<{ customers: any[] }>('/crm'); setCustomers(d.customers); } catch {} };
+    fetchCRM();
   }, []);
 
-  const segments = crmStore.getSegmentCounts();
+  const segments = { total: customers.length, new: customers.filter((c: any) => c.segment === 'new').length, regular: customers.filter((c: any) => c.segment === 'regular').length, vip: customers.filter((c: any) => c.segment === 'vip').length };
   const filtered = filter === 'all' ? customers : customers.filter((c) => c.segment === filter);
   const totalRevenue = customers.reduce((sum, c) => sum + c.totalSpent, 0);
 

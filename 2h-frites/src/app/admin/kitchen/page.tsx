@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { store } from '@/stores/store';
-import { Order, OrderStatus } from '@/types/order';
+import { OrderStatus } from '@/types/order';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
 import { formatPrice } from '@/utils/format';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
@@ -14,37 +14,40 @@ const STATUS_FLOW: Record<string, OrderStatus> = {
 
 function KDSContent() {
   const { t } = useLanguage();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [lastCount, setLastCount] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    const refresh = () => {
-      const all = store.getOrders();
-      const active = all.filter((o) => ['received', 'preparing', 'ready'].includes(o.status));
-      // Play sound on new order
-      if (active.filter((o) => o.status === 'received').length > lastCount) {
-        try { audioRef.current?.play(); } catch {}
-      }
-      setLastCount(active.filter((o) => o.status === 'received').length);
-      setOrders(active);
+    const refresh = async () => {
+      try {
+        const all = await api.get<any[]>('/orders');
+        const active = all.filter((o: any) => ['received', 'preparing', 'ready'].includes(o.status));
+        if (active.filter((o: any) => o.status === 'received').length > lastCount) {
+          try { audioRef.current?.play(); } catch {}
+        }
+        setLastCount(active.filter((o: any) => o.status === 'received').length);
+        setOrders(active);
+      } catch {}
     };
     refresh();
-    return store.subscribe(refresh);
+    const interval = setInterval(refresh, 5000);
+    return () => clearInterval(interval);
   }, [lastCount]);
 
   const received = orders.filter((o) => o.status === 'received');
   const preparing = orders.filter((o) => o.status === 'preparing');
   const ready = orders.filter((o) => o.status === 'ready');
 
-  const advance = (orderId: string, current: OrderStatus) => {
+  const advance = async (orderId: string, current: string) => {
+    const order = orders.find((o: any) => o.id === orderId);
     const next = current === 'ready'
-      ? (store.getOrder(orderId)?.type === 'pickup' ? 'picked_up' : 'delivering')
-      : STATUS_FLOW[current];
-    if (next) store.updateOrderStatus(orderId, next as OrderStatus);
+      ? (order?.type === 'pickup' ? 'picked_up' : 'delivering')
+      : (STATUS_FLOW as any)[current];
+    if (next) await api.post('/orders', { action: 'updateStatus', orderId, status: next });
   };
 
-  const OrderCard = ({ order, color }: { order: Order; color: string }) => {
+  const OrderCard = ({ order, color }: { order: any; color: string }) => {
     const mins = Math.round((Date.now() - new Date(order.createdAt).getTime()) / 60000);
     return (
       <div className={`p-4 rounded-xl border ${color} space-y-2`}>
@@ -58,7 +61,7 @@ function KDSContent() {
           {order.pickupTime && <span className="text-amber-400">🕐 {order.pickupTime}</span>}
         </div>
         <div className="space-y-1">
-          {order.items.map((item, i) => (
+          {(order.items || []).map((item: any, i: number) => (
             <div key={i} className="flex items-center justify-between text-sm">
               <span className="text-white">{item.quantity}× {item.name}{item.sizeKey ? ` (${item.sizeKey})` : ''}</span>
             </div>

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { inventoryStore } from '@/stores/inventoryStore';
-import { Ingredient, Supplier } from '@/types/inventory';
+import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
 
@@ -13,23 +12,27 @@ type Tab = 'stock' | 'alerts' | 'suppliers' | 'movements';
 export default function InventoryPage() {
   const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>('stock');
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [ingredients, setIngredients] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [mvForm, setMvForm] = useState({ ingredientId: '', type: 'in' as const, quantity: '', note: '' });
+  const [movements, setMovements] = useState<any[]>([]);
+
+  const refresh = async () => {
+    try {
+      const data = await api.get<{ ingredients: any[]; suppliers: any[]; movements: any[] }>('/inventory');
+      setIngredients(data.ingredients); setSuppliers(data.suppliers); setMovements(data.movements);
+    } catch {}
+  };
 
   useEffect(() => {
-    const refresh = () => {
-      setIngredients(inventoryStore.getIngredients());
-      setSuppliers(inventoryStore.getSuppliers());
-    };
     refresh();
-    return inventoryStore.subscribe(refresh);
+    return;
   }, []);
 
-  const lowStock = inventoryStore.getLowStock();
-  const expiring = inventoryStore.getExpiringSoon();
-  const movements = inventoryStore.getMovements();
+  const lowStock = ingredients.filter((i: any) => i.currentStock <= i.minStock);
+  const in3Days = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  const expiring = ingredients.filter((i: any) => i.expiryDate && i.expiryDate <= in3Days);
   const totalValue = ingredients.reduce((sum, i) => sum + i.currentStock * i.costPerUnit, 0);
   const getName = (id: string) => ingredients.find((i) => i.id === id)?.name || '?';
 
@@ -129,7 +132,7 @@ export default function InventoryPage() {
           <form onSubmit={(e) => {
             e.preventDefault();
             if (!mvForm.ingredientId || !mvForm.quantity) return;
-            inventoryStore.addMovement({ ingredientId: mvForm.ingredientId, type: mvForm.type, quantity: +mvForm.quantity, note: mvForm.note, date: new Date().toISOString().slice(0, 10) });
+            api.post('/inventory', { action: 'addMovement', ingredientId: mvForm.ingredientId, type: mvForm.type, quantity: +mvForm.quantity, note: mvForm.note, date: new Date().toISOString().slice(0, 10) }).then(refresh);
             setMvForm({ ingredientId: '', type: 'in', quantity: '', note: '' });
           }} className="p-3 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-2">
             <div className="grid grid-cols-2 gap-2">

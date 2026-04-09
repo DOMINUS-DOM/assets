@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { store } from '@/stores/store';
-import { DriverApplication, ApplicationStatus } from '@/types/order';
+import { ApplicationStatus } from '@/types/order';
+import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
@@ -15,10 +15,11 @@ const STATUS_KEYS: Record<ApplicationStatus, string> = {
 };
 
 export default function RecruitmentPage() {
-  const [apps, setApps] = useState<DriverApplication[]>([]);
+  const [apps, setApps] = useState<any[]>([]);
   const { t } = useLanguage();
 
-  useEffect(() => { setApps(store.getApplications()); return store.subscribe(() => setApps(store.getApplications())); }, []);
+  const refresh = async () => { try { const d = await api.get<{ applications: any[] }>('/drivers'); setApps(d.applications); } catch {} };
+  useEffect(() => { refresh(); }, []);
 
   return (
     <div className="space-y-6">
@@ -33,13 +34,13 @@ export default function RecruitmentPage() {
                 <p className="text-xs text-zinc-500 mt-1">📍 {a.city} — 🚗 {a.transport}</p>
                 <p className="text-xs text-zinc-500">🕐 {a.availability}</p>
               </div>
-              <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[a.status]}`}>
-                {t.ui[STATUS_KEYS[a.status]]}
+              <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${(STATUS_COLORS as any)[a.status]}`}>
+                {t.ui[(STATUS_KEYS as any)[a.status]]}
               </span>
             </div>
             <div className="flex gap-2 mt-3">
               {(['new', 'contacted', 'accepted', 'rejected'] as ApplicationStatus[]).map((s) => (
-                <button key={s} onClick={() => store.updateApplicationStatus(a.id, s)}
+                <button key={s} onClick={() => api.post('/drivers', { action: 'updateApplicationStatus', id: a.id, status: s }).then(refresh)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${a.status === s ? STATUS_COLORS[s] : 'bg-zinc-800 text-zinc-600 hover:text-zinc-400'}`}>
                   {t.ui[STATUS_KEYS[s]]}
                 </button>

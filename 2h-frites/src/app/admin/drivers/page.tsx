@@ -1,21 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { store } from '@/stores/store';
-import { Driver } from '@/types/order';
+import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
 
 export default function DriversPage() {
-  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [drivers, setDrivers] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', email: '', zone: '', contractType: 'freelance', ratePerDelivery: 3.5, bonusRate: 0, notes: '' });
   const { t } = useLanguage();
 
-  useEffect(() => { setDrivers(store.getDrivers()); return store.subscribe(() => setDrivers(store.getDrivers())); }, []);
+  const refresh = async () => { try { const d = await api.get<{ drivers: any[] }>('/drivers'); setDrivers(d.drivers); } catch {} };
+  useEffect(() => { refresh(); }, []);
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    store.addDriver({ ...form, active: true });
+    await api.post('/drivers', { action: 'addDriver', data: { ...form, active: true } }); refresh();
     setForm({ name: '', phone: '', email: '', zone: '', contractType: 'freelance', ratePerDelivery: 3.5, bonusRate: 0, notes: '' });
     setShowForm(false);
   };
@@ -67,7 +67,7 @@ export default function DriversPage() {
                 <p className="text-xs text-zinc-500">📍 {d.zone} — {d.ratePerDelivery} {t.ui.admin_perDelivery}{d.bonusRate > 0 ? ` + ${d.bonusRate} ${t.ui.admin_bonusPerDelivery}` : ''}</p>
                 {d.notes && <p className="text-xs text-zinc-600 mt-1 italic">💬 {d.notes}</p>}
               </div>
-              <button onClick={() => store.toggleDriverActive(d.id)}
+              <button onClick={() => api.post('/drivers', { action: 'toggleActive', id: d.id }).then(refresh)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${d.active ? 'bg-emerald-500/15 text-emerald-400' : 'bg-zinc-800 text-zinc-500'}`}>
                 {d.active ? t.ui.admin_active : t.ui.admin_inactive}
               </button>
