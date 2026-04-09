@@ -245,11 +245,11 @@ export const categories: Category[] = [
     nameKey: 'salades',
     icon: '🥗',
     items: [
-      { id: 'salade_basique', name: 'Basique', currency: '€', descriptionKey: 'salade_basique_desc', tags: ['vegetarian'] },
-      { id: 'salade_mixte', name: 'Mixte', currency: '€', descriptionKey: 'salade_mixte_desc', tags: ['vegetarian'] },
-      { id: 'salade_italienne', name: 'Italienne', currency: '€', descriptionKey: 'salade_italienne_desc', tags: ['vegetarian'], allergens: [7] },
-      { id: 'salade_grecque', name: 'Grecque', currency: '€', descriptionKey: 'salade_grecque_desc', tags: ['vegetarian'], allergens: [7] },
-      { id: 'salade_poulet', name: 'Poulet', currency: '€', descriptionKey: 'salade_poulet_desc' },
+      { id: 'salade_basique', name: 'Basique', price: 7.50, currency: '€', descriptionKey: 'salade_basique_desc', tags: ['vegetarian'] },
+      { id: 'salade_mixte', name: 'Mixte', price: 8.50, currency: '€', descriptionKey: 'salade_mixte_desc', tags: ['vegetarian'] },
+      { id: 'salade_italienne', name: 'Italienne', price: 9.00, currency: '€', descriptionKey: 'salade_italienne_desc', tags: ['vegetarian'], allergens: [7] },
+      { id: 'salade_grecque', name: 'Grecque', price: 9.00, currency: '€', descriptionKey: 'salade_grecque_desc', tags: ['vegetarian'], allergens: [7] },
+      { id: 'salade_poulet', name: 'Poulet', price: 10.00, currency: '€', descriptionKey: 'salade_poulet_desc' },
     ],
   },
 ];

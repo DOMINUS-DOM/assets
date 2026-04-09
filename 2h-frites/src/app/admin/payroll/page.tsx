@@ -18,7 +18,7 @@ export default function PayrollPage() {
     });
   }, []);
 
-  const deliveredOrders = orders.filter((o) => ['delivered'].includes(o.status));
+  const deliveredOrders = orders.filter((o) => ['delivered', 'picked_up'].includes(o.status));
 
   const driverStats = drivers.map((driver) => {
     const driverOrders = deliveredOrders.filter((o) => o.driverId === driver.id);
