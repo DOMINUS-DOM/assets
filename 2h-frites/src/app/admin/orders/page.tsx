@@ -1,20 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { store } from '@/stores/store';
-import { Order, OrderStatus } from '@/types/order';
+import { useState } from 'react';
+import { OrderStatus } from '@/types/order';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useApiData } from '@/hooks/useApiData';
 import { formatPrice } from '@/utils/format';
 import Link from 'next/link';
 
 const STATUSES: (OrderStatus | 'all')[] = ['all', 'received', 'preparing', 'ready', 'delivering', 'delivered', 'picked_up', 'cancelled'];
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const { data: orders } = useApiData<any[]>('/orders', []);
   const [filter, setFilter] = useState<OrderStatus | 'all'>('all');
   const { t } = useLanguage();
-
-  useEffect(() => { setOrders(store.getOrders()); return store.subscribe(() => setOrders(store.getOrders())); }, []);
 
   const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
 

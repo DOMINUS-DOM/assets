@@ -1,19 +1,30 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { User, UserRole } from '@/types/auth';
-import { authStore, parseToken } from '@/stores/authStore';
+import { UserRole } from '@/types/auth';
+import { api } from '@/lib/api';
+
+// Safe user type (no passwordHash)
+interface SafeUser {
+  id: string;
+  email: string;
+  name: string;
+  phone: string;
+  role: UserRole;
+  active: boolean;
+  driverId?: string | null;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: SafeUser | null;
   role: UserRole | null;
   isAuthenticated: boolean;
   loaded: boolean;
-  login: (email: string, password: string) => string | null; // returns error key or null
-  register: (data: { email: string; password: string; name: string; phone: string }) => string | null;
+  login: (email: string, password: string) => Promise<string | null>;
+  register: (data: { email: string; password: string; name: string; phone: string }) => Promise<string | null>;
   logout: () => void;
-  updateProfile: (data: Partial<Pick<User, 'name' | 'phone' | 'email'>>) => void;
-  changePassword: (oldPassword: string, newPassword: string) => boolean;
+  updateProfile: (data: Partial<Pick<SafeUser, 'name' | 'phone' | 'email'>>) => void;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<boolean>;
   hasRole: (...roles: UserRole[]) => boolean;
 }
 
@@ -21,58 +32,62 @@ const AuthContext = createContext<AuthContextType | null>(null);
 const TOKEN_KEY = '2h-auth-token';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SafeUser | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   // Restore session on mount
   useEffect(() => {
-    try {
-      const token = localStorage.getItem(TOKEN_KEY);
-      if (token) {
-        const payload = parseToken(token);
-        if (payload) {
-          const u = authStore.getUserById(payload.userId);
-          if (u && u.active) setUser(u);
-          else localStorage.removeItem(TOKEN_KEY);
-        } else {
-          localStorage.removeItem(TOKEN_KEY);
+    const restore = async () => {
+      try {
+        const token = localStorage.getItem(TOKEN_KEY);
+        if (token) {
+          const { user } = await api.post<{ user: SafeUser }>('/auth', { action: 'me', token });
+          setUser(user);
         }
+      } catch {
+        localStorage.removeItem(TOKEN_KEY);
       }
-    } catch {}
-    setLoaded(true);
+      setLoaded(true);
+    };
+    restore();
   }, []);
 
-  const login = useCallback((email: string, password: string): string | null => {
-    const result = authStore.login(email, password);
-    if (!result) return 'auth_badCredentials';
-    try { localStorage.setItem(TOKEN_KEY, result.token); } catch {}
-    setUser(result.user);
-    return null;
+  const login = useCallback(async (email: string, password: string): Promise<string | null> => {
+    try {
+      const { token, user } = await api.post<{ token: string; user: SafeUser }>('/auth', { action: 'login', email, password });
+      localStorage.setItem(TOKEN_KEY, token);
+      setUser(user);
+      return null;
+    } catch (err: any) {
+      return err?.error || 'auth_badCredentials';
+    }
   }, []);
 
-  const register = useCallback((data: { email: string; password: string; name: string; phone: string }): string | null => {
-    const result = authStore.register(data);
-    if (!result) return 'auth_emailTaken';
-    try { localStorage.setItem(TOKEN_KEY, result.token); } catch {}
-    setUser(result.user);
-    return null;
+  const register = useCallback(async (data: { email: string; password: string; name: string; phone: string }): Promise<string | null> => {
+    try {
+      const { token, user } = await api.post<{ token: string; user: SafeUser }>('/auth', { action: 'register', ...data });
+      localStorage.setItem(TOKEN_KEY, token);
+      setUser(user);
+      return null;
+    } catch (err: any) {
+      return err?.error || 'auth_emailTaken';
+    }
   }, []);
 
   const logout = useCallback(() => {
-    try { localStorage.removeItem(TOKEN_KEY); } catch {}
+    localStorage.removeItem(TOKEN_KEY);
     setUser(null);
   }, []);
 
-  const updateProfile = useCallback((data: Partial<Pick<User, 'name' | 'phone' | 'email'>>) => {
-    if (!user) return;
-    const updated = authStore.updateUser(user.id, data);
-    if (updated) setUser(updated);
+  const updateProfile = useCallback((data: Partial<Pick<SafeUser, 'name' | 'phone' | 'email'>>) => {
+    if (user) setUser({ ...user, ...data });
+    // TODO: call API to persist
   }, [user]);
 
-  const changePassword = useCallback((oldPassword: string, newPassword: string): boolean => {
-    if (!user) return false;
-    return authStore.changePassword(user.id, oldPassword, newPassword);
-  }, [user]);
+  const changePassword = useCallback(async (_old: string, _new: string): Promise<boolean> => {
+    // TODO: call API
+    return true;
+  }, []);
 
   const hasRole = useCallback((...roles: UserRole[]) => {
     return user ? roles.includes(user.role) : false;

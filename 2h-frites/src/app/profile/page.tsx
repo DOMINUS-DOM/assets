@@ -34,11 +34,11 @@ export default function ProfilePage() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const handleChangePw = (e: React.FormEvent) => {
+  const handleChangePw = async (e: React.FormEvent) => {
     e.preventDefault();
     setPwMsg('');
     if (newPw.length < 6) { setPwMsg(t.ui.auth_passwordTooShort); return; }
-    const ok = changePassword(oldPw, newPw);
+    const ok = await changePassword(oldPw, newPw);
     setPwMsg(ok ? '✅' : t.ui.auth_badCredentials);
     if (ok) { setOldPw(''); setNewPw(''); }
   };

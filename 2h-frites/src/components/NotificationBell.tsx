@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { notificationStore, AppNotification } from '@/stores/notificationStore';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
 import Link from 'next/link';
+
+interface AppNotification { id: string; type: string; title: string; message: string; read: boolean; createdAt: string; link?: string; }
 
 const TYPE_EMOJI: Record<string, string> = { order: '📋', stock: '📦', staff: '👤', delivery: '🛵', system: '⚙️' };
 
@@ -17,12 +19,16 @@ export default function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const refresh = () => {
-      setNotifications(notificationStore.getAll().slice(0, 10));
-      setUnread(notificationStore.getUnreadCount());
+    const fetchNotifs = async () => {
+      try {
+        const data = await api.get<AppNotification[]>('/notifications');
+        setNotifications(data.slice(0, 10));
+        setUnread(data.filter((n) => !n.read).length);
+      } catch {}
     };
-    refresh();
-    return notificationStore.subscribe(refresh);
+    fetchNotifs();
+    const interval = setInterval(fetchNotifs, 15000); // poll every 15s
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -59,7 +65,7 @@ export default function NotificationBell() {
           <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
             <span className="text-sm font-bold text-white">{t.ui.notif_title}</span>
             {unread > 0 && (
-              <button onClick={() => notificationStore.markAllRead()}
+              <button onClick={async () => { await api.post('/notifications', { action: 'markAllRead' }); setNotifications((n) => n.map((x) => ({ ...x, read: true }))); setUnread(0); }}
                 className="text-xs text-amber-400 hover:text-amber-300">{t.ui.notif_markAll}</button>
             )}
           </div>
@@ -68,7 +74,7 @@ export default function NotificationBell() {
           ) : (
             notifications.map((n) => (
               <div key={n.id}
-                onClick={() => { notificationStore.markRead(n.id); setOpen(false); }}
+                onClick={async () => { await api.post('/notifications', { action: 'markRead', id: n.id }); setNotifications((prev) => prev.map((x) => x.id === n.id ? { ...x, read: true } : x)); setUnread((u) => Math.max(0, u - 1)); setOpen(false); }}
                 className={`px-4 py-3 border-b border-zinc-700/50 hover:bg-zinc-700/50 transition-colors cursor-pointer ${!n.read ? 'bg-zinc-700/20' : ''}`}>
                 {n.link ? (
                   <Link href={n.link} className="block">

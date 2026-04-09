@@ -17,12 +17,12 @@ export default function RegisterPage() {
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (password !== confirm) { setError(t.ui.auth_passwordMismatch); return; }
     if (password.length < 6) { setError(t.ui.auth_passwordTooShort); return; }
-    const err = register({ email, password, name, phone });
+    const err = await register({ email, password, name, phone });
     if (err) { setError(t.ui[err] || err); return; }
     router.replace('/');
   };

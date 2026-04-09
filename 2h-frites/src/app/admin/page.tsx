@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { store } from '@/stores/store';
-import { Order } from '@/types/order';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useApiData } from '@/hooks/useApiData';
 import { formatPrice } from '@/utils/format';
 import Link from 'next/link';
 
@@ -18,10 +16,8 @@ function StatCard({ label, value, emoji }: { label: string; value: string | numb
 }
 
 export default function AdminDashboard() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const { data: orders } = useApiData<any[]>('/orders', []);
   const { t } = useLanguage();
-
-  useEffect(() => { setOrders(store.getOrders()); return store.subscribe(() => setOrders(store.getOrders())); }, []);
 
   const revenue = orders.reduce((sum, o) => sum + o.total, 0);
   const pending = orders.filter((o) => o.status === 'received').length;
