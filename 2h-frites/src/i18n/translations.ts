@@ -136,6 +136,11 @@ const fr: Translations = {
     staff_leaveStatus_pending: 'En attente', staff_leaveStatus_approved: 'Approuvé', staff_leaveStatus_rejected: 'Refusé',
     staff_leaveReason: 'Motif (optionnel)', staff_submitLeave: 'Envoyer', staff_approve: 'Approuver', staff_reject: 'Refuser',
     staff_noProfile: 'Aucun profil employé lié à votre compte.',
+    // Menu CMS
+    cms_nav: '🍔 Menu', cms_title: 'Gestion du menu', cms_hint: 'Sélectionnez une catégorie pour gérer ses articles.',
+    cms_available: 'disponibles', cms_addItem: '+ Ajouter', cms_save: 'Enregistrer',
+    cms_itemName: 'Nom de l\'article', cms_price: 'Prix (€)', cms_allergens: 'Allergènes (1,3,7...)',
+    cms_noItems: 'Aucun article dans cette catégorie.',
   },
   categories: {
     frites: 'Frites',
@@ -370,6 +375,10 @@ const en: Translations = {
     staff_leaveStatus_pending: 'Pending', staff_leaveStatus_approved: 'Approved', staff_leaveStatus_rejected: 'Rejected',
     staff_leaveReason: 'Reason (optional)', staff_submitLeave: 'Submit', staff_approve: 'Approve', staff_reject: 'Reject',
     staff_noProfile: 'No employee profile linked to your account.',
+    cms_nav: '🍔 Menu', cms_title: 'Menu management', cms_hint: 'Select a category to manage its items.',
+    cms_available: 'available', cms_addItem: '+ Add', cms_save: 'Save',
+    cms_itemName: 'Item name', cms_price: 'Price (€)', cms_allergens: 'Allergens (1,3,7...)',
+    cms_noItems: 'No items in this category.',
   },
   categories: {
     frites: 'Fries',
@@ -604,6 +613,10 @@ const es: Translations = {
     staff_leaveStatus_pending: 'Pendiente', staff_leaveStatus_approved: 'Aprobado', staff_leaveStatus_rejected: 'Rechazado',
     staff_leaveReason: 'Motivo (opcional)', staff_submitLeave: 'Enviar', staff_approve: 'Aprobar', staff_reject: 'Rechazar',
     staff_noProfile: 'No hay perfil de empleado vinculado a su cuenta.',
+    cms_nav: '🍔 Menú', cms_title: 'Gestión del menú', cms_hint: 'Seleccione una categoría para gestionar sus artículos.',
+    cms_available: 'disponibles', cms_addItem: '+ Añadir', cms_save: 'Guardar',
+    cms_itemName: 'Nombre del artículo', cms_price: 'Precio (€)', cms_allergens: 'Alérgenos (1,3,7...)',
+    cms_noItems: 'Sin artículos en esta categoría.',
   },
   categories: {
     frites: 'Patatas fritas',
@@ -838,6 +851,10 @@ const nl: Translations = {
     staff_leaveStatus_pending: 'In afwachting', staff_leaveStatus_approved: 'Goedgekeurd', staff_leaveStatus_rejected: 'Afgewezen',
     staff_leaveReason: 'Reden (optioneel)', staff_submitLeave: 'Verzenden', staff_approve: 'Goedkeuren', staff_reject: 'Afwijzen',
     staff_noProfile: 'Geen medewerkersprofiel gekoppeld aan uw account.',
+    cms_nav: '🍔 Menu', cms_title: 'Menubeheer', cms_hint: 'Selecteer een categorie om de artikelen te beheren.',
+    cms_available: 'beschikbaar', cms_addItem: '+ Toevoegen', cms_save: 'Opslaan',
+    cms_itemName: 'Artikelnaam', cms_price: 'Prijs (€)', cms_allergens: 'Allergenen (1,3,7...)',
+    cms_noItems: 'Geen artikelen in deze categorie.',
   },
   categories: {
     frites: 'Friet',

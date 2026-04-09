@@ -1,6 +1,7 @@
 'use client';
 
-import { categories } from '@/data/menu';
+import { useState, useEffect } from 'react';
+import { menuStore } from '@/stores/menuStore';
 import { useLanguage } from '@/i18n/LanguageContext';
 
 interface CategoryGridProps {
@@ -9,6 +10,8 @@ interface CategoryGridProps {
 
 export default function CategoryGrid({ onSelect }: CategoryGridProps) {
   const { t, getCategory } = useLanguage();
+  const [categories, setCategories] = useState(menuStore.getCategories());
+  useEffect(() => menuStore.subscribe(() => setCategories(menuStore.getCategories())), []);
 
   return (
     <section className="px-4 pb-8">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { categories } from '@/data/menu';
+import { menuStore } from '@/stores/menuStore';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useSearch } from '@/hooks/useSearch';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -28,13 +28,16 @@ export default function HomePage() {
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSurprise, setShowSurprise] = useState(false);
+  const [categories, setCategories] = useState(menuStore.getCategories());
+
+  useEffect(() => menuStore.subscribe(() => setCategories(menuStore.getCategories())), []);
 
   // ALL hooks must be called before any conditional return
   const searchResults = useSearch(searchQuery, locale);
 
   const activeCategory = useMemo(
     () => (activeSlug ? categories.find((c) => c.slug === activeSlug) || null : null),
-    [activeSlug]
+    [activeSlug, categories]
   );
 
   const favoriteItems = useMemo(

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { categories } from '@/data/menu';
+import { menuStore } from '@/stores/menuStore';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { MenuItem, Category } from '@/types';
 
@@ -20,7 +20,7 @@ export default function SurpriseMe({ onClose }: SurpriseMeProps) {
   const [pick, setPick] = useState<{ item: MenuItem; category: Category } | null>(null);
 
   const pickRandom = useCallback(() => {
-    const foodItems = categories
+    const foodItems = menuStore.getCategories()
       .filter((cat) => FOOD_CATEGORIES.includes(cat.id))
       .flatMap((cat) =>
         cat.items.filter((i) => i.price != null).map((item) => ({ item, category: cat }))

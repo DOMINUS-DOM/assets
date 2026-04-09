@@ -18,6 +18,7 @@ export interface MenuItem {
   allergens?: number[];
   subcategory?: string;
   priceLabel?: string;
+  unavailable?: boolean;
 }
 
 export interface Category {
