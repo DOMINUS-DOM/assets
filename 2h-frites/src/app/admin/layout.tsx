@@ -15,6 +15,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
   const NAV = [
     { href: '/admin', label: t.ui.admin_dashboard, exact: true, roles: ['patron', 'manager', 'employe'] },
     { href: '/admin/orders', label: t.ui.admin_orders, exact: false, roles: ['patron', 'manager', 'employe'] },
+    { href: '/admin/staff', label: t.ui.staff_title, exact: false, roles: ['patron', 'manager'] },
     { href: '/admin/drivers', label: t.ui.admin_drivers, exact: false, roles: ['patron', 'manager'] },
     { href: '/admin/recruitment', label: t.ui.admin_recruitment, exact: false, roles: ['patron', 'manager'] },
     { href: '/admin/payroll', label: t.ui.admin_payroll, exact: false, roles: ['patron'] },

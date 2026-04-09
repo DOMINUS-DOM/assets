@@ -59,6 +59,12 @@ export default function UserMenu() {
               className="block px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors">
               {t.ui.auth_profile}
             </Link>
+            {hasRole('patron', 'manager', 'employe', 'livreur') && (
+              <Link href="/staff" onClick={() => setOpen(false)}
+                className="block px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors">
+                {t.ui.staff_portal}
+              </Link>
+            )}
             {hasRole('patron', 'manager', 'employe') && (
               <Link href="/admin" onClick={() => setOpen(false)}
                 className="block px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors">
