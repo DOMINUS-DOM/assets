@@ -1,9 +1,13 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden } from '@/lib/auth';
 
 // Driver updates their GPS position
 export async function POST(req: NextRequest) {
+  const auth = getAuthUser(req);
+  if (!auth || (auth.role !== 'livreur' && !ADMIN_ROLES.includes(auth.role))) return forbidden();
+
   const { driverId, lat, lng } = await req.json();
 
   if (!driverId || lat == null || lng == null) {
@@ -19,7 +23,9 @@ export async function POST(req: NextRequest) {
 }
 
 // Get all active drivers with their last known location
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = getAuthUser(req);
+  if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
   const drivers = await prisma.driver.findMany({
     where: { active: true, lastLat: { not: null } },
     select: { id: true, name: true, lastLat: true, lastLng: true, lastLocationAt: true, zone: true },

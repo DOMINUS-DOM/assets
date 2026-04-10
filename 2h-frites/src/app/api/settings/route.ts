@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAuthUser, ADMIN_ROLES, forbidden } from '@/lib/auth';
 
 export async function GET() {
   const setting = await prisma.setting.findUnique({ where: { key: 'business' } });
@@ -8,6 +9,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = getAuthUser(req);
+  if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
+
   const body = await req.json();
   await prisma.setting.upsert({
     where: { key: 'business' },

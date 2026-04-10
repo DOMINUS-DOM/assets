@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden } from '@/lib/auth';
 
 export async function GET() {
   const reviews = await prisma.review.findMany({ orderBy: { createdAt: 'desc' } });
@@ -10,7 +11,10 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
+  const auth = getAuthUser(req);
+
   if (body.action === 'create') {
+    if (!auth) return unauthorized();
     const review = await prisma.review.create({
       data: { orderId: body.orderId, customerName: body.customerName, customerPhone: body.customerPhone, rating: body.rating, comment: body.comment || '' },
     });
@@ -18,11 +22,13 @@ export async function POST(req: NextRequest) {
   }
 
   if (body.action === 'reply') {
+    if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
     await prisma.review.update({ where: { id: body.id }, data: { reply: body.reply } });
     return NextResponse.json({ ok: true });
   }
 
   if (body.action === 'togglePublish') {
+    if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
     const r = await prisma.review.findUnique({ where: { id: body.id } });
     if (r) await prisma.review.update({ where: { id: body.id }, data: { published: !r.published } });
     return NextResponse.json({ ok: true });

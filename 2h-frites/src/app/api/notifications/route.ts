@@ -1,13 +1,19 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAuthUser, unauthorized } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = getAuthUser(req);
+  if (!auth) return unauthorized();
   const notifications = await prisma.notification.findMany({ orderBy: { createdAt: 'desc' }, take: 20 });
   return NextResponse.json(notifications);
 }
 
 export async function POST(req: NextRequest) {
+  const auth = getAuthUser(req);
+  if (!auth) return unauthorized();
+
   const body = await req.json();
 
   if (body.action === 'markRead') {

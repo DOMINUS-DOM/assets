@@ -1,8 +1,12 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAuthUser, ADMIN_ROLES, forbidden } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
+  const auth = getAuthUser(req);
+  if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
+
   const { searchParams } = new URL(req.url);
   const locationId = searchParams.get('locationId');
   const limit = parseInt(searchParams.get('limit') || '50');
@@ -17,6 +21,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = getAuthUser(req);
+  if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
+
   const body = await req.json();
   const log = await prisma.auditLog.create({ data: body });
   return NextResponse.json(log);

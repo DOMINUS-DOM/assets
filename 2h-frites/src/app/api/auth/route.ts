@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createToken, getAuthUser } from '@/lib/auth';
 import bcryptjs from 'bcryptjs';
 
 export async function POST(req: NextRequest) {
@@ -15,8 +16,7 @@ export async function POST(req: NextRequest) {
     const valid = bcryptjs.compareSync(password, user.passwordHash);
     if (!valid) return NextResponse.json({ error: 'auth_badCredentials' }, { status: 401 });
 
-    // Simple token (in production: use JWT with secret)
-    const token = Buffer.from(JSON.stringify({ userId: user.id, role: user.role, exp: Date.now() + 86400000 })).toString('base64');
+    const token = createToken(user.id, user.role as any);
     const { passwordHash: _, ...safeUser } = user;
     return NextResponse.json({ token, user: safeUser });
   }
@@ -31,21 +31,18 @@ export async function POST(req: NextRequest) {
       data: { email: email.toLowerCase(), passwordHash: hash, name, phone, role: 'client' },
     });
 
-    const token = Buffer.from(JSON.stringify({ userId: user.id, role: user.role, exp: Date.now() + 86400000 })).toString('base64');
+    const token = createToken(user.id, user.role as any);
     const { passwordHash: _, ...safeUser } = user;
     return NextResponse.json({ token, user: safeUser });
   }
 
   if (action === 'me') {
-    const { token } = body;
-    try {
-      const payload = JSON.parse(Buffer.from(token, 'base64').toString());
-      if (payload.exp < Date.now()) return NextResponse.json({ error: 'expired' }, { status: 401 });
-      const user = await prisma.user.findUnique({ where: { id: payload.userId } });
-      if (!user || !user.active) return NextResponse.json({ error: 'not_found' }, { status: 401 });
-      const { passwordHash: _, ...safeUser } = user;
-      return NextResponse.json({ user: safeUser });
-    } catch { return NextResponse.json({ error: 'invalid' }, { status: 401 }); }
+    const auth = getAuthUser(req);
+    if (!auth) return NextResponse.json({ error: 'invalid' }, { status: 401 });
+    const user = await prisma.user.findUnique({ where: { id: auth.userId } });
+    if (!user || !user.active) return NextResponse.json({ error: 'not_found' }, { status: 401 });
+    const { passwordHash: _, ...safeUser } = user;
+    return NextResponse.json({ user: safeUser });
   }
 
   return NextResponse.json({ error: 'unknown_action' }, { status: 400 });

@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden } from '@/lib/auth';
 
 let orderCounter = 100;
 
@@ -16,7 +17,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { action } = body;
 
+  const auth = getAuthUser(req);
+
   if (action === 'create') {
+    if (!auth) return unauthorized();
     orderCounter++;
     const order = await prisma.order.create({
       data: {
@@ -43,6 +47,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'updateStatus') {
+    if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
     const { orderId, status } = body;
     await prisma.order.update({ where: { id: orderId }, data: { status } });
     await prisma.statusEntry.create({ data: { orderId, status } });
@@ -50,12 +55,14 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'assignDriver') {
+    if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
     const { orderId, driverId } = body;
     await prisma.order.update({ where: { id: orderId }, data: { driverId } });
     return NextResponse.json({ ok: true });
   }
 
   if (action === 'updatePayment') {
+    if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
     const { orderId, paymentStatus } = body;
     await prisma.order.update({ where: { id: orderId }, data: { paymentStatus } });
     return NextResponse.json({ ok: true });

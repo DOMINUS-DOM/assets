@@ -1,8 +1,11 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAuthUser, ADMIN_ROLES, forbidden } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = getAuthUser(req);
+  if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
   const [employees, shifts, timeEntries, leaveRequests, tasks] = await Promise.all([
     prisma.employee.findMany({ orderBy: { name: 'asc' } }),
     prisma.shift.findMany({ orderBy: { date: 'desc' } }),
@@ -14,6 +17,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = getAuthUser(req);
+  if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
+
   const body = await req.json();
 
   if (body.action === 'clockIn') {

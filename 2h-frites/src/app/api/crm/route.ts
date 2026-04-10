@@ -1,8 +1,11 @@
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAuthUser, ADMIN_ROLES, forbidden } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = getAuthUser(req);
+  if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
   const orders = await prisma.order.findMany({
     where: { status: { in: ['delivered', 'picked_up'] } },
     include: { items: true },

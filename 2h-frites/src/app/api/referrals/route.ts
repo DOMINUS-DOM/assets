@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAuthUser, unauthorized } from '@/lib/auth';
 
 function generateCode(): string {
   return '2H-' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -12,6 +13,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = getAuthUser(req);
+  if (!auth) return unauthorized();
+
   const body = await req.json();
 
   if (body.action === 'create') {

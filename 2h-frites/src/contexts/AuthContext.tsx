@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const token = localStorage.getItem(TOKEN_KEY);
         if (token) {
-          const { user } = await api.post<{ user: SafeUser }>('/auth', { action: 'me', token });
+          const { user } = await api.post<{ user: SafeUser }>('/auth', { action: 'me' });
           setUser(user);
         }
       } catch {
