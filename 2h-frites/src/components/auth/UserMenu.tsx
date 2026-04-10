@@ -11,6 +11,9 @@ const ROLE_COLORS: Record<string, string> = {
   employe: 'bg-emerald-500/20 text-emerald-400',
   livreur: 'bg-orange-500/20 text-orange-400',
   client: 'bg-zinc-700/50 text-zinc-300',
+  franchisor_admin: 'bg-purple-500/20 text-purple-400',
+  location_manager: 'bg-cyan-500/20 text-cyan-400',
+  franchisee_owner: 'bg-rose-500/20 text-rose-400',
 };
 
 export default function UserMenu() {
@@ -65,7 +68,7 @@ export default function UserMenu() {
                 {t.ui.staff_portal}
               </Link>
             )}
-            {hasRole('patron', 'manager', 'employe') && (
+            {hasRole('patron', 'manager', 'employe', 'franchisor_admin', 'location_manager') && (
               <Link href="/admin" onClick={() => setOpen(false)}
                 className="block px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors">
                 Admin

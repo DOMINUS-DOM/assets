@@ -32,6 +32,7 @@ export default function CheckoutPage() {
   const [loyaltyRedeem, setLoyaltyRedeem] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('on_pickup');
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   if (items.length === 0) {
     return (
@@ -50,8 +51,10 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     if (!name || !phone) return;
     if (orderType === 'delivery' && (!street || !city)) return;
+    if (items.length === 0) return;
     setSubmitting(true);
     try {
       const order = await api.post<any>('/orders', {
@@ -68,7 +71,10 @@ export default function CheckoutPage() {
       });
       clearCart();
       router.push(`/order?id=${order.orderNumber}`);
-    } catch { setSubmitting(false); }
+    } catch {
+      setError(t.ui.checkout_error || 'Une erreur est survenue. Veuillez réessayer.');
+      setSubmitting(false);
+    }
   };
 
   const ic = 'w-full px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-amber-500/50';
@@ -194,6 +200,8 @@ export default function CheckoutPage() {
             <span className="text-xl font-extrabold text-amber-400">{formatPrice(grandTotal)} €</span>
           </div>
         </section>
+
+        {error && <p className="text-red-400 text-sm text-center mb-3">{error}</p>}
 
         <button type="submit" disabled={submitting}
           className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-950 font-bold text-sm active:scale-[0.97] transition-transform shadow-lg shadow-amber-500/20 disabled:opacity-50">

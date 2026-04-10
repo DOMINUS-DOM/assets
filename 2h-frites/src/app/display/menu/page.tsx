@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { menuStore } from '@/stores/menuStore';
+import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
 
 export default function DisplayMenuPage() {
+  const { getCategory, getItemName } = useLanguage();
   const [categories, setCategories] = useState(menuStore.getCategories());
   const [activeIndex, setActiveIndex] = useState(0);
   const [time, setTime] = useState(new Date());
@@ -54,7 +56,7 @@ export default function DisplayMenuPage() {
         <div className="flex items-center gap-4">
           <span className="text-5xl">{cat.icon}</span>
           <div>
-            <h2 className="text-3xl font-extrabold text-white">{cat.nameKey}</h2>
+            <h2 className="text-3xl font-extrabold text-white">{getCategory(cat.nameKey)}</h2>
             <p className="text-sm text-zinc-400">{availableItems.length} articles</p>
           </div>
         </div>
@@ -74,7 +76,7 @@ export default function DisplayMenuPage() {
               className="flex items-center justify-between px-5 py-4 rounded-xl bg-zinc-900 border border-zinc-800/50 animate-fade-in"
               style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'backwards' }}>
               <div className="min-w-0 flex-1">
-                <p className="text-base font-semibold text-white truncate">{item.name}</p>
+                <p className="text-base font-semibold text-white truncate">{getItemName(item.id, item.name)}</p>
                 {item.tags?.map((tag) => (
                   <span key={tag} className="text-[10px] mr-1">
                     {tag === 'popular' ? '⭐' : tag === 'spicy' ? '🌶️' : tag === 'vegetarian' ? '🌿' : tag === 'new' ? '✨' : ''}

@@ -71,12 +71,12 @@ function DriverContent() {
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <p className="text-sm font-bold text-white">{o.id}</p>
-                          <p className="text-xs text-zinc-400">{o.customer.name} — {o.customer.phone}</p>
+                          <p className="text-xs text-zinc-400">{o.customerName} — {o.customerPhone}</p>
                         </div>
                         <span className="text-sm font-bold text-amber-400">{formatPrice(o.total)} €</span>
                       </div>
-                      {o.deliveryAddress && <p className="text-xs text-zinc-300 mb-2">📍 {o.deliveryAddress.street}, {o.deliveryAddress.city}</p>}
-                      {o.deliveryAddress?.instructions && <p className="text-xs text-zinc-500 mb-3 italic">💬 {o.deliveryAddress.instructions}</p>}
+                      {o.deliveryStreet && <p className="text-xs text-zinc-300 mb-2">📍 {o.deliveryStreet}, {o.deliveryCity}</p>}
+                      {o.deliveryNotes && <p className="text-xs text-zinc-500 mb-3 italic">💬 {o.deliveryNotes}</p>}
                       <div className="flex gap-2">
                         {o.status === 'ready' && (
                           <button onClick={() => api.post('/orders', { action: 'updateStatus', orderId: o.id, status: 'delivering' }).then(refresh)}

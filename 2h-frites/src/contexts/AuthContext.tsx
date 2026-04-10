@@ -79,14 +79,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  const updateProfile = useCallback((data: Partial<Pick<SafeUser, 'name' | 'phone' | 'email'>>) => {
-    if (user) setUser({ ...user, ...data });
-    // TODO: call API to persist
+  const updateProfile = useCallback(async (data: Partial<Pick<SafeUser, 'name' | 'phone' | 'email'>>) => {
+    try {
+      await api.post('/auth', { action: 'updateProfile', ...data });
+      if (user) setUser({ ...user, ...data });
+    } catch {}
   }, [user]);
 
-  const changePassword = useCallback(async (_old: string, _new: string): Promise<boolean> => {
-    // TODO: call API
-    return true;
+  const changePassword = useCallback(async (oldPassword: string, newPassword: string): Promise<boolean> => {
+    try {
+      await api.post('/auth', { action: 'changePassword', oldPassword, newPassword });
+      return true;
+    } catch { return false; }
   }, []);
 
   const hasRole = useCallback((...roles: UserRole[]) => {

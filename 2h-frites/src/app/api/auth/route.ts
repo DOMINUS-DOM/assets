@@ -45,5 +45,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ user: safeUser });
   }
 
+  if (action === 'updateProfile') {
+    const auth = getAuthUser(req);
+    if (!auth) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    const { name, phone, email } = body;
+    const data: any = {};
+    if (name) data.name = name;
+    if (phone) data.phone = phone;
+    if (email) data.email = email.toLowerCase();
+    await prisma.user.update({ where: { id: auth.userId }, data });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'changePassword') {
+    const auth = getAuthUser(req);
+    if (!auth) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    const { oldPassword, newPassword } = body;
+    const user = await prisma.user.findUnique({ where: { id: auth.userId } });
+    if (!user) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    const valid = bcryptjs.compareSync(oldPassword, user.passwordHash);
+    if (!valid) return NextResponse.json({ error: 'auth_badCredentials' }, { status: 401 });
+    const hash = bcryptjs.hashSync(newPassword, 10);
+    await prisma.user.update({ where: { id: auth.userId }, data: { passwordHash: hash } });
+    return NextResponse.json({ ok: true });
+  }
+
   return NextResponse.json({ error: 'unknown_action' }, { status: 400 });
 }
