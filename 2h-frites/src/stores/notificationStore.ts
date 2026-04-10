@@ -11,26 +11,35 @@ export interface AppNotification {
 }
 
 let counter = 1000;
-function genId() { return `notif-${++counter}`; }
+function genId() { return `notif-${Date.now()}-${++counter}`; }
 
-const DEMO_NOTIFICATIONS: AppNotification[] = [
-  { id: 'notif-1', type: 'order', title: 'Nouvelle commande', message: 'ORD-003 — Thomas R. (livraison)', read: false, createdAt: new Date().toISOString(), link: '/admin/orders/detail?id=ORD-003' },
-  { id: 'notif-2', type: 'stock', title: 'Stock bas', message: 'Steak haché 100g : 15 restants (min: 20)', read: false, createdAt: new Date().toISOString(), link: '/admin/inventory' },
-  { id: 'notif-3', type: 'staff', title: 'Demande de congé', message: 'Youssef K. demande des vacances du 21 au 25 avril', read: true, createdAt: new Date(Date.now() - 3600000).toISOString(), link: '/admin/staff' },
-  { id: 'notif-4', type: 'delivery', title: 'Livraison terminée', message: 'ORD-005 livrée par Sophie M.', read: true, createdAt: new Date(Date.now() - 7200000).toISOString() },
-];
-
-let notifications: AppNotification[] = [...DEMO_NOTIFICATIONS];
+let notifications: AppNotification[] = [];
+let loaded = false;
 let listeners: (() => void)[] = [];
 function notify() { listeners.forEach((l) => l()); }
 
+function loadFromApi() {
+  if (loaded) return;
+  loaded = true;
+  fetch('/api/notifications')
+    .then((r) => r.json())
+    .then((data: any[]) => {
+      if (Array.isArray(data) && data.length > 0) {
+        notifications = data;
+        notify();
+      }
+    })
+    .catch(() => {});
+}
+
 export const notificationStore = {
   subscribe(listener: () => void) {
+    loadFromApi();
     listeners.push(listener);
     return () => { listeners = listeners.filter((l) => l !== listener); };
   },
 
-  getAll: () => notifications,
+  getAll: () => { loadFromApi(); return notifications; },
   getUnread: () => notifications.filter((n) => !n.read),
   getUnreadCount: () => notifications.filter((n) => !n.read).length,
 

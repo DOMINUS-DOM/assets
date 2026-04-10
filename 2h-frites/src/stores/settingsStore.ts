@@ -1,7 +1,7 @@
 import { BusinessSettings, BusinessHours, DeliveryZone } from '@/types/settings';
 
 let counter = 600;
-function genId() { return `zone-${++counter}`; }
+function genId() { return `zone-${Date.now()}-${++counter}`; }
 
 const DEFAULT_HOURS: BusinessHours[] = [
   { day: 0, open: '11:30', close: '21:30', closed: false }, // Dimanche
@@ -39,20 +39,51 @@ const DEFAULT_SETTINGS: BusinessSettings = {
 };
 
 let settings: BusinessSettings = { ...DEFAULT_SETTINGS };
+let loaded = false;
 let listeners: (() => void)[] = [];
 function notify() { listeners.forEach((l) => l()); }
 
+// Persist to API (debounced)
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+function persistToApi() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings),
+    }).catch(() => {});
+  }, 300);
+}
+
+// Load from API on first access
+function loadFromApi() {
+  if (loaded) return;
+  loaded = true;
+  fetch('/api/settings')
+    .then((r) => r.json())
+    .then((data: any) => {
+      if (data && data.name) {
+        settings = { ...DEFAULT_SETTINGS, ...data };
+        notify();
+      }
+    })
+    .catch(() => {});
+}
+
 export const settingsStore = {
   subscribe(listener: () => void) {
+    loadFromApi();
     listeners.push(listener);
     return () => { listeners = listeners.filter((l) => l !== listener); };
   },
 
-  get: () => settings,
+  get: () => { loadFromApi(); return settings; },
 
   update(data: Partial<BusinessSettings>) {
     settings = { ...settings, ...data };
     notify();
+    persistToApi();
   },
 
   updateHours(day: number, data: Partial<BusinessHours>) {
@@ -61,11 +92,13 @@ export const settingsStore = {
       hours: settings.hours.map((h) => (h.day === day ? { ...h, ...data } : h)),
     };
     notify();
+    persistToApi();
   },
 
   toggleAcceptingOrders() {
     settings = { ...settings, acceptingOrders: !settings.acceptingOrders };
     notify();
+    persistToApi();
   },
 
   // Delivery zones
@@ -73,6 +106,7 @@ export const settingsStore = {
     const zone: DeliveryZone = { ...data, id: genId() };
     settings = { ...settings, deliveryZones: [...settings.deliveryZones, zone] };
     notify();
+    persistToApi();
     return zone;
   },
 
@@ -82,6 +116,7 @@ export const settingsStore = {
       deliveryZones: settings.deliveryZones.map((z) => (z.id === id ? { ...z, ...data } : z)),
     };
     notify();
+    persistToApi();
   },
 
   toggleZone(id: string) {
@@ -90,11 +125,13 @@ export const settingsStore = {
       deliveryZones: settings.deliveryZones.map((z) => (z.id === id ? { ...z, active: !z.active } : z)),
     };
     notify();
+    persistToApi();
   },
 
   deleteZone(id: string) {
     settings = { ...settings, deliveryZones: settings.deliveryZones.filter((z) => z.id !== id) };
     notify();
+    persistToApi();
   },
 
   // Closed dates
@@ -102,12 +139,14 @@ export const settingsStore = {
     if (!settings.closedDates.includes(date)) {
       settings = { ...settings, closedDates: [...settings.closedDates, date].sort() };
       notify();
+      persistToApi();
     }
   },
 
   removeClosedDate(date: string) {
     settings = { ...settings, closedDates: settings.closedDates.filter((d) => d !== date) };
     notify();
+    persistToApi();
   },
 
   // Helpers
