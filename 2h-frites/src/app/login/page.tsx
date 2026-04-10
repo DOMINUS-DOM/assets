@@ -16,7 +16,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (loaded && isAuthenticated) {
-      if (hasRole('patron', 'manager', 'employe')) router.replace('/admin');
+      if (hasRole('patron', 'manager', 'employe', 'franchisor_admin', 'location_manager')) router.replace('/admin');
       else if (hasRole('livreur')) router.replace('/driver');
       else router.replace('/');
     }
