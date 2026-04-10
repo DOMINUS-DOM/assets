@@ -1,0 +1,212 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { menuStore } from '@/stores/menuStore';
+import { useCart } from '@/contexts/CartContext';
+import { useLanguage } from '@/i18n/LanguageContext';
+import { MenuItem } from '@/types';
+import { CartExtra } from '@/types/order';
+import { formatPrice } from '@/utils/format';
+
+type Step = 'sauce' | 'toppings' | 'summary';
+const STEPS: Step[] = ['sauce', 'toppings', 'summary'];
+
+interface Props {
+  item: MenuItem;
+  onClose: () => void;
+}
+
+export default function PainRondBuilder({ item, onClose }: Props) {
+  const { addItem } = useCart();
+  const { getItemName } = useLanguage();
+  const [step, setStep] = useState<Step>('sauce');
+  const [sauces, setSauces] = useState<MenuItem[]>([]);
+  const [toppings, setToppings] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState(menuStore.getCategories());
+
+  useEffect(() => {
+    return menuStore.subscribe(() => setCategories(menuStore.getCategories()));
+  }, []);
+
+  const sauceItems = categories.find((c) => c.id === 'sauces')?.items.filter((i) => !i.unavailable) || [];
+  const toppingItems = categories.find((c) => c.id === 'supplements')?.items.filter((i) => !i.unavailable) || [];
+
+  const stepIndex = STEPS.indexOf(step);
+  const basePrice = item.price || 0;
+
+  const totalPrice = () => {
+    let t = basePrice;
+    sauces.forEach((s) => (t += s.price || 0));
+    toppings.forEach((tp) => (t += tp.price || 0));
+    return t;
+  };
+
+  const toggleSelection = (sel: MenuItem, list: MenuItem[], setList: (v: MenuItem[]) => void, max: number) => {
+    const exists = list.find((i) => i.id === sel.id);
+    if (exists) {
+      setList(list.filter((i) => i.id !== sel.id));
+    } else if (list.length < max) {
+      setList([...list, sel]);
+    }
+  };
+
+  const handleAddToCart = () => {
+    const extras: CartExtra[] = [];
+    sauces.forEach((s) => extras.push({ name: getItemName(s.id, s.name), price: s.price || 0 }));
+    toppings.forEach((tp) => extras.push({ name: getItemName(tp.id, tp.name), price: tp.price || 0 }));
+
+    addItem({
+      menuItemId: `${item.id}_${Date.now()}`,
+      name: getItemName(item.id, item.name),
+      price: totalPrice(),
+      categoryId: 'pains_ronds',
+      extras: extras.length > 0 ? extras : undefined,
+    });
+    onClose();
+  };
+
+  const handleAddSimple = () => {
+    addItem({
+      menuItemId: item.id,
+      name: getItemName(item.id, item.name),
+      price: basePrice,
+      categoryId: 'pains_ronds',
+    });
+    onClose();
+  };
+
+  const nextStep = () => {
+    const idx = STEPS.indexOf(step);
+    if (idx < STEPS.length - 1) setStep(STEPS[idx + 1]);
+  };
+
+  const prevStep = () => {
+    const idx = STEPS.indexOf(step);
+    if (idx > 0) setStep(STEPS[idx - 1]);
+  };
+
+  const renderGrid = (items: MenuItem[], selected: MenuItem[], onToggle: (i: MenuItem) => void) => (
+    <div className="grid grid-cols-2 gap-2 pb-4">
+      {items.map((it) => {
+        const isSelected = selected.some((s) => s.id === it.id);
+        return (
+          <button key={it.id} onClick={() => onToggle(it)}
+            className={`p-3 rounded-xl border text-left transition-all active:scale-[0.97] ${
+              isSelected
+                ? 'bg-amber-500/15 border-amber-500/50 ring-1 ring-amber-500/30'
+                : 'bg-zinc-900 border-zinc-800/50 hover:border-zinc-700'
+            }`}>
+            <p className={`text-sm font-medium ${isSelected ? 'text-amber-400' : 'text-white'}`}>
+              {getItemName(it.id, it.name)}
+            </p>
+            {it.price != null && (
+              <p className="text-xs text-zinc-500 mt-0.5">+{formatPrice(it.price)} €</p>
+            )}
+            {isSelected && <span className="text-amber-400 text-xs mt-1 block">✓</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col">
+      <header className="sticky top-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-10">
+        <div className="flex items-center justify-between max-w-lg mx-auto">
+          <button onClick={onClose} className="text-zinc-400 text-sm">← Retour</button>
+          <h1 className="text-sm font-bold text-white">🍔 {getItemName(item.id, item.name)}</h1>
+          <span className="text-xs text-amber-400 font-bold">{formatPrice(totalPrice())} €</span>
+        </div>
+        <div className="flex gap-1 mt-2 max-w-lg mx-auto">
+          {STEPS.map((s, i) => (
+            <div key={s} className={`flex-1 h-1 rounded-full transition-colors ${
+              i <= stepIndex ? 'bg-amber-500' : 'bg-zinc-800'
+            }`} />
+          ))}
+        </div>
+      </header>
+
+      <main className="flex-1 overflow-y-auto px-4 py-4 max-w-lg mx-auto w-full">
+        {/* Base info */}
+        {step === 'sauce' && (
+          <>
+            <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800/50 mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🍔</span>
+                <span className="text-white font-medium">{getItemName(item.id, item.name)}</span>
+              </div>
+              <span className="text-amber-400 font-bold">{formatPrice(basePrice)} €</span>
+            </div>
+            <h2 className="text-lg font-bold text-white mb-1">Sauce (max 2)</h2>
+            <p className="text-xs text-zinc-500 mb-3">Optionnel — 0.90€ par sauce</p>
+            {renderGrid(sauceItems, sauces, (it) => toggleSelection(it, sauces, setSauces, 2))}
+          </>
+        )}
+
+        {step === 'toppings' && (
+          <>
+            <h2 className="text-lg font-bold text-white mb-1">Garnitures</h2>
+            <p className="text-xs text-zinc-500 mb-3">Optionnel</p>
+            {renderGrid(toppingItems, toppings, (it) => toggleSelection(it, toppings, setToppings, 10))}
+          </>
+        )}
+
+        {step === 'summary' && (
+          <div className="space-y-3 mt-2">
+            <h2 className="text-lg font-bold text-white mb-1">Récapitulatif</h2>
+            <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-2">
+              <div className="flex justify-between">
+                <span className="text-white font-medium">🍔 {getItemName(item.id, item.name)}</span>
+                <span className="text-amber-400">{formatPrice(basePrice)} €</span>
+              </div>
+              {sauces.map((s) => (
+                <div key={s.id} className="flex justify-between text-sm">
+                  <span className="text-zinc-300">+ {getItemName(s.id, s.name)}</span>
+                  <span className="text-zinc-400">+{formatPrice(s.price || 0)} €</span>
+                </div>
+              ))}
+              {toppings.map((tp) => (
+                <div key={tp.id} className="flex justify-between text-sm">
+                  <span className="text-zinc-300">+ {getItemName(tp.id, tp.name)}</span>
+                  <span className="text-zinc-400">+{formatPrice(tp.price || 0)} €</span>
+                </div>
+              ))}
+              <div className="border-t border-zinc-700 pt-2 mt-2 flex justify-between">
+                <span className="text-white font-bold">Total</span>
+                <span className="text-amber-400 font-bold text-lg">{formatPrice(totalPrice())} €</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      <footer className="sticky bottom-0 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/50 px-4 py-3">
+        <div className="flex gap-3 max-w-lg mx-auto">
+          {step === 'sauce' && (
+            <button onClick={handleAddSimple}
+              className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">
+              Sans supplément
+            </button>
+          )}
+          {stepIndex > 0 && (
+            <button onClick={prevStep}
+              className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">
+              ← Précédent
+            </button>
+          )}
+          {step === 'summary' ? (
+            <button onClick={handleAddToCart}
+              className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
+              Ajouter — {formatPrice(totalPrice())} €
+            </button>
+          ) : (
+            <button onClick={nextStep}
+              className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
+              {step === 'sauce' ? 'Garnitures →' : 'Récapitulatif →'}
+            </button>
+          )}
+        </div>
+      </footer>
+    </div>
+  );
+}

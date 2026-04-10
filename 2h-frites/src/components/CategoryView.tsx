@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Category } from '@/types';
+import { Category, MenuItem } from '@/types';
 import { useLanguage } from '@/i18n/LanguageContext';
 import MenuItemCard from './MenuItemCard';
 import FritesDisplay from './FritesDisplay';
 import MagicBoxCard from './MagicBoxCard';
 import SauceGrid from './SauceGrid';
 import Badge from './Badge';
+import PainRondBuilder from './PainRondBuilder';
 
 interface CategoryViewProps {
   category: Category;
@@ -18,6 +19,7 @@ interface CategoryViewProps {
 export default function CategoryView({ category, isFavorite, onToggleFavorite }: CategoryViewProps) {
   const { t, getCategory, getSubcategory, getItemName } = useLanguage();
   const [vegFilter, setVegFilter] = useState(false);
+  const [builderItem, setBuilderItem] = useState<MenuItem | null>(null);
 
   const hasVegetarianItems = category.items.some((i) => i.tags?.includes('vegetarian'));
 
@@ -38,6 +40,35 @@ export default function CategoryView({ category, isFavorite, onToggleFavorite }:
     return (
       <div className="px-4 pb-8">
         <MagicBoxCard items={category.items} isFavorite={isFavorite} onToggleFavorite={onToggleFavorite} />
+      </div>
+    );
+  }
+
+  if (category.slug === 'pains-ronds') {
+    return (
+      <div className="px-4 pb-8">
+        <p className="text-xs text-zinc-500 mb-4">Cliquez sur un pain pour le personnaliser avec sauces et garnitures.</p>
+        <div className="space-y-2">
+          {filteredItems.map((item) => (
+            <button key={item.id} onClick={() => setBuilderItem(item)}
+              className="w-full flex items-center justify-between p-4 rounded-xl bg-zinc-900 border border-zinc-800/50
+                hover:border-zinc-700 transition-colors text-left active:scale-[0.98]">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white">{getItemName(item.id, item.name)}</p>
+                {item.tags && item.tags.length > 0 && (
+                  <div className="flex gap-1 mt-1">{item.tags.map((tag) => <Badge key={tag} tag={tag} />)}</div>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {item.price != null && (
+                  <span className="text-sm font-bold text-amber-400">{item.price.toFixed(2)} €</span>
+                )}
+                <span className="text-zinc-500 text-lg">→</span>
+              </div>
+            </button>
+          ))}
+        </div>
+        {builderItem && <PainRondBuilder item={builderItem} onClose={() => setBuilderItem(null)} />}
       </div>
     );
   }
