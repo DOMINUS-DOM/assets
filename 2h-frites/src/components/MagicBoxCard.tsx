@@ -4,6 +4,7 @@ import { MenuItem } from '@/types';
 import { useLanguage } from '@/i18n/LanguageContext';
 import Badge from './Badge';
 import FavoriteButton from './FavoriteButton';
+import AddToCartButton from './cart/AddToCartButton';
 
 interface MagicBoxCardProps {
   items: MenuItem[];
@@ -48,6 +49,16 @@ export default function MagicBoxCard({ items, isFavorite, onToggleFavorite }: Ma
               <p className="text-sm text-zinc-300 leading-relaxed bg-zinc-800/50 rounded-lg px-3 py-2">
                 {getDescription(item.descriptionKey)}
               </p>
+            )}
+            {item.price != null && (
+              <div className="mt-3">
+                <AddToCartButton
+                  menuItemId={item.id}
+                  name={getItemName(item.id, item.name)}
+                  price={item.price}
+                  categoryId="magic_box"
+                />
+              </div>
             )}
           </div>
         </div>

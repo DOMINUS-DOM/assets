@@ -93,7 +93,7 @@ export default function PainFritesBuilder({ onClose }: Props) {
   };
 
   const renderItemGrid = (items: MenuItem[], selected: MenuItem[], onToggle: (item: MenuItem) => void) => (
-    <div className="grid grid-cols-2 gap-2 max-h-[55vh] overflow-y-auto pb-4">
+    <div className="grid grid-cols-2 gap-2 pb-4">
       {items.map((item) => {
         const isSelected = selected.some((s) => s.id === item.id);
         return (
