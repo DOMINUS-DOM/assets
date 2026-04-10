@@ -16,6 +16,7 @@ import AllergenLegend from '@/components/AllergenLegend';
 import SurpriseMe from '@/components/SurpriseMe';
 import Onboarding from '@/components/Onboarding';
 import NotificationPrompt from '@/components/NotificationPrompt';
+import PainFritesBuilder from '@/components/PainFritesBuilder';
 
 type View = 'home' | 'category' | 'favorites';
 
@@ -29,6 +30,7 @@ export default function HomePage() {
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSurprise, setShowSurprise] = useState(false);
+  const [showBuilder, setShowBuilder] = useState(false);
   const [categories, setCategories] = useState(menuStore.getCategories());
 
   useEffect(() => menuStore.subscribe(() => setCategories(menuStore.getCategories())), []);
@@ -71,11 +73,16 @@ export default function HomePage() {
   }, []);
 
   const handleSelectCategory = useCallback((slug: string) => {
+    const cat = categories.find((c) => c.slug === slug);
+    if (cat?.builder) {
+      setShowBuilder(true);
+      return;
+    }
     setActiveSlug(slug);
     setView('category');
     setSearchQuery('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }, [categories]);
 
   const handleBack = useCallback(() => {
     setView('home');
@@ -206,6 +213,7 @@ export default function HomePage() {
 
       <BackToTop />
       {showSurprise && <SurpriseMe onClose={() => setShowSurprise(false)} />}
+      {showBuilder && <PainFritesBuilder onClose={() => setShowBuilder(false)} />}
       <NotificationPrompt />
     </div>
   );

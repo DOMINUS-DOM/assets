@@ -30,6 +30,7 @@ export interface Category {
   note?: string;
   flatPrice?: { price: number; labelKey: string };
   subcategories?: string[];
+  builder?: boolean;
 }
 
 export interface SearchResult {

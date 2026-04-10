@@ -1,6 +1,11 @@
 import { MenuItem } from './index';
 
 // ─── Cart ───
+export interface CartExtra {
+  name: string;
+  price: number;
+}
+
 export interface CartItem {
   menuItemId: string;
   name: string;
@@ -8,6 +13,7 @@ export interface CartItem {
   quantity: number;
   sizeKey?: string;
   categoryId: string;
+  extras?: CartExtra[];
 }
 
 // ─── Customer ───

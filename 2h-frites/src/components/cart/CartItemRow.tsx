@@ -14,6 +14,13 @@ export default function CartItemRow({ item }: { item: CartItem }) {
           {item.name}
           {item.sizeKey && <span className="text-zinc-400 font-normal ml-1">({item.sizeKey})</span>}
         </p>
+        {item.extras && item.extras.length > 0 && (
+          <div className="mt-0.5">
+            {item.extras.map((ex, i) => (
+              <p key={i} className="text-[11px] text-zinc-500">└ {ex.name} +{formatPrice(ex.price)} €</p>
+            ))}
+          </div>
+        )}
         <p className="text-xs text-zinc-500">{formatPrice(item.price)} € × {item.quantity}</p>
       </div>
 

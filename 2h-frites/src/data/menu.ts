@@ -18,8 +18,15 @@ export const categories: Category[] = [
           { sizeKey: 'grand', price: 4.50 },
         ],
       },
-      { id: 'pain_frites', name: 'Pain frites', price: 5.00, currency: '€', allergens: [1] },
     ],
+  },
+  {
+    id: 'pain_frites',
+    slug: 'pain-frites',
+    nameKey: 'pain_frites',
+    icon: '🥖',
+    items: [],
+    builder: true,
   },
   {
     id: 'magic_box',
