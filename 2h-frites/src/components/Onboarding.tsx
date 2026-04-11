@@ -113,7 +113,7 @@ function DemoPainFrites() {
 
 /* Slide 4: Add to cart — item with + button animating */
 function DemoAddToCart() {
-  const { t } = useLanguage();
+  const { t, getItemName } = useLanguage();
   const [added, setAdded] = useState(0);
 
   useEffect(() => {
@@ -126,9 +126,9 @@ function DemoAddToCart() {
   }, []);
 
   const items = [
-    { name: 'Frites', price: '3,80 €', emoji: '🍟' },
-    { name: 'Fricadelle', price: '3,00 €', emoji: '🌭' },
-    { name: 'Samouraï', price: '0,90 €', emoji: '🫙' },
+    { id: 'frites', name: 'Frites', price: '3,80 €', emoji: '🍟' },
+    { id: 'fricadelle', name: 'Fricadelle', price: '3,00 €', emoji: '🌭' },
+    { id: 'sauce_samourai', name: 'Samouraï', price: '0,90 €', emoji: '🫙' },
   ];
 
   return (
@@ -142,7 +142,7 @@ function DemoAddToCart() {
         >
           <span className="text-lg">{item.emoji}</span>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-white font-medium">{item.name}</p>
+            <p className="text-xs text-white font-medium">{getItemName(item.id, item.name)}</p>
             <p className="text-[10px] text-amber-400 font-bold">{item.price}</p>
           </div>
           <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300
