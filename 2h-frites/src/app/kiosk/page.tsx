@@ -6,6 +6,10 @@ import { menuStore } from '@/stores/menuStore';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
 import { Category, MenuItem, Locale } from '@/types';
+import { CartExtra } from '@/types/order';
+import PainFritesBuilder from '@/components/PainFritesBuilder';
+import PainRondBuilder from '@/components/PainRondBuilder';
+import MagicBoxBuilder from '@/components/MagicBoxBuilder';
 
 // ─── Types ───
 interface CartItem {
@@ -16,6 +20,7 @@ interface CartItem {
   quantity: number;
   sizeKey?: string;
   categoryId: string;
+  extras?: CartExtra[];
 }
 
 type KioskStep = 'welcome' | 'orderType' | 'menu' | 'cart' | 'confirm';
@@ -51,7 +56,7 @@ function KioskContent() {
   // Load menu
   useEffect(() => {
     const load = () => {
-      const cats = menuStore.getCategories().filter((c) => !c.builder && c.items.length > 0);
+      const cats = menuStore.getCategories().filter((c) => c.items.length > 0 || c.builder);
       setCategories(cats);
     };
     load();
@@ -105,6 +110,45 @@ function KioskContent() {
     setCart((prev) => prev.map((c) => c.id === id ? { ...c, quantity: c.quantity + delta } : c).filter((c) => c.quantity > 0));
   };
 
+  // ─── Builder modals ───
+  const [showPainFrites, setShowPainFrites] = useState(false);
+  const [showPainRond, setShowPainRond] = useState<MenuItem | null>(null);
+  const [showMagicBox, setShowMagicBox] = useState<{ item: MenuItem; isExtra: boolean } | null>(null);
+
+  const handleBuilderAdd = useCallback((builderItem: { menuItemId: string; name: string; price: number; categoryId: string; extras?: CartExtra[] }) => {
+    const extrasLabel = builderItem.extras?.length ? ` (${builderItem.extras.map((e) => e.name).join(', ')})` : '';
+    setCart((prev) => [...prev, {
+      id: `${builderItem.menuItemId}_${Date.now()}`,
+      menuItemId: builderItem.menuItemId,
+      name: builderItem.name + extrasLabel,
+      price: builderItem.price,
+      quantity: 1,
+      categoryId: builderItem.categoryId,
+      extras: builderItem.extras,
+    }]);
+  }, []);
+
+  const handleItemTapKiosk = useCallback((item: MenuItem) => {
+    const cat = categories.find((c) => c.id === activeCatId);
+    if (cat?.builder || cat?.slug === 'pain-frites') {
+      setShowPainFrites(true);
+      return;
+    }
+    if (cat?.slug === 'pains-ronds' || cat?.slug === 'grillades') {
+      setShowPainRond(item);
+      return;
+    }
+    if (cat?.slug === 'magic-box') {
+      setShowMagicBox({ item, isExtra: item.id.includes('extra') });
+      return;
+    }
+    if (item.sizes && item.sizes.length > 0) {
+      setSizePopup(item);
+    } else {
+      addToCart(item);
+    }
+  }, [categories, activeCatId, addToCart]);
+
   // Submit order
   const handleSubmit = async () => {
     if (cart.length === 0) return;
@@ -114,7 +158,10 @@ function KioskContent() {
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Kiosk-Key': process.env.NEXT_PUBLIC_KIOSK_API_KEY || '',
+        },
         body: JSON.stringify({
           action: 'create',
           type: 'pickup',
@@ -288,7 +335,7 @@ function KioskContent() {
               const inCart = cart.find((c) => c.menuItemId === item.id);
               return (
                 <button key={item.id}
-                  onClick={() => item.sizes?.length ? setSizePopup(item) : addToCart(item)}
+                  onClick={() => handleItemTapKiosk(item)}
                   className={`relative p-5 rounded-2xl border-2 text-left transition-all active:scale-95 ${
                     inCart ? 'bg-amber-500/10 border-amber-500/40' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-600'
                   }`}>
@@ -402,6 +449,16 @@ function KioskContent() {
             </div>
           </div>
         </div>
+      )}
+      {/* ─── Builder modals ─── */}
+      {showPainFrites && (
+        <PainFritesBuilder onClose={() => setShowPainFrites(false)} onAdd={handleBuilderAdd} />
+      )}
+      {showPainRond && (
+        <PainRondBuilder item={showPainRond} onClose={() => setShowPainRond(null)} onAdd={handleBuilderAdd} />
+      )}
+      {showMagicBox && (
+        <MagicBoxBuilder item={showMagicBox.item} isExtra={showMagicBox.isExtra} onClose={() => setShowMagicBox(null)} onAdd={handleBuilderAdd} />
       )}
     </div>
   );

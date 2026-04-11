@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Category, MenuItem } from '@/types';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useCart } from '@/contexts/CartContext';
 import MenuItemCard from './MenuItemCard';
 import FritesDisplay from './FritesDisplay';
 import MagicBoxCard from './MagicBoxCard';
@@ -18,6 +19,7 @@ interface CategoryViewProps {
 
 export default function CategoryView({ category, isFavorite, onToggleFavorite }: CategoryViewProps) {
   const { t, getCategory, getSubcategory, getItemName } = useLanguage();
+  const { addItem } = useCart();
   const [vegFilter, setVegFilter] = useState(false);
   const [builderItem, setBuilderItem] = useState<MenuItem | null>(null);
 
@@ -68,7 +70,7 @@ export default function CategoryView({ category, isFavorite, onToggleFavorite }:
             </button>
           ))}
         </div>
-        {builderItem && <PainRondBuilder item={builderItem} onClose={() => setBuilderItem(null)} />}
+        {builderItem && <PainRondBuilder item={builderItem} onClose={() => setBuilderItem(null)} onAdd={(item) => addItem(item)} />}
       </div>
     );
   }

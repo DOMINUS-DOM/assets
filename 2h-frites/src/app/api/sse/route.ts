@@ -1,12 +1,23 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAuthUserOrQuery, ADMIN_ROLES, enforceLocation } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
+  // SSE requires authentication (via Bearer header or ?token= query param)
+  const auth = getAuthUserOrQuery(req);
+  if (!auth || !ADMIN_ROLES.includes(auth.role)) {
+    return new Response(JSON.stringify({ error: 'forbidden' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   const { searchParams } = new URL(req.url);
-  const channel = searchParams.get('channel') || 'orders'; // orders, kitchen, notifications
-  const locationId = searchParams.get('locationId');
+  const channel = searchParams.get('channel') || 'orders';
+  const requestedLocationId = searchParams.get('locationId');
+  const locationId = enforceLocation(auth, requestedLocationId);
 
   const encoder = new TextEncoder();
   let closed = false;
@@ -20,19 +31,22 @@ export async function GET(req: NextRequest) {
         } catch { closed = true; }
       };
 
+      const locFilter = locationId ? { locationId } : {};
+
       // Send initial data
       if (channel === 'orders' || channel === 'kitchen') {
-        const where = locationId ? { locationId } : {};
         const orders = await prisma.order.findMany({
-          where, include: { items: true, statusHistory: { orderBy: { at: 'asc' } } },
+          where: locFilter,
+          include: { items: true, statusHistory: { orderBy: { at: 'asc' } } },
           orderBy: { createdAt: 'desc' }, take: 50,
         });
         send({ type: 'init', orders });
       }
 
       if (channel === 'notifications') {
-        const where = locationId ? { locationId } : {};
-        const notifs = await prisma.notification.findMany({ where, orderBy: { createdAt: 'desc' }, take: 20 });
+        const notifs = await prisma.notification.findMany({
+          where: locFilter, orderBy: { createdAt: 'desc' }, take: 20,
+        });
         send({ type: 'init', notifications: notifs });
       }
 
@@ -42,14 +56,14 @@ export async function GET(req: NextRequest) {
         send({ type: 'init', drivers });
       }
 
-      // Poll for updates every 3 seconds (replace with DB triggers in production)
+      // Poll for updates every 3 seconds
       const interval = setInterval(async () => {
         if (closed) { clearInterval(interval); return; }
         try {
           if (channel === 'orders' || channel === 'kitchen') {
-            const where = locationId ? { locationId } : {};
             const orders = await prisma.order.findMany({
-              where, include: { items: true, statusHistory: { orderBy: { at: 'asc' } } },
+              where: locFilter,
+              include: { items: true, statusHistory: { orderBy: { at: 'asc' } } },
               orderBy: { createdAt: 'desc' }, take: 50,
             });
             send({ type: 'update', orders });

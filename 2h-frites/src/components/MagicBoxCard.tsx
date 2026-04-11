@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { MenuItem } from '@/types';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useCart } from '@/contexts/CartContext';
 import Badge from './Badge';
 import FavoriteButton from './FavoriteButton';
 import MagicBoxBuilder from './MagicBoxBuilder';
@@ -16,6 +17,7 @@ interface MagicBoxCardProps {
 
 export default function MagicBoxCard({ items, isFavorite, onToggleFavorite }: MagicBoxCardProps) {
   const { getItemName, getDescription } = useLanguage();
+  const { addItem } = useCart();
   const [builderItem, setBuilderItem] = useState<MenuItem | null>(null);
 
   return (
@@ -78,6 +80,7 @@ export default function MagicBoxCard({ items, isFavorite, onToggleFavorite }: Ma
           item={builderItem}
           isExtra={builderItem.id.includes('extra')}
           onClose={() => setBuilderItem(null)}
+          onAdd={(item) => addItem(item)}
         />
       )}
     </div>

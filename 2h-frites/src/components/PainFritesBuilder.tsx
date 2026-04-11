@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { menuStore } from '@/stores/menuStore';
-import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { MenuItem } from '@/types';
 import { CartExtra } from '@/types/order';
@@ -22,10 +21,10 @@ const STEP_LABELS: Record<Step, string> = {
 
 interface Props {
   onClose: () => void;
+  onAdd: (item: { menuItemId: string; name: string; price: number; categoryId: string; extras?: CartExtra[] }) => void;
 }
 
-export default function PainFritesBuilder({ onClose }: Props) {
-  const { addItem } = useCart();
+export default function PainFritesBuilder({ onClose, onAdd }: Props) {
   const { getItemName } = useLanguage();
   const [step, setStep] = useState<Step>('frites');
   const [withSalt, setWithSalt] = useState(true);
@@ -70,7 +69,7 @@ export default function PainFritesBuilder({ onClose }: Props) {
     sauces.forEach((s) => extras.push({ name: getItemName(s.id, s.name), price: s.price || 0 }));
     toppings.forEach((tp) => extras.push({ name: getItemName(tp.id, tp.name), price: tp.price || 0 }));
 
-    addItem({
+    onAdd({
       menuItemId: `pain_frites_${Date.now()}`,
       name: 'Pain-frites',
       price: totalPrice(),

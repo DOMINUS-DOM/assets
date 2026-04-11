@@ -53,11 +53,23 @@ export interface LeaveRequest {
 }
 
 // ─── Daily Tasks ───
+export type TaskCategory = 'prep' | 'cleaning' | 'restock' | 'other';
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
 export interface Task {
   id: string;
-  employeeId?: string; // null = unassigned
+  employeeId?: string | null;
+  locationId?: string | null;
   title: string;
+  description: string;
   date: string;
+  dueTime?: string | null;
   completed: boolean;
-  category: 'prep' | 'cleaning' | 'restock' | 'other';
+  completedAt?: string | null;
+  category: TaskCategory;
+  priority: TaskPriority;
+  photoUrl?: string | null;
+  completionPhotoUrl?: string | null;
+  requiresPhoto: boolean;
+  createdAt: string;
 }

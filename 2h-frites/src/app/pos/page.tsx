@@ -8,17 +8,22 @@ import { useLocation } from '@/contexts/LocationContext';
 import { api } from '@/lib/api';
 import { formatPrice } from '@/utils/format';
 import { Category, MenuItem } from '@/types';
+import { CartExtra } from '@/types/order';
 import OrderReceipt from '@/components/OrderReceipt';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import PainFritesBuilder from '@/components/PainFritesBuilder';
+import PainRondBuilder from '@/components/PainRondBuilder';
+import MagicBoxBuilder from '@/components/MagicBoxBuilder';
 
 interface POSCartItem {
-  id: string; // unique key
+  id: string;
   menuItemId: string;
   name: string;
   price: number;
   quantity: number;
   sizeKey?: string;
   categoryId: string;
+  extras?: CartExtra[];
 }
 
 // ─── POS Content ───
@@ -38,11 +43,11 @@ function POSContent() {
   const [lastOrderData, setLastOrderData] = useState<any>(null);
 
   useEffect(() => {
-    const cats = menuStore.getCategories().filter((c) => !c.builder);
+    const cats = menuStore.getCategories().filter((c) => c.items.length > 0 || c.builder);
     setCategories(cats);
     if (cats.length > 0) setActiveCatId(cats[0].id);
     return menuStore.subscribe(() => {
-      const updated = menuStore.getCategories().filter((c) => !c.builder);
+      const updated = menuStore.getCategories().filter((c) => c.items.length > 0 || c.builder);
       setCategories(updated);
     });
   }, []);
@@ -80,7 +85,39 @@ function POSContent() {
   const removeItem = (id: string) => setCart((prev) => prev.filter((c) => c.id !== id));
   const clearCart = () => setCart([]);
 
+  // ─── Builder modals ───
+  const [showPainFrites, setShowPainFrites] = useState(false);
+  const [showPainRond, setShowPainRond] = useState<MenuItem | null>(null);
+  const [showMagicBox, setShowMagicBox] = useState<{ item: MenuItem; isExtra: boolean } | null>(null);
+
+  const handleBuilderAdd = useCallback((builderItem: { menuItemId: string; name: string; price: number; categoryId: string; extras?: CartExtra[] }) => {
+    const extrasLabel = builderItem.extras?.length ? ` (${builderItem.extras.map((e) => e.name).join(', ')})` : '';
+    setCart((prev) => [...prev, {
+      id: `${builderItem.menuItemId}_${Date.now()}`,
+      menuItemId: builderItem.menuItemId,
+      name: builderItem.name + extrasLabel,
+      price: builderItem.price,
+      quantity: 1,
+      categoryId: builderItem.categoryId,
+      extras: builderItem.extras,
+    }]);
+  }, []);
+
   const handleItemTap = (item: MenuItem) => {
+    // Builder categories
+    if (activeCat?.builder || activeCat?.slug === 'pain-frites') {
+      setShowPainFrites(true);
+      return;
+    }
+    if (activeCat?.slug === 'pains-ronds' || activeCat?.slug === 'grillades') {
+      setShowPainRond(item);
+      return;
+    }
+    if (activeCat?.slug === 'magic-box') {
+      setShowMagicBox({ item, isExtra: item.id.includes('extra') });
+      return;
+    }
+
     if (item.sizes && item.sizes.length > 0) {
       setShowSizePopup(item);
     } else {
@@ -100,7 +137,7 @@ function POSContent() {
     try {
       const order = await api.post<any>('/orders', {
         action: 'create',
-        type: orderType === 'dine_in' ? 'pickup' : 'pickup',
+        type: orderType,
         customerName: customerName || 'Client comptoir',
         customerPhone: '',
         customerEmail: null,
@@ -109,7 +146,7 @@ function POSContent() {
         deliveryPostal: null,
         deliveryNotes: orderType === 'dine_in' ? 'Sur place' : null,
         pickupTime: null,
-        paymentMethod: paymentMethod === 'cash' ? 'on_pickup' : 'on_pickup',
+        paymentMethod: paymentMethod === 'cash' ? 'on_pickup' : 'card',
         paymentStatus: paymentMethod === 'card' ? 'paid' : 'pending',
         total,
         userId: user?.id || null,
@@ -341,6 +378,17 @@ function POSContent() {
       {/* Receipt modal */}
       {lastOrderData && (
         <OrderReceipt order={lastOrderData} onClose={() => setLastOrderData(null)} />
+      )}
+
+      {/* ─── Builder modals ─── */}
+      {showPainFrites && (
+        <PainFritesBuilder onClose={() => setShowPainFrites(false)} onAdd={handleBuilderAdd} />
+      )}
+      {showPainRond && (
+        <PainRondBuilder item={showPainRond} onClose={() => setShowPainRond(null)} onAdd={handleBuilderAdd} />
+      )}
+      {showMagicBox && (
+        <MagicBoxBuilder item={showMagicBox.item} isExtra={showMagicBox.isExtra} onClose={() => setShowMagicBox(null)} onAdd={handleBuilderAdd} />
       )}
     </div>
   );

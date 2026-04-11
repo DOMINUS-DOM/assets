@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { MenuItem } from '@/types';
 import { CartExtra } from '@/types/order';
@@ -27,13 +26,13 @@ const JOUETS = [
 ];
 
 interface Props {
-  item: MenuItem; // The Magic Box or Magic Box Extra item
+  item: MenuItem;
   isExtra: boolean;
   onClose: () => void;
+  onAdd: (item: { menuItemId: string; name: string; price: number; categoryId: string; extras?: CartExtra[] }) => void;
 }
 
-export default function MagicBoxBuilder({ item, isExtra, onClose }: Props) {
-  const { addItem } = useCart();
+export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props) {
   const { getItemName } = useLanguage();
 
   const [step, setStep] = useState<MagicStep>('snack');
@@ -83,7 +82,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose }: Props) {
     const jouetName = JOUETS.find((j) => j.id === jouet)?.name || '';
     extras.push({ name: jouetName, price: 0 });
 
-    addItem({
+    onAdd({
       menuItemId: `${item.id}_${Date.now()}`,
       name: getItemName(item.id, item.name),
       price: basePrice,

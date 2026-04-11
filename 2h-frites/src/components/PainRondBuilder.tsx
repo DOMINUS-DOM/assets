@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { menuStore } from '@/stores/menuStore';
-import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { MenuItem } from '@/types';
 import { CartExtra } from '@/types/order';
@@ -14,10 +13,10 @@ const STEPS: Step[] = ['sauce', 'toppings', 'summary'];
 interface Props {
   item: MenuItem;
   onClose: () => void;
+  onAdd: (item: { menuItemId: string; name: string; price: number; categoryId: string; extras?: CartExtra[] }) => void;
 }
 
-export default function PainRondBuilder({ item, onClose }: Props) {
-  const { addItem } = useCart();
+export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
   const { getItemName } = useLanguage();
   const [step, setStep] = useState<Step>('sauce');
   const [sauces, setSauces] = useState<MenuItem[]>([]);
@@ -55,7 +54,7 @@ export default function PainRondBuilder({ item, onClose }: Props) {
     sauces.forEach((s) => extras.push({ name: getItemName(s.id, s.name), price: s.price || 0 }));
     toppings.forEach((tp) => extras.push({ name: getItemName(tp.id, tp.name), price: tp.price || 0 }));
 
-    addItem({
+    onAdd({
       menuItemId: `${item.id}_${Date.now()}`,
       name: getItemName(item.id, item.name),
       price: totalPrice(),
@@ -66,7 +65,7 @@ export default function PainRondBuilder({ item, onClose }: Props) {
   };
 
   const handleAddSimple = () => {
-    addItem({
+    onAdd({
       menuItemId: item.id,
       name: getItemName(item.id, item.name),
       price: basePrice,

@@ -17,12 +17,14 @@ import SurpriseMe from '@/components/SurpriseMe';
 import Onboarding from '@/components/Onboarding';
 import NotificationPrompt from '@/components/NotificationPrompt';
 import PainFritesBuilder from '@/components/PainFritesBuilder';
+import { useCart } from '@/contexts/CartContext';
 
 type View = 'home' | 'category' | 'favorites';
 
 export default function HomePage() {
   const { locale, t, getCategory } = useLanguage();
   const { isFavorite, toggleFavorite, count: favCount } = useFavorites();
+  const { addItem } = useCart();
 
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [ready, setReady] = useState(false);
@@ -217,7 +219,7 @@ export default function HomePage() {
 
       <BackToTop />
       {showSurprise && <SurpriseMe onClose={() => setShowSurprise(false)} />}
-      {showBuilder && <PainFritesBuilder onClose={() => setShowBuilder(false)} />}
+      {showBuilder && <PainFritesBuilder onClose={() => setShowBuilder(false)} onAdd={(item) => addItem(item)} />}
       <NotificationPrompt />
     </div>
   );

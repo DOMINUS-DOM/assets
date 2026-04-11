@@ -3,20 +3,39 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden } from '@/lib/auth';
 
-export async function GET() {
-  const reviews = await prisma.review.findMany({ orderBy: { createdAt: 'desc' } });
+export async function GET(req: NextRequest) {
+  const auth = getAuthUser(req);
+
+  // Admin: full list (including unpublished + phone)
+  if (auth && ADMIN_ROLES.includes(auth.role)) {
+    const reviews = await prisma.review.findMany({ orderBy: { createdAt: 'desc' } });
+    return NextResponse.json(reviews);
+  }
+
+  // Public: only published reviews, no phone number
+  const reviews = await prisma.review.findMany({
+    where: { published: true },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true, orderId: true, customerName: true, rating: true,
+      comment: true, reply: true, published: true, createdAt: true,
+    },
+  });
   return NextResponse.json(reviews);
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-
   const auth = getAuthUser(req);
 
   if (body.action === 'create') {
     if (!auth) return unauthorized();
     const review = await prisma.review.create({
-      data: { orderId: body.orderId, customerName: body.customerName, customerPhone: body.customerPhone, rating: body.rating, comment: body.comment || '' },
+      data: {
+        orderId: body.orderId, customerName: body.customerName,
+        customerPhone: body.customerPhone, rating: body.rating,
+        comment: body.comment || '',
+      },
     });
     return NextResponse.json(review);
   }

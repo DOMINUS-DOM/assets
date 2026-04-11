@@ -7,13 +7,18 @@ export type UserRole = 'franchisor_admin' | 'franchisee_owner' | 'location_manag
 export interface TokenPayload {
   userId: string;
   role: UserRole;
+  locationId?: string | null;
   exp: number;
 }
 
 export const ADMIN_ROLES: UserRole[] = ['patron', 'manager', 'franchisor_admin', 'location_manager'];
 
 // ─── Helpers ───
-const SECRET = process.env.AUTH_SECRET || 'fallback-dev-secret-change-me';
+const SECRET = process.env.AUTH_SECRET;
+if (!SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('AUTH_SECRET environment variable is required in production');
+}
+const EFFECTIVE_SECRET = SECRET || 'dev-only-secret-not-for-prod';
 
 function toBase64url(str: string): string {
   return Buffer.from(str).toString('base64url');
@@ -24,14 +29,15 @@ function fromBase64url(b64: string): string {
 }
 
 function sign(payload: string): string {
-  return createHmac('sha256', SECRET).update(payload).digest('base64url');
+  return createHmac('sha256', EFFECTIVE_SECRET).update(payload).digest('base64url');
 }
 
 // ─── Token Creation ───
-export function createToken(userId: string, role: UserRole): string {
+export function createToken(userId: string, role: UserRole, locationId?: string | null): string {
   const payload = toBase64url(JSON.stringify({
     userId,
     role,
+    locationId: locationId || null,
     exp: Date.now() + 86400000, // 24h
   }));
   const signature = sign(payload);
@@ -69,6 +75,25 @@ export function getAuthUser(req: NextRequest): TokenPayload | null {
   const header = req.headers.get('authorization');
   if (!header || !header.startsWith('Bearer ')) return null;
   return verifyToken(header.slice(7));
+}
+
+/** Get auth from Bearer header OR ?token= query param (for SSE/EventSource) */
+export function getAuthUserOrQuery(req: NextRequest): TokenPayload | null {
+  const fromHeader = getAuthUser(req);
+  if (fromHeader) return fromHeader;
+  const tokenParam = req.nextUrl.searchParams.get('token');
+  if (tokenParam) return verifyToken(tokenParam);
+  return null;
+}
+
+/** Enforce multi-site isolation. Returns the allowed locationId or null. */
+export function enforceLocation(auth: TokenPayload, requestedLocationId: string | null): string | null {
+  // Franchisor admin can access any site
+  if (auth.role === 'franchisor_admin') return requestedLocationId;
+  // User bound to a location can only access their own
+  if (auth.locationId) return auth.locationId;
+  // No location restriction (e.g. patron without locationId)
+  return requestedLocationId;
 }
 
 /** Returns 401 JSON response if not authenticated */

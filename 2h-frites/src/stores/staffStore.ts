@@ -35,11 +35,11 @@ const DEMO_LEAVE_REQUESTS: LeaveRequest[] = [
 ];
 
 const DEMO_TASKS: Task[] = [
-  { id: 'tk-1', employeeId: 'emp-3', title: 'Préparer les sauces du jour', date: d, completed: true, category: 'prep' },
-  { id: 'tk-2', employeeId: 'emp-3', title: 'Découper les oignons', date: d, completed: false, category: 'prep' },
-  { id: 'tk-3', employeeId: undefined, title: 'Nettoyer la friteuse', date: d, completed: false, category: 'cleaning' },
-  { id: 'tk-4', employeeId: undefined, title: 'Réapprovisionner les boissons', date: d, completed: false, category: 'restock' },
-  { id: 'tk-5', employeeId: 'emp-2', title: 'Vérifier les stocks viandes', date: d, completed: false, category: 'restock' },
+  { id: 'tk-1', employeeId: 'emp-3', title: 'Préparer les sauces du jour', description: '', date: d, completed: true, category: 'prep', priority: 'medium', requiresPhoto: false, createdAt: d },
+  { id: 'tk-2', employeeId: 'emp-3', title: 'Découper les oignons', description: '', date: d, completed: false, category: 'prep', priority: 'medium', requiresPhoto: false, createdAt: d },
+  { id: 'tk-3', employeeId: undefined, title: 'Nettoyer la friteuse', description: '', date: d, completed: false, category: 'cleaning', priority: 'high', requiresPhoto: false, createdAt: d },
+  { id: 'tk-4', employeeId: undefined, title: 'Réapprovisionner les boissons', description: '', date: d, completed: false, category: 'restock', priority: 'medium', requiresPhoto: false, createdAt: d },
+  { id: 'tk-5', employeeId: 'emp-2', title: 'Vérifier les stocks viandes', description: '', date: d, completed: false, category: 'restock', priority: 'medium', requiresPhoto: false, createdAt: d },
 ];
 
 // ─── Store ───

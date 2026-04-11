@@ -40,6 +40,7 @@ export default function StaffPage() {
   const [taskPhotoUrl, setTaskPhotoUrl] = useState('');
   const [taskRequiresPhoto, setTaskRequiresPhoto] = useState(false);
   const [taskFilter, setTaskFilter] = useState('all');
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
   const PRIORITY_COLORS: Record<string, string> = { low: 'bg-emerald-500/15 text-emerald-400', medium: 'bg-amber-500/15 text-amber-400', high: 'bg-red-500/15 text-red-400', urgent: 'bg-purple-500/15 text-purple-400' };
   const PRIORITY_LABELS: Record<string, string> = { low: 'Low', medium: 'Medium', high: 'High', urgent: 'Urgent' };
@@ -47,19 +48,48 @@ export default function StaffPage() {
   const resetTaskForm = () => {
     setTaskTitle(''); setTaskDesc(''); setTaskCategory('prep'); setTaskPriority('medium');
     setTaskEmployee(''); setTaskDueTime(''); setTaskPhotoUrl(''); setTaskRequiresPhoto(false);
+    setEditingTaskId(null);
+  };
+
+  const startEditTask = (tk: any) => {
+    setEditingTaskId(tk.id);
+    setTaskTitle(tk.title || '');
+    setTaskDesc(tk.description || '');
+    setTaskCategory(tk.category || 'prep');
+    setTaskPriority(tk.priority || 'medium');
+    setTaskEmployee(tk.employeeId || '');
+    setTaskDueTime(tk.dueTime || '');
+    setTaskPhotoUrl(tk.photoUrl || '');
+    setTaskRequiresPhoto(tk.requiresPhoto || false);
+    setShowTaskForm(true);
   };
 
   const submitTask = async () => {
     if (!taskTitle.trim()) return;
-    await api.post('/staff', {
-      action: 'addTask',
-      data: {
-        title: taskTitle.trim(), description: taskDesc.trim(), category: taskCategory,
-        priority: taskPriority, employeeId: taskEmployee || null, locationId,
-        date: viewDate, dueTime: taskDueTime || null, photoUrl: taskPhotoUrl || null,
-        requiresPhoto: taskRequiresPhoto,
-      },
-    });
+    if (editingTaskId) {
+      // Update existing task
+      await api.post('/staff', {
+        action: 'updateTask',
+        data: {
+          id: editingTaskId,
+          title: taskTitle.trim(), description: taskDesc.trim(), category: taskCategory,
+          priority: taskPriority, employeeId: taskEmployee || null,
+          dueTime: taskDueTime || null, photoUrl: taskPhotoUrl || null,
+          requiresPhoto: taskRequiresPhoto,
+        },
+      });
+    } else {
+      // Create new task
+      await api.post('/staff', {
+        action: 'addTask',
+        data: {
+          title: taskTitle.trim(), description: taskDesc.trim(), category: taskCategory,
+          priority: taskPriority, employeeId: taskEmployee || null, locationId,
+          date: viewDate, dueTime: taskDueTime || null, photoUrl: taskPhotoUrl || null,
+          requiresPhoto: taskRequiresPhoto,
+        },
+      });
+    }
     resetTaskForm(); setShowTaskForm(false); refresh();
   };
 
@@ -192,9 +222,9 @@ export default function StaffPage() {
         <div className="space-y-3">
           {/* Create Task Toggle */}
           {hasRole('patron', 'manager') && (
-            <button onClick={() => setShowTaskForm(!showTaskForm)}
+            <button onClick={() => { if (showTaskForm) { resetTaskForm(); setShowTaskForm(false); } else { setShowTaskForm(true); } }}
               className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800/50 text-sm font-medium text-amber-400 hover:bg-zinc-800/70 transition-colors">
-              <span>{showTaskForm ? '✕ Fermer' : '＋ Nouvelle tâche'}</span>
+              <span>{showTaskForm ? '✕ Fermer' : (editingTaskId ? '✏️ Modifier' : '＋ Nouvelle tâche')}</span>
               <span className="text-zinc-600 text-xs">{showTaskForm ? '' : `${tasks.length} tâche${tasks.length !== 1 ? 's' : ''}`}</span>
             </button>
           )}
@@ -256,7 +286,7 @@ export default function StaffPage() {
               </div>
               <button onClick={submitTask} disabled={!taskTitle.trim()}
                 className="w-full py-2.5 rounded-lg bg-amber-500 text-black text-sm font-bold hover:bg-amber-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                Créer la tâche
+                {editingTaskId ? 'Enregistrer' : 'Créer la tâche'}
               </button>
             </div>
           )}
@@ -327,12 +357,18 @@ export default function StaffPage() {
                   )}
                 </div>
 
-                {/* Delete button (admin only) */}
+                {/* Edit + Delete buttons (admin only) */}
                 {hasRole('patron', 'manager') && (
-                  <button onClick={() => api.post('/staff', { action: 'deleteTask', id: tk.id }).then(refresh)}
-                    className="text-zinc-600 hover:text-red-400 text-xs shrink-0 transition-colors p-1" title="Supprimer">
-                    🗑
-                  </button>
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <button onClick={() => startEditTask(tk)}
+                      className="text-zinc-600 hover:text-amber-400 text-xs transition-colors p-1" title="Modifier">
+                      ✏️
+                    </button>
+                    <button onClick={() => api.post('/staff', { action: 'deleteTask', id: tk.id }).then(refresh)}
+                      className="text-zinc-600 hover:text-red-400 text-xs transition-colors p-1" title="Supprimer">
+                      🗑
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

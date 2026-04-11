@@ -1,14 +1,36 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden } from '@/lib/auth';
+import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden, enforceLocation, verifyToken } from '@/lib/auth';
 
 let orderCounter = 100;
 
 export async function GET(req: NextRequest) {
+  const orderNumber = req.nextUrl.searchParams.get('orderNumber');
+  const orderId = req.nextUrl.searchParams.get('orderId');
+
+  // Public path: single order lookup for tracking (no PII)
+  if (orderNumber || orderId) {
+    const where = orderId ? { id: orderId } : { orderNumber: orderNumber! };
+    const order = await prisma.order.findFirst({
+      where,
+      include: { items: true, statusHistory: { orderBy: { at: 'asc' } } },
+    });
+    if (!order) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    // Strip PII for public access
+    const { customerPhone, customerEmail, ...safeOrder } = order;
+    return NextResponse.json(safeOrder);
+  }
+
+  // Authenticated path: list all orders (admin only)
+  const auth = getAuthUser(req);
+  if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
+
   const locationId = req.nextUrl.searchParams.get('locationId');
+  const effectiveLocation = enforceLocation(auth, locationId);
   const limit = parseInt(req.nextUrl.searchParams.get('limit') || '200');
-  const where = locationId ? { locationId } : {};
+  const where = effectiveLocation ? { locationId: effectiveLocation } : {};
+
   const orders = await prisma.order.findMany({
     where,
     include: { items: true, statusHistory: { orderBy: { at: 'asc' } } },
@@ -25,9 +47,13 @@ export async function POST(req: NextRequest) {
   const auth = getAuthUser(req);
 
   if (action === 'create') {
-    // Allow kiosk orders without auth (customerName starts with 'Borne')
-    const isKiosk = body.customerName?.startsWith('Borne');
-    if (!auth && !isKiosk) return unauthorized();
+    // Kiosk: authenticate via X-Kiosk-Key header
+    const kioskKey = req.headers.get('x-kiosk-key');
+    const isKiosk = !!(kioskKey && process.env.KIOSK_API_KEY && kioskKey === process.env.KIOSK_API_KEY);
+    // Client orders (from website) are allowed without auth
+    const isClientOrder = body.customerPhone || body.customerEmail;
+    if (!auth && !isKiosk && !isClientOrder) return unauthorized();
+
     orderCounter++;
     const order = await prisma.order.create({
       data: {
@@ -43,6 +69,7 @@ export async function POST(req: NextRequest) {
         pickupTime: body.pickupTime,
         paymentMethod: body.paymentMethod,
         paymentStatus: body.paymentStatus || 'pending',
+        channel: isKiosk ? 'kiosk' : (body.channel || 'website'),
         total: body.total,
         userId: body.userId,
         locationId: body.locationId || null,

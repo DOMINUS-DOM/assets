@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const valid = bcryptjs.compareSync(password, user.passwordHash);
     if (!valid) return NextResponse.json({ error: 'auth_badCredentials' }, { status: 401 });
 
-    const token = createToken(user.id, user.role as any);
+    const token = createToken(user.id, user.role as any, user.locationId);
     const { passwordHash: _, ...safeUser } = user;
     return NextResponse.json({ token, user: safeUser });
   }
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       data: { email: email.toLowerCase(), passwordHash: hash, name, phone, role: 'client' },
     });
 
-    const token = createToken(user.id, user.role as any);
+    const token = createToken(user.id, user.role as any, user.locationId);
     const { passwordHash: _, ...safeUser } = user;
     return NextResponse.json({ token, user: safeUser });
   }

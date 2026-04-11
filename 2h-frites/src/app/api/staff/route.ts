@@ -1,72 +1,114 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthUser, ADMIN_ROLES, forbidden } from '@/lib/auth';
+import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden, enforceLocation } from '@/lib/auth';
+
+// Actions any authenticated user (employee, driver, manager) can perform
+const EMPLOYEE_ACTIONS = ['clockIn', 'clockOut', 'toggleTask', 'completeTaskWithPhoto', 'addLeaveRequest'];
 
 export async function GET(req: NextRequest) {
   const auth = getAuthUser(req);
-  if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
+  if (!auth) return unauthorized();
+
   const locationId = req.nextUrl.searchParams.get('locationId');
-  const locFilter = locationId ? { locationId } : {};
-  const [employees, shifts, timeEntries, leaveRequests, tasks] = await Promise.all([
-    prisma.employee.findMany({ where: locFilter, orderBy: { name: 'asc' } }),
-    prisma.shift.findMany({ where: locFilter, orderBy: { date: 'desc' } }),
-    prisma.timeEntry.findMany({ orderBy: { clockIn: 'desc' }, take: 50 }),
-    prisma.leaveRequest.findMany({ orderBy: { createdAt: 'desc' } }),
-    prisma.task.findMany({ where: locFilter, orderBy: { date: 'desc' } }),
+  const effectiveLocation = enforceLocation(auth, locationId);
+  const locFilter = effectiveLocation ? { locationId: effectiveLocation } : {};
+
+  // Admin: return all staff data
+  if (ADMIN_ROLES.includes(auth.role)) {
+    const [employees, shifts, timeEntries, leaveRequests, tasks] = await Promise.all([
+      prisma.employee.findMany({ where: locFilter, orderBy: { name: 'asc' } }),
+      prisma.shift.findMany({ where: locFilter, orderBy: { date: 'desc' } }),
+      prisma.timeEntry.findMany({ orderBy: { clockIn: 'desc' }, take: 50 }),
+      prisma.leaveRequest.findMany({ orderBy: { createdAt: 'desc' } }),
+      prisma.task.findMany({ where: locFilter, orderBy: { date: 'desc' } }),
+    ]);
+    return NextResponse.json({ employees, shifts, timeEntries, leaveRequests, tasks });
+  }
+
+  // Employee: return only their own data
+  const employee = await prisma.employee.findFirst({ where: { userId: auth.userId } });
+  if (!employee) {
+    return NextResponse.json({ employees: [], shifts: [], timeEntries: [], leaveRequests: [], tasks: [] });
+  }
+
+  const [shifts, timeEntries, leaveRequests, tasks] = await Promise.all([
+    prisma.shift.findMany({ where: { employeeId: employee.id }, orderBy: { date: 'desc' } }),
+    prisma.timeEntry.findMany({ where: { employeeId: employee.id }, orderBy: { clockIn: 'desc' }, take: 50 }),
+    prisma.leaveRequest.findMany({ where: { employeeId: employee.id }, orderBy: { createdAt: 'desc' } }),
+    prisma.task.findMany({
+      where: { OR: [{ employeeId: employee.id }, { employeeId: null }] },
+      orderBy: { date: 'desc' },
+    }),
   ]);
-  return NextResponse.json({ employees, shifts, timeEntries, leaveRequests, tasks });
+
+  return NextResponse.json({ employees: [employee], shifts, timeEntries, leaveRequests, tasks });
 }
 
 export async function POST(req: NextRequest) {
   const auth = getAuthUser(req);
-  if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
+  if (!auth) return unauthorized();
 
   const body = await req.json();
 
-  if (body.action === 'clockIn') {
-    const entry = await prisma.timeEntry.create({
-      data: { employeeId: body.employeeId, date: new Date().toISOString().slice(0, 10), clockIn: new Date() },
-    });
-    return NextResponse.json(entry);
-  }
+  // Employee-level actions: any authenticated user
+  if (EMPLOYEE_ACTIONS.includes(body.action)) {
+    if (body.action === 'clockIn') {
+      const entry = await prisma.timeEntry.create({
+        data: { employeeId: body.employeeId, date: new Date().toISOString().slice(0, 10), clockIn: new Date() },
+      });
+      return NextResponse.json(entry);
+    }
 
-  if (body.action === 'clockOut') {
-    const entry = await prisma.timeEntry.findUnique({ where: { id: body.id } });
-    if (!entry) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-    const hours = (Date.now() - new Date(entry.clockIn).getTime()) / 3600000;
-    await prisma.timeEntry.update({
-      where: { id: body.id },
-      data: { clockOut: new Date(), hoursWorked: Math.round(hours * 100) / 100 },
-    });
-    return NextResponse.json({ ok: true });
-  }
+    if (body.action === 'clockOut') {
+      const entry = await prisma.timeEntry.findUnique({ where: { id: body.id } });
+      if (!entry) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      const hours = (Date.now() - new Date(entry.clockIn).getTime()) / 3600000;
+      await prisma.timeEntry.update({
+        where: { id: body.id },
+        data: { clockOut: new Date(), hoursWorked: Math.round(hours * 100) / 100 },
+      });
+      return NextResponse.json({ ok: true });
+    }
 
-  if (body.action === 'toggleTask') {
-    const task = await prisma.task.findUnique({ where: { id: body.id } });
-    if (task) {
+    if (body.action === 'toggleTask') {
+      const task = await prisma.task.findUnique({ where: { id: body.id } });
+      if (!task) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      // Ownership check: employee can only toggle their own or unassigned tasks
+      if (!ADMIN_ROLES.includes(auth.role)) {
+        const emp = await prisma.employee.findFirst({ where: { userId: auth.userId } });
+        if (task.employeeId && task.employeeId !== emp?.id) return forbidden();
+      }
       await prisma.task.update({
         where: { id: body.id },
-        data: {
-          completed: !task.completed,
-          completedAt: !task.completed ? new Date() : null,
-        },
+        data: { completed: !task.completed, completedAt: !task.completed ? new Date() : null },
       });
+      return NextResponse.json({ ok: true });
     }
-    return NextResponse.json({ ok: true });
+
+    if (body.action === 'completeTaskWithPhoto') {
+      const task = await prisma.task.findUnique({ where: { id: body.id } });
+      if (!task) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      // Ownership check
+      if (!ADMIN_ROLES.includes(auth.role)) {
+        const emp = await prisma.employee.findFirst({ where: { userId: auth.userId } });
+        if (task.employeeId && task.employeeId !== emp?.id) return forbidden();
+      }
+      await prisma.task.update({
+        where: { id: body.id },
+        data: { completed: true, completedAt: new Date(), completionPhotoUrl: body.completionPhotoUrl },
+      });
+      return NextResponse.json({ ok: true });
+    }
+
+    if (body.action === 'addLeaveRequest') {
+      const lr = await prisma.leaveRequest.create({ data: body.data });
+      return NextResponse.json(lr);
+    }
   }
 
-  if (body.action === 'completeTaskWithPhoto') {
-    await prisma.task.update({
-      where: { id: body.id },
-      data: {
-        completed: true,
-        completedAt: new Date(),
-        completionPhotoUrl: body.completionPhotoUrl,
-      },
-    });
-    return NextResponse.json({ ok: true });
-  }
+  // Admin-only actions
+  if (!ADMIN_ROLES.includes(auth.role)) return forbidden();
 
   if (body.action === 'updateTask') {
     const { id, ...data } = body.data || {};
@@ -77,11 +119,6 @@ export async function POST(req: NextRequest) {
   if (body.action === 'deleteTask') {
     await prisma.task.delete({ where: { id: body.id } });
     return NextResponse.json({ ok: true });
-  }
-
-  if (body.action === 'addLeaveRequest') {
-    const lr = await prisma.leaveRequest.create({ data: body.data });
-    return NextResponse.json(lr);
   }
 
   if (body.action === 'updateLeaveStatus') {
