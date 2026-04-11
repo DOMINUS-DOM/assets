@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
 import { menuStore } from '@/stores/menuStore';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
-import { Category, MenuItem } from '@/types';
+import { Category, MenuItem, Locale } from '@/types';
 
-interface KioskCartItem {
+// ─── Types ───
+interface CartItem {
   id: string;
   menuItemId: string;
   name: string;
@@ -18,32 +18,46 @@ interface KioskCartItem {
   categoryId: string;
 }
 
-type KioskStep = 'welcome' | 'menu' | 'cart' | 'confirm';
-const IDLE_TIMEOUT = 60000; // 60s inactivity → back to welcome
+type KioskStep = 'welcome' | 'orderType' | 'menu' | 'cart' | 'confirm';
+const IDLE_TIMEOUT = 90000; // 90s inactivity
+
+const LANGS: { code: Locale; flag: string; label: string }[] = [
+  { code: 'fr', flag: '🇫🇷', label: 'Français' },
+  { code: 'en', flag: '🇬🇧', label: 'English' },
+  { code: 'es', flag: '🇪🇸', label: 'Español' },
+  { code: 'nl', flag: '🇳🇱', label: 'Nederlands' },
+];
+
+// ═══════════════════════════════════════════
+// MAIN KIOSK COMPONENT
+// ═══════════════════════════════════════════
 
 function KioskContent() {
-  const { getCategory, getItemName } = useLanguage();
+  const { t, locale, setLocale, getCategory, getItemName } = useLanguage();
   const searchParams = useSearchParams();
   const tableNumber = searchParams.get('table');
 
   const [step, setStep] = useState<KioskStep>('welcome');
+  const [orderType, setOrderType] = useState<'dine_in' | 'takeaway'>('dine_in');
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
-  const [cart, setCart] = useState<KioskCartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [sizePopup, setSizePopup] = useState<MenuItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Load menu
   useEffect(() => {
-    const cats = menuStore.getCategories().filter((c) => !c.builder && c.items.length > 0);
-    setCategories(cats);
-    return menuStore.subscribe(() => {
-      setCategories(menuStore.getCategories().filter((c) => !c.builder && c.items.length > 0));
-    });
+    const load = () => {
+      const cats = menuStore.getCategories().filter((c) => !c.builder && c.items.length > 0);
+      setCategories(cats);
+    };
+    load();
+    return menuStore.subscribe(load);
   }, []);
 
-  // Idle timer — reset on any touch
+  // Idle timer
   const resetIdle = useCallback(() => {
     if (idleTimer.current) clearTimeout(idleTimer.current);
     if (step !== 'welcome' && step !== 'confirm') {
@@ -51,6 +65,7 @@ function KioskContent() {
         setStep('welcome');
         setCart([]);
         setActiveCatId(null);
+        setOrderType('dine_in');
       }, IDLE_TIMEOUT);
     }
   }, [step]);
@@ -58,7 +73,7 @@ function KioskContent() {
   useEffect(() => {
     resetIdle();
     const handler = () => resetIdle();
-    window.addEventListener('touchstart', handler);
+    window.addEventListener('touchstart', handler, { passive: true });
     window.addEventListener('click', handler);
     return () => {
       window.removeEventListener('touchstart', handler);
@@ -67,6 +82,7 @@ function KioskContent() {
     };
   }, [resetIdle]);
 
+  // Cart helpers
   const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const itemCount = cart.reduce((sum, i) => sum + i.quantity, 0);
 
@@ -88,6 +104,7 @@ function KioskContent() {
     setCart((prev) => prev.map((c) => c.id === id ? { ...c, quantity: c.quantity + delta } : c).filter((c) => c.quantity > 0));
   };
 
+  // Submit order
   const handleSubmit = async () => {
     if (cart.length === 0) return;
     setSubmitting(true);
@@ -101,7 +118,10 @@ function KioskContent() {
           customerName: tableNumber ? `Borne Table ${tableNumber}` : 'Borne',
           customerPhone: '',
           customerEmail: null,
-          deliveryStreet: null, deliveryCity: null, deliveryPostal: null, deliveryNotes: tableNumber ? `Table ${tableNumber} — Sur place` : 'Commande borne — Sur place',
+          deliveryStreet: null, deliveryCity: null, deliveryPostal: null,
+          deliveryNotes: tableNumber
+            ? `Table ${tableNumber} — ${orderType === 'dine_in' ? t.ui.kiosk_eatIn : t.ui.kiosk_takeAway}`
+            : `${orderType === 'dine_in' ? t.ui.kiosk_eatIn : t.ui.kiosk_takeAway}`,
           pickupTime: null,
           paymentMethod: 'on_pickup',
           paymentStatus: 'pending',
@@ -115,104 +135,165 @@ function KioskContent() {
       setOrderNumber(order.orderNumber || order.id);
       setCart([]);
       setStep('confirm');
-      setTimeout(() => { setStep('welcome'); setOrderNumber(null); }, 8000);
+      setTimeout(() => { setStep('welcome'); setOrderNumber(null); setOrderType('dine_in'); }, 10000);
     } catch (e) {
       console.error('Kiosk order error:', e);
     }
     setSubmitting(false);
   };
 
-  // ─── WELCOME ───
+  // ═══════════════════════════════════════════
+  // STEP 1: WELCOME
+  // ═══════════════════════════════════════════
   if (step === 'welcome') {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-zinc-950 px-8"
-        onClick={() => { setStep('menu'); if (categories.length > 0) setActiveCatId(categories[0].id); }}>
+      <div className="h-screen flex flex-col items-center justify-center bg-zinc-950 px-8">
+        {/* Logo */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="2H Frites" className="h-28 w-auto mb-8" />
-        <div className="w-full max-w-md">
-          <button className="w-full py-6 rounded-3xl bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-950 font-extrabold text-2xl active:scale-[0.97] transition-transform shadow-2xl shadow-amber-500/30">
-            Commander ici
-          </button>
-        </div>
+        <img src="/logo.png" alt="2H Frites" className="h-32 w-auto mb-10 animate-fade-in" />
+
+        {/* Order button */}
+        <button
+          onClick={() => setStep('orderType')}
+          className="w-full max-w-md py-8 rounded-3xl bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-950 font-extrabold text-3xl active:scale-[0.97] transition-transform shadow-2xl shadow-amber-500/30 mb-8"
+        >
+          {t.ui.kiosk_orderHere}
+        </button>
+
+        {/* Table number */}
         {tableNumber && (
-          <p className="text-amber-400 text-lg font-bold mt-6">Table {tableNumber}</p>
+          <p className="text-amber-400 text-xl font-bold mb-4">{t.ui.kiosk_table} {tableNumber}</p>
         )}
-        <p className="text-zinc-600 text-sm mt-4">Touchez l&apos;écran pour commencer</p>
+
+        {/* Language selector */}
+        <div className="flex gap-3 mb-6">
+          {LANGS.map((l) => (
+            <button key={l.code} onClick={(e) => { e.stopPropagation(); setLocale(l.code); }}
+              className={`px-4 py-3 rounded-2xl text-lg transition-all active:scale-95 ${
+                locale === l.code
+                  ? 'bg-amber-500/20 border-2 border-amber-500/50 text-white'
+                  : 'bg-zinc-800 border-2 border-zinc-700 text-zinc-400'
+              }`}>
+              <span className="text-2xl">{l.flag}</span>
+            </button>
+          ))}
+        </div>
+
+        <p className="text-zinc-600 text-base">{t.ui.kiosk_touchToStart}</p>
       </div>
     );
   }
 
-  // ─── CONFIRM ───
+  // ═══════════════════════════════════════════
+  // STEP 2: ORDER TYPE (eat in / take away)
+  // ═══════════════════════════════════════════
+  if (step === 'orderType') {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-zinc-950 px-8">
+        <h1 className="text-3xl font-extrabold text-white mb-12">{t.ui.kiosk_howToEat}</h1>
+
+        <div className="flex gap-6 w-full max-w-lg">
+          <button onClick={() => { setOrderType('dine_in'); setStep('menu'); if (categories.length > 0) setActiveCatId(categories[0].id); }}
+            className="flex-1 py-12 rounded-3xl bg-zinc-900 border-2 border-zinc-700 hover:border-amber-500/50 transition-all active:scale-95 flex flex-col items-center gap-4">
+            <span className="text-6xl">🍽️</span>
+            <span className="text-xl font-bold text-white">{t.ui.kiosk_eatIn}</span>
+          </button>
+          <button onClick={() => { setOrderType('takeaway'); setStep('menu'); if (categories.length > 0) setActiveCatId(categories[0].id); }}
+            className="flex-1 py-12 rounded-3xl bg-zinc-900 border-2 border-zinc-700 hover:border-amber-500/50 transition-all active:scale-95 flex flex-col items-center gap-4">
+            <span className="text-6xl">🛍️</span>
+            <span className="text-xl font-bold text-white">{t.ui.kiosk_takeAway}</span>
+          </button>
+        </div>
+
+        <button onClick={() => setStep('welcome')}
+          className="mt-8 text-zinc-500 text-base hover:text-white transition-colors">{t.ui.kiosk_cancel}</button>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  // STEP 5: CONFIRMATION
+  // ═══════════════════════════════════════════
   if (step === 'confirm') {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-zinc-950 px-8">
-        <span className="text-8xl mb-6">🎉</span>
-        <h1 className="text-4xl font-extrabold text-white mb-2">Merci !</h1>
-        <p className="text-zinc-400 text-lg mb-8">Votre commande a bien été enregistrée</p>
-        {orderNumber && (
-          <div className="px-8 py-4 rounded-2xl bg-amber-500/15 border border-amber-500/30">
-            <p className="text-sm text-zinc-400 text-center">Numéro de commande</p>
-            <p className="text-5xl font-black text-amber-400 text-center mt-1">{orderNumber}</p>
-          </div>
-        )}
-        <p className="text-zinc-600 text-xs mt-8">Présentez-vous au comptoir pour le paiement</p>
+        <div className="animate-scale-in text-center">
+          <span className="text-9xl block mb-6">🎉</span>
+          <h1 className="text-4xl font-extrabold text-white mb-3">{t.ui.kiosk_thanks}</h1>
+          <p className="text-zinc-400 text-xl mb-10">{t.ui.kiosk_orderRegistered}</p>
+          {orderNumber && (
+            <div className="inline-block px-12 py-6 rounded-3xl bg-amber-500/15 border-2 border-amber-500/30 mb-10">
+              <p className="text-base text-zinc-400">{t.ui.kiosk_orderNumber}</p>
+              <p className="text-6xl font-black text-amber-400 mt-2">{orderNumber}</p>
+            </div>
+          )}
+          <p className="text-zinc-500 text-lg">{t.ui.kiosk_goToCounter}</p>
+        </div>
       </div>
     );
   }
 
-  // ─── MENU + CART ───
+  // ═══════════════════════════════════════════
+  // STEP 3 & 4: MENU + CART
+  // ═══════════════════════════════════════════
   const activeItems = categories.find((c) => c.id === activeCatId)?.items.filter((i) => !i.unavailable) || [];
 
   return (
     <div className="h-screen flex flex-col bg-zinc-950">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 h-14 bg-zinc-900 border-b border-zinc-800 shrink-0">
+      <header className="flex items-center justify-between px-6 h-16 bg-zinc-900 border-b border-zinc-800 shrink-0">
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/favicon.png" alt="2H" className="h-7 w-7 object-contain" />
-          <span className="text-base font-bold text-white">Commander</span>
+          <img src="/favicon.png" alt="2H" className="h-8 w-8 object-contain" />
+          <span className="text-lg font-bold text-white">
+            {orderType === 'dine_in' ? t.ui.kiosk_eatIn : t.ui.kiosk_takeAway}
+          </span>
+          {tableNumber && <span className="text-sm text-amber-400 font-bold ml-2">{t.ui.kiosk_table} {tableNumber}</span>}
         </div>
         <button onClick={() => { setStep('welcome'); setCart([]); setActiveCatId(null); }}
-          className="text-sm text-zinc-500 hover:text-white px-3 py-1 rounded-lg">
-          Annuler
+          className="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-400 text-sm font-medium hover:text-white active:scale-95">
+          {t.ui.kiosk_cancel}
         </button>
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Categories */}
-        <div className="w-24 bg-zinc-900/50 border-r border-zinc-800 overflow-y-auto shrink-0">
+        {/* Categories sidebar */}
+        <div className="w-28 bg-zinc-900/50 border-r border-zinc-800 overflow-y-auto shrink-0">
           {categories.map((cat) => (
             <button key={cat.id} onClick={() => setActiveCatId(cat.id)}
-              className={`w-full py-4 text-center transition-colors border-l-3 ${
+              className={`w-full py-5 text-center transition-colors border-l-3 ${
                 cat.id === activeCatId
                   ? 'bg-amber-500/10 border-amber-500 text-amber-400'
                   : 'border-transparent text-zinc-500 hover:bg-zinc-800/50'
               }`}>
-              <span className="text-2xl block">{cat.icon}</span>
-              <span className="text-[10px] font-medium block mt-1 truncate px-1">{getCategory(cat.nameKey)}</span>
+              <span className="text-3xl block">{cat.icon}</span>
+              <span className="text-xs font-bold block mt-2 truncate px-2">{getCategory(cat.nameKey)}</span>
             </button>
           ))}
         </div>
 
-        {/* Items */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {/* Items grid */}
+        <div className="flex-1 overflow-y-auto p-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {activeItems.map((item) => {
               const inCart = cart.find((c) => c.menuItemId === item.id);
               return (
                 <button key={item.id}
                   onClick={() => item.sizes?.length ? setSizePopup(item) : addToCart(item)}
-                  className={`relative p-4 rounded-2xl border text-left transition-all active:scale-95 ${
-                    inCart ? 'bg-amber-500/10 border-amber-500/30' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
+                  className={`relative p-5 rounded-2xl border-2 text-left transition-all active:scale-95 ${
+                    inCart ? 'bg-amber-500/10 border-amber-500/40' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-600'
                   }`}>
-                  <p className="text-base font-semibold text-white leading-tight">{getItemName(item.id, item.name)}</p>
-                  <p className="text-sm text-amber-400 font-bold mt-2">
+                  <p className="text-base font-bold text-white leading-tight">{getItemName(item.id, item.name)}</p>
+                  {item.tags?.includes('popular') && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold mt-2 inline-block">★ Popular</span>
+                  )}
+                  <p className="text-lg text-amber-400 font-extrabold mt-3">
                     {item.sizes
-                      ? `à partir de ${formatPrice(item.sizes[0].price)} €`
+                      ? `${formatPrice(item.sizes[0].price)} €`
                       : item.price != null ? `${formatPrice(item.price)} €` : ''}
                   </p>
                   {inCart && (
-                    <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-amber-500 text-zinc-950 text-sm font-extrabold flex items-center justify-center">
+                    <span className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-amber-500 text-zinc-950 text-base font-black flex items-center justify-center shadow-lg">
                       {inCart.quantity}
                     </span>
                   )}
@@ -224,74 +305,89 @@ function KioskContent() {
       </div>
 
       {/* Bottom cart bar */}
-      {cart.length > 0 && step === 'menu' && (
-        <div className="px-4 py-3 bg-zinc-900 border-t border-zinc-800 shrink-0">
-          <div className="flex items-center gap-3 max-w-2xl mx-auto">
+      {itemCount > 0 && step === 'menu' && (
+        <div className="px-6 py-4 bg-zinc-900 border-t border-zinc-800 shrink-0">
+          <div className="flex items-center gap-4">
             <div className="flex-1">
-              <span className="text-sm text-zinc-400">{itemCount} article{itemCount > 1 ? 's' : ''}</span>
-              <span className="text-lg font-extrabold text-amber-400 ml-3">{formatPrice(total)} €</span>
+              <span className="text-base text-zinc-400">{itemCount} {t.ui.kiosk_items}</span>
+              <span className="text-2xl font-extrabold text-amber-400 ml-4">{formatPrice(total)} €</span>
             </div>
             <button onClick={() => setStep('cart')}
-              className="px-6 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm active:scale-95">
-              Voir mon panier →
+              className="px-8 py-4 rounded-2xl bg-amber-500 text-zinc-950 font-extrabold text-base active:scale-95 shadow-lg shadow-amber-500/20">
+              {t.ui.kiosk_seeCart} →
             </button>
           </div>
         </div>
       )}
 
-      {/* Cart step */}
+      {/* ═══ CART OVERLAY ═══ */}
       {step === 'cart' && (
         <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col">
-          <header className="flex items-center justify-between px-6 h-14 bg-zinc-900 border-b border-zinc-800 shrink-0">
-            <button onClick={() => setStep('menu')} className="text-amber-400 font-medium text-sm">← Modifier</button>
-            <h2 className="text-base font-bold text-white">Mon panier</h2>
-            <div className="w-16" />
+          <header className="flex items-center justify-between px-6 h-16 bg-zinc-900 border-b border-zinc-800 shrink-0">
+            <button onClick={() => setStep('menu')} className="text-amber-400 font-bold text-base">← {t.ui.kiosk_modify}</button>
+            <h2 className="text-lg font-bold text-white">{t.ui.kiosk_myOrder}</h2>
+            <div className="w-20" />
           </header>
 
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
-            {cart.map((item) => (
-              <div key={item.id} className="flex items-center gap-3 p-4 rounded-xl bg-zinc-900 border border-zinc-800">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white">{item.name}</p>
-                  <p className="text-xs text-zinc-500">{formatPrice(item.price)} € × {item.quantity}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => updateQty(item.id, -1)}
-                    className="w-10 h-10 rounded-xl bg-zinc-800 text-white text-lg font-bold flex items-center justify-center active:scale-90">−</button>
-                  <span className="text-base font-bold text-white w-6 text-center">{item.quantity}</span>
-                  <button onClick={() => updateQty(item.id, 1)}
-                    className="w-10 h-10 rounded-xl bg-zinc-800 text-white text-lg font-bold flex items-center justify-center active:scale-90">+</button>
-                </div>
-                <span className="text-base text-amber-400 font-bold w-16 text-right">{formatPrice(item.price * item.quantity)} €</span>
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-3">
+            {cart.length === 0 ? (
+              <div className="text-center py-20">
+                <span className="text-6xl block mb-4">🛒</span>
+                <p className="text-zinc-500 text-lg">{t.ui.kiosk_empty}</p>
+                <p className="text-zinc-600 text-sm mt-2">{t.ui.kiosk_addItems}</p>
               </div>
-            ))}
+            ) : (
+              cart.map((item) => (
+                <div key={item.id} className="flex items-center gap-4 p-5 rounded-2xl bg-zinc-900 border border-zinc-800">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-base font-bold text-white">{item.name}</p>
+                    <p className="text-sm text-zinc-500">{formatPrice(item.price)} € × {item.quantity}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => updateQty(item.id, -1)}
+                      className="w-12 h-12 rounded-xl bg-zinc-800 text-white text-xl font-bold flex items-center justify-center active:scale-90 active:bg-zinc-700">−</button>
+                    <span className="text-lg font-extrabold text-white w-8 text-center">{item.quantity}</span>
+                    <button onClick={() => updateQty(item.id, 1)}
+                      className="w-12 h-12 rounded-xl bg-zinc-800 text-white text-xl font-bold flex items-center justify-center active:scale-90 active:bg-zinc-700">+</button>
+                  </div>
+                  <span className="text-lg text-amber-400 font-extrabold w-20 text-right">{formatPrice(item.price * item.quantity)} €</span>
+                </div>
+              ))
+            )}
           </div>
 
-          <div className="px-6 py-4 bg-zinc-900 border-t border-zinc-800 space-y-3 shrink-0">
+          <div className="px-6 py-5 bg-zinc-900 border-t border-zinc-800 space-y-4 shrink-0">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-white">Total</span>
-              <span className="text-2xl font-extrabold text-amber-400">{formatPrice(total)} €</span>
+              <span className="text-xl font-bold text-white">{t.ui.kiosk_total}</span>
+              <span className="text-3xl font-black text-amber-400">{formatPrice(total)} €</span>
             </div>
-            <button onClick={handleSubmit} disabled={submitting}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-950 font-extrabold text-lg active:scale-[0.97] transition-transform disabled:opacity-50 shadow-lg shadow-amber-500/20">
-              {submitting ? 'Envoi en cours...' : 'Commander'}
-            </button>
+            <div className="flex gap-3">
+              <button onClick={() => setStep('menu')}
+                className="flex-1 py-4 rounded-2xl bg-zinc-800 text-white font-bold text-base active:scale-95">
+                + {t.ui.kiosk_addMore}
+              </button>
+              <button onClick={handleSubmit} disabled={submitting || cart.length === 0}
+                className="flex-2 py-4 px-8 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-950 font-extrabold text-lg active:scale-[0.97] transition-transform disabled:opacity-50 shadow-lg shadow-amber-500/20">
+                {submitting ? '...' : t.ui.kiosk_validate}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Size popup */}
+      {/* ═══ SIZE POPUP ═══ */}
       {sizePopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setSizePopup(null)}>
-          <div className="bg-zinc-900 rounded-3xl border border-zinc-700 p-6 w-80 space-y-3" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-white text-center">{getItemName(sizePopup.id, sizePopup.name)}</h3>
-            <div className="space-y-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setSizePopup(null)}>
+          <div className="bg-zinc-900 rounded-3xl border-2 border-zinc-700 p-8 w-96 space-y-4 animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-extrabold text-white text-center">{getItemName(sizePopup.id, sizePopup.name)}</h3>
+            <p className="text-sm text-zinc-500 text-center">{t.ui.kiosk_chooseSize}</p>
+            <div className="space-y-3">
               {sizePopup.sizes?.map((size) => (
                 <button key={size.sizeKey}
                   onClick={() => { addToCart(sizePopup, size.sizeKey); setSizePopup(null); }}
-                  className="w-full py-4 rounded-xl bg-zinc-800 border border-zinc-700 text-white font-medium text-base hover:border-amber-500/30 active:scale-95 transition-all flex items-center justify-between px-5">
+                  className="w-full py-5 rounded-2xl bg-zinc-800 border-2 border-zinc-700 text-white font-bold text-lg hover:border-amber-500/40 active:scale-95 transition-all flex items-center justify-between px-6">
                   <span className="capitalize">{size.sizeKey}</span>
-                  <span className="text-amber-400 font-bold">{formatPrice(size.price)} €</span>
+                  <span className="text-amber-400 font-extrabold">{formatPrice(size.price)} €</span>
                 </button>
               ))}
             </div>
@@ -302,9 +398,10 @@ function KioskContent() {
   );
 }
 
+// ─── Suspense wrapper ───
 export default function KioskPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-zinc-950 flex items-center justify-center"><span className="text-6xl animate-pulse">🍟</span></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-zinc-950 flex items-center justify-center"><span className="text-8xl animate-pulse">🍟</span></div>}>
       <KioskContent />
     </Suspense>
   );
