@@ -51,7 +51,8 @@ function KDSContent() {
   };
 
   const OrderCard = ({ order, color }: { order: any; color: string }) => {
-    const mins = Math.round((Date.now() - new Date(order.createdAt).getTime()) / 60000);
+    const createdAt = order.createdAt ? new Date(order.createdAt).getTime() : Date.now();
+    const mins = Math.round((Date.now() - createdAt) / 60000);
     return (
       <div className={`p-4 rounded-xl border ${color} space-y-2`}>
         <div className="flex items-center justify-between">

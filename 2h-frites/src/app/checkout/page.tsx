@@ -67,7 +67,14 @@ export default function CheckoutPage() {
         pickupTime: orderType === 'pickup' ? pickupTime : null,
         paymentMethod, paymentStatus: paymentMethod === 'online' ? 'paid' : 'pending',
         total: grandTotal, userId: user?.id || null, locationId: user?.locationId || null,
-        items: items.map((i) => ({ menuItemId: i.menuItemId, name: i.name, price: i.price, quantity: i.quantity, sizeKey: i.sizeKey || null, categoryId: i.categoryId })),
+        items: items.map((i) => {
+          let itemName = i.name;
+          if (i.extras && i.extras.length > 0) {
+            const extrasStr = i.extras.map((e: any) => e.name).filter(Boolean).join(', ');
+            if (extrasStr) itemName += ` [${extrasStr}]`;
+          }
+          return { menuItemId: i.menuItemId, name: itemName, price: i.price, quantity: i.quantity, sizeKey: i.sizeKey || null, categoryId: i.categoryId };
+        }),
       });
       clearCart();
       router.push(`/order?id=${order.orderNumber}`);

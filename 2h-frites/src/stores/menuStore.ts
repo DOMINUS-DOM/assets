@@ -35,7 +35,7 @@ function loadFromApi() {
         notify();
       }
     })
-    .catch(() => {});
+    .catch((err) => { console.warn('menuStore: failed to load from API', err); });
 }
 
 export const menuStore = {

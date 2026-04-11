@@ -44,6 +44,7 @@ function KioskContent() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [sizePopup, setSizePopup] = useState<MenuItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -107,7 +108,9 @@ function KioskContent() {
   // Submit order
   const handleSubmit = async () => {
     if (cart.length === 0) return;
+    if (submitting) return;
     setSubmitting(true);
+    setOrderError(null);
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
@@ -138,6 +141,7 @@ function KioskContent() {
       setTimeout(() => { setStep('welcome'); setOrderNumber(null); setOrderType('dine_in'); }, 10000);
     } catch (e) {
       console.error('Kiosk order error:', e);
+      setOrderError('Une erreur est survenue. Veuillez réessayer.');
     }
     setSubmitting(false);
   };
@@ -180,6 +184,11 @@ function KioskContent() {
         </div>
 
         <p className="text-zinc-600 text-base">{t.ui.kiosk_touchToStart}</p>
+        {orderError && (
+          <div className="mt-6 px-6 py-4 rounded-2xl bg-red-500/15 border border-red-500/30 max-w-md">
+            <p className="text-red-400 text-base font-medium text-center">{orderError}</p>
+          </div>
+        )}
       </div>
     );
   }

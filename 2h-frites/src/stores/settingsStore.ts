@@ -68,7 +68,7 @@ function loadFromApi() {
         notify();
       }
     })
-    .catch(() => {});
+    .catch((err) => { console.warn('settingsStore: failed to load from API', err); });
 }
 
 export const settingsStore = {

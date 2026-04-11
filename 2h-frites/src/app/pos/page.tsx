@@ -95,6 +95,7 @@ function POSContent() {
 
   const handleSubmitOrder = async () => {
     if (cart.length === 0) return;
+    if (submitting) return;
     setSubmitting(true);
     try {
       const order = await api.post<any>('/orders', {

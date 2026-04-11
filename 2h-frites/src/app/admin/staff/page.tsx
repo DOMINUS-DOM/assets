@@ -39,7 +39,7 @@ export default function StaffPage() {
     } catch {}
   };
 
-  useEffect(() => { refresh(); }, [viewDate]);
+  useEffect(() => { refresh(); }, [viewDate, locationId]);
 
   const TABS: { key: Tab; label: string; roles: string[] }[] = [
     { key: 'employees', label: t.ui.staff_employees, roles: ['patron', 'manager'] },
