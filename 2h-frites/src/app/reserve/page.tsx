@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 // ─── Types ───
 
@@ -29,9 +30,10 @@ function todayStr(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function formatDateDisplay(dateStr: string): string {
+function formatDateDisplay(dateStr: string, loc?: string): string {
   const d = new Date(dateStr + 'T12:00:00');
-  return d.toLocaleDateString('fr-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const l = loc === 'en' ? 'en-GB' : loc === 'es' ? 'es-ES' : loc === 'nl' ? 'nl-BE' : 'fr-BE';
+  return d.toLocaleDateString(l, { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
 // Hard-coded locationId — in production this would come from URL param or context
@@ -48,6 +50,7 @@ function getLocationId(): string | null {
 type Step = 'date' | 'time' | 'details' | 'confirm';
 
 export default function ReservePage() {
+  const { t, locale } = useLanguage();
   const [step, setStep] = useState<Step>('date');
   const [locationId, setLocationId] = useState<string | null>(null);
   const [date, setDate] = useState(todayStr());

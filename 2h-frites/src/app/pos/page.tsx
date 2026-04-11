@@ -29,7 +29,7 @@ interface POSCartItem {
 // ─── POS Content ───
 
 function POSContent() {
-  const { getCategory, getItemName } = useLanguage();
+  const { t, getCategory, getItemName } = useLanguage();
   const { user } = useAuth();
   const { locationId } = useLocation();
   const [isOnline, setIsOnline] = useState(true);
@@ -227,18 +227,18 @@ function POSContent() {
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/favicon.png" alt="2H" className="h-7 w-7 object-contain" />
-          <span className="text-base font-bold text-white">Caisse POS</span>
+          <span className="text-base font-bold text-white">{t.ui.pos_title}</span>
           {user && <span className="text-sm text-zinc-500 ml-1">{user.name}</span>}
         </div>
         <div className="flex items-center gap-3">
           {!isOnline && (
             <span className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-xs font-bold animate-pulse">
-              Hors ligne
+              {t.ui.pos_offline}
             </span>
           )}
           {offlineCount > 0 && (
             <span className="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 text-xs font-bold">
-              {offlineCount} en attente
+              {offlineCount} {t.ui.pos_pending}
             </span>
           )}
           {lastOrder && (
@@ -246,7 +246,7 @@ function POSContent() {
               ✓ {lastOrder}
             </span>
           )}
-          <a href="/admin" className="text-sm text-zinc-500 hover:text-white transition-colors">Admin ↗</a>
+          <a href="/admin" className="text-sm text-zinc-500 hover:text-white transition-colors">{t.ui.pos_admin} ↗</a>
         </div>
       </header>
 
@@ -290,8 +290,8 @@ function POSContent() {
                 className="px-8 py-6 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 text-center hover:bg-amber-500/20 transition-all active:scale-95"
               >
                 <span className="text-5xl block mb-3">{activeCat?.icon}</span>
-                <p className="text-lg font-bold text-white">Composer un {getCategory(activeCat?.nameKey || '')}</p>
-                <p className="text-sm text-zinc-400 mt-1">Cliquez pour démarrer</p>
+                <p className="text-lg font-bold text-white">{t.ui.pos_composeA}{getCategory(activeCat?.nameKey || '')}</p>
+                <p className="text-sm text-zinc-400 mt-1">{t.ui.pos_clickToStart}</p>
               </button>
             </div>
           )}
@@ -322,10 +322,10 @@ function POSContent() {
                           : ''}
                     </p>
                     {(activeCat?.slug === 'pains-ronds' || activeCat?.slug === 'grillades') && (
-                      <span className="text-[10px] text-amber-400/60 mt-1 block">Personnaliser →</span>
+                      <span className="text-[10px] text-amber-400/60 mt-1 block">{t.ui.pos_customize} →</span>
                     )}
                     {activeCat?.slug === 'magic-box' && (
-                      <span className="text-[10px] text-amber-400/60 mt-1 block">Composer →</span>
+                      <span className="text-[10px] text-amber-400/60 mt-1 block">{t.ui.pos_compose} →</span>
                     )}
                     {item.tags?.includes('popular') && (
                       <span className="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">★</span>
@@ -347,13 +347,13 @@ function POSContent() {
           <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
             <span className="text-base font-bold text-white">{itemCount} article{itemCount > 1 ? 's' : ''}</span>
             {cart.length > 0 && (
-              <button onClick={clearCart} className="text-sm text-red-400 hover:text-red-300 font-medium">Vider</button>
+              <button onClick={clearCart} className="text-sm text-red-400 hover:text-red-300 font-medium">{t.ui.pos_clear}</button>
             )}
           </div>
 
           <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
             {cart.length === 0 ? (
-              <p className="text-zinc-600 text-sm text-center py-8">Sélectionnez un article</p>
+              <p className="text-zinc-600 text-sm text-center py-8">{t.ui.pos_selectItem}</p>
             ) : (
               cart.map((item) => (
                 <div key={item.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800/50">
@@ -363,10 +363,10 @@ function POSContent() {
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button onClick={() => updateQty(item.id, -1)}
-                      className="w-8 h-8 rounded-lg bg-zinc-700 text-white text-base font-bold flex items-center justify-center active:scale-90">−</button>
+                      className="w-11 h-11 rounded-lg bg-zinc-700 text-white text-lg font-bold flex items-center justify-center active:scale-90">−</button>
                     <span className="text-sm font-bold text-white w-5 text-center">{item.quantity}</span>
                     <button onClick={() => updateQty(item.id, 1)}
-                      className="w-8 h-8 rounded-lg bg-zinc-700 text-white text-base font-bold flex items-center justify-center active:scale-90">+</button>
+                      className="w-11 h-11 rounded-lg bg-zinc-700 text-white text-lg font-bold flex items-center justify-center active:scale-90">+</button>
                   </div>
                   <span className="text-sm text-amber-400 font-bold w-16 text-right">{formatPrice(item.price * item.quantity)} €</span>
                   <button onClick={() => removeItem(item.id)} className="text-zinc-600 hover:text-red-400 text-base p-1">✕</button>
@@ -386,7 +386,7 @@ function POSContent() {
               disabled={cart.length === 0}
               className="w-full py-4 rounded-xl bg-amber-500 text-zinc-950 font-extrabold text-lg active:scale-[0.97] transition-transform disabled:opacity-30"
             >
-              Encaisser
+              {t.ui.pos_checkout}
             </button>
           </div>
         </div>
@@ -415,24 +415,24 @@ function POSContent() {
       {showCheckout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => { setShowCheckout(false); setOrderError(null); }}>
           <div className="bg-zinc-900 rounded-2xl border border-zinc-700 p-6 w-[28rem] space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-white text-center">Encaisser — {formatPrice(total)} €</h3>
+            <h3 className="text-xl font-bold text-white text-center">{t.ui.pos_checkout} — {formatPrice(total)} €</h3>
 
             {/* Order type */}
             <div className="grid grid-cols-2 gap-3">
               <button onClick={() => setOrderType('dine_in')}
                 className={`py-4 rounded-xl text-base font-bold transition-all ${orderType === 'dine_in' ? 'bg-amber-500 text-zinc-950' : 'bg-zinc-800 text-zinc-400'}`}>
-                🏪 Sur place
+                🏪 {t.ui.pos_dineIn}
               </button>
               <button onClick={() => setOrderType('pickup')}
                 className={`py-4 rounded-xl text-base font-bold transition-all ${orderType === 'pickup' ? 'bg-amber-500 text-zinc-950' : 'bg-zinc-800 text-zinc-400'}`}>
-                🛍️ À emporter
+                🛍️ {t.ui.pos_takeAway}
               </button>
             </div>
 
             {/* Customer name */}
             <input
               type="text"
-              placeholder="Nom du client (optionnel)"
+              placeholder="{t.ui.pos_customerName}"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               className="w-full px-4 py-4 rounded-xl bg-zinc-800 border border-zinc-700 text-white text-base placeholder-zinc-500 focus:outline-none focus:border-amber-500/50"
@@ -442,11 +442,11 @@ function POSContent() {
             <div className="grid grid-cols-2 gap-3">
               <button onClick={() => setPaymentMethod('cash')}
                 className={`py-4 rounded-xl text-base font-bold transition-all ${paymentMethod === 'cash' ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
-                💵 Espèces
+                💵 {t.ui.pos_cash}
               </button>
               <button onClick={() => setPaymentMethod('card')}
                 className={`py-4 rounded-xl text-base font-bold transition-all ${paymentMethod === 'card' ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
-                💳 Carte
+                💳 {t.ui.pos_card}
               </button>
             </div>
 
@@ -458,11 +458,11 @@ function POSContent() {
             {/* Submit */}
             <button onClick={handleSubmitOrder} disabled={submitting}
               className="w-full py-5 rounded-xl bg-amber-500 text-zinc-950 font-extrabold text-xl active:scale-[0.97] transition-transform disabled:opacity-50">
-              {submitting ? 'Envoi...' : `Valider — ${formatPrice(total)} €`}
+              {submitting ? '{t.ui.pos_submitting}' : `Valider — ${formatPrice(total)} €`}
             </button>
 
             <button onClick={() => { setShowCheckout(false); setOrderError(null); }}
-              className="w-full text-center text-zinc-500 text-base py-2 hover:text-zinc-300 transition-colors">Annuler</button>
+              className="w-full text-center text-zinc-500 text-base py-2 hover:text-zinc-300 transition-colors">{t.ui.pos_cancel}</button>
           </div>
         </div>
       )}

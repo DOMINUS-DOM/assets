@@ -361,8 +361,8 @@ function KioskContent() {
                 className="px-12 py-8 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 text-center hover:bg-amber-500/20 transition-all active:scale-95"
               >
                 <span className="text-7xl block mb-4">{categories.find((c) => c.id === activeCatId)?.icon}</span>
-                <p className="text-2xl font-bold text-white">Composer votre Pain-frites</p>
-                <p className="text-base text-zinc-400 mt-2">Touchez pour commencer</p>
+                <p className="text-2xl font-bold text-white">{t.ui.pos_composeA} Pain-frites</p>
+                <p className="text-base text-zinc-400 mt-2">{t.ui.pos_clickToStart}</p>
               </button>
             </div>
           )}
@@ -381,7 +381,7 @@ function KioskContent() {
                     }`}>
                     <p className="text-lg font-bold text-white leading-tight">{getItemName(item.id, item.name)}</p>
                     {item.tags?.includes('popular') && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold mt-2 inline-block">★ Populaire</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold mt-2 inline-block">★ {t.ui.popular}</span>
                     )}
                     <p className="text-xl text-amber-400 font-extrabold mt-3">
                       {item.sizes
@@ -389,7 +389,7 @@ function KioskContent() {
                         : item.price != null ? `${formatPrice(item.price)} €` : ''}
                     </p>
                     {isCustomizable && (
-                      <p className="text-xs text-amber-400/60 mt-2">Personnaliser →</p>
+                      <p className="text-xs text-amber-400/60 mt-2">{t.ui.pos_customize} →</p>
                     )}
                     {inCart && (
                       <span className="absolute -top-2 -right-2 w-9 h-9 rounded-full bg-amber-500 text-zinc-950 text-lg font-black flex items-center justify-center shadow-lg">
@@ -467,7 +467,7 @@ function KioskContent() {
                 + {t.ui.kiosk_addMore}
               </button>
               <button onClick={handleSubmit} disabled={submitting || cart.length === 0}
-                className="flex-2 py-4 px-8 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-950 font-extrabold text-lg active:scale-[0.97] transition-transform disabled:opacity-50 shadow-lg shadow-amber-500/20">
+                className="flex-1 py-4 px-8 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-950 font-extrabold text-lg active:scale-[0.97] transition-transform disabled:opacity-50 shadow-lg shadow-amber-500/20">
                 {submitting ? '...' : t.ui.kiosk_validate}
               </button>
             </div>
@@ -478,7 +478,7 @@ function KioskContent() {
       {/* ═══ SIZE POPUP ═══ */}
       {sizePopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setSizePopup(null)}>
-          <div className="bg-zinc-900 rounded-3xl border-2 border-zinc-700 p-8 w-96 space-y-4 animate-scale-in" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-zinc-900 rounded-3xl border-2 border-zinc-700 p-8 w-full max-w-sm mx-4 space-y-4 animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-xl font-extrabold text-white text-center">{getItemName(sizePopup.id, sizePopup.name)}</h3>
             <p className="text-sm text-zinc-500 text-center">{t.ui.kiosk_chooseSize}</p>
             <div className="space-y-3">
