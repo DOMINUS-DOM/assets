@@ -7,7 +7,7 @@ import { useLanguage } from '@/i18n/LanguageContext';
 import Link from 'next/link';
 
 export default function LoginPage() {
-  const { login, isAuthenticated, loaded, hasRole } = useAuth();
+  const { login, isAuthenticated, loaded, hasRole, user } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -15,12 +15,13 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (loaded && isAuthenticated) {
-      if (hasRole('patron', 'manager', 'employe', 'franchisor_admin', 'location_manager')) router.replace('/admin');
-      else if (hasRole('livreur')) router.replace('/driver');
+    if (loaded && isAuthenticated && user) {
+      const adminRoles = ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'];
+      if (adminRoles.includes(user.role)) router.replace('/admin');
+      else if (user.role === 'livreur') router.replace('/driver');
       else router.replace('/');
     }
-  }, [loaded, isAuthenticated, hasRole, router]);
+  }, [loaded, isAuthenticated, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

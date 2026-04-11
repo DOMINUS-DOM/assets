@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, useEffect, ReactNode } from 'react';
 import { UserRole } from '@/types/auth';
 import { api } from '@/lib/api';
 
@@ -94,9 +94,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch { return false; }
   }, []);
 
+  const currentRole = user?.role || null;
   const hasRole = useCallback((...roles: UserRole[]) => {
-    return user ? roles.includes(user.role) : false;
-  }, [user]);
+    return currentRole ? roles.includes(currentRole) : false;
+  }, [currentRole]);
 
   return (
     <AuthContext.Provider value={{

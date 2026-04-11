@@ -16,8 +16,12 @@ const ROLE_COLORS: Record<string, string> = {
   franchisee_owner: 'bg-rose-500/20 text-rose-400',
 };
 
+const ADMIN_ROLES = ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'];
+const STAFF_ROLES = ['patron', 'manager', 'employe', 'livreur', 'franchisor_admin', 'location_manager'];
+const DRIVER_ROLES = ['livreur'];
+
 export default function UserMenu() {
-  const { user, isAuthenticated, logout, hasRole } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -62,19 +66,19 @@ export default function UserMenu() {
               className="block px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors">
               {t.ui.auth_profile}
             </Link>
-            {hasRole('patron', 'manager', 'employe', 'livreur') && (
+            {STAFF_ROLES.includes(user.role) && (
               <Link href="/staff" onClick={() => setOpen(false)}
                 className="block px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors">
                 {t.ui.staff_portal}
               </Link>
             )}
-            {hasRole('patron', 'manager', 'employe', 'franchisor_admin', 'location_manager') && (
+            {ADMIN_ROLES.includes(user.role) && (
               <Link href="/admin" onClick={() => setOpen(false)}
                 className="block px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors">
                 Admin
               </Link>
             )}
-            {hasRole('livreur') && (
+            {DRIVER_ROLES.includes(user.role) && (
               <Link href="/driver" onClick={() => setOpen(false)}
                 className="block px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors">
                 {t.ui.driver_title}
