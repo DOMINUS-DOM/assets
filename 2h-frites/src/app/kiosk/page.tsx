@@ -314,49 +314,76 @@ function KioskContent() {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Categories sidebar */}
-        <div className="w-28 bg-zinc-900/50 border-r border-zinc-800 overflow-y-auto shrink-0">
-          {categories.map((cat) => (
-            <button key={cat.id} onClick={() => setActiveCatId(cat.id)}
-              className={`w-full py-5 text-center transition-colors border-l-3 ${
-                cat.id === activeCatId
-                  ? 'bg-amber-500/10 border-amber-500 text-amber-400'
-                  : 'border-transparent text-zinc-500 hover:bg-zinc-800/50'
-              }`}>
-              <span className="text-3xl block">{cat.icon}</span>
-              <span className="text-xs font-bold block mt-2 truncate px-2">{getCategory(cat.nameKey)}</span>
-            </button>
-          ))}
+        <div className="w-32 bg-zinc-900/50 border-r border-zinc-800 overflow-y-auto shrink-0">
+          {categories.map((cat) => {
+            const handleCatTap = () => {
+              setActiveCatId(cat.id);
+              if (cat.builder && cat.slug === 'pain-frites') setShowPainFrites(true);
+            };
+            return (
+              <button key={cat.id} onClick={handleCatTap}
+                className={`w-full py-5 text-center transition-colors border-l-4 ${
+                  cat.id === activeCatId
+                    ? 'bg-amber-500/10 border-amber-500 text-amber-400'
+                    : 'border-transparent text-zinc-500 hover:bg-zinc-800/50'
+                }`}>
+                <span className="text-3xl block">{cat.icon}</span>
+                <span className="text-xs font-bold block mt-2 px-1 leading-tight">{getCategory(cat.nameKey)}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Items grid */}
         <div className="flex-1 overflow-y-auto p-5">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {activeItems.map((item) => {
-              const inCart = cart.find((c) => c.menuItemId === item.id);
-              return (
-                <button key={item.id}
-                  onClick={() => handleItemTapKiosk(item)}
-                  className={`relative p-5 rounded-2xl border-2 text-left transition-all active:scale-95 ${
-                    inCart ? 'bg-amber-500/10 border-amber-500/40' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-600'
-                  }`}>
-                  <p className="text-base font-bold text-white leading-tight">{getItemName(item.id, item.name)}</p>
-                  {item.tags?.includes('popular') && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold mt-2 inline-block">★ Popular</span>
-                  )}
-                  <p className="text-lg text-amber-400 font-extrabold mt-3">
-                    {item.sizes
-                      ? `${formatPrice(item.sizes[0].price)} €`
-                      : item.price != null ? `${formatPrice(item.price)} €` : ''}
-                  </p>
-                  {inCart && (
-                    <span className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-amber-500 text-zinc-950 text-base font-black flex items-center justify-center shadow-lg">
-                      {inCart.quantity}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          {/* Builder category with no items: show big compose button */}
+          {activeItems.length === 0 && categories.find((c) => c.id === activeCatId)?.builder && (
+            <div className="flex items-center justify-center h-full">
+              <button
+                onClick={() => setShowPainFrites(true)}
+                className="px-12 py-8 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 text-center hover:bg-amber-500/20 transition-all active:scale-95"
+              >
+                <span className="text-7xl block mb-4">{categories.find((c) => c.id === activeCatId)?.icon}</span>
+                <p className="text-2xl font-bold text-white">Composer votre Pain-frites</p>
+                <p className="text-base text-zinc-400 mt-2">Touchez pour commencer</p>
+              </button>
+            </div>
+          )}
+
+          {activeItems.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {activeItems.map((item) => {
+                const inCart = cart.find((c) => c.menuItemId === item.id);
+                const activeCatSlug = categories.find((c) => c.id === activeCatId)?.slug;
+                const isCustomizable = activeCatSlug === 'pains-ronds' || activeCatSlug === 'grillades' || activeCatSlug === 'magic-box';
+                return (
+                  <button key={item.id}
+                    onClick={() => handleItemTapKiosk(item)}
+                    className={`relative p-6 rounded-2xl border-2 text-left transition-all active:scale-95 ${
+                      inCart ? 'bg-amber-500/10 border-amber-500/40' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-600'
+                    }`}>
+                    <p className="text-lg font-bold text-white leading-tight">{getItemName(item.id, item.name)}</p>
+                    {item.tags?.includes('popular') && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold mt-2 inline-block">★ Populaire</span>
+                    )}
+                    <p className="text-xl text-amber-400 font-extrabold mt-3">
+                      {item.sizes
+                        ? `${formatPrice(item.sizes[0].price)} €`
+                        : item.price != null ? `${formatPrice(item.price)} €` : ''}
+                    </p>
+                    {isCustomizable && (
+                      <p className="text-xs text-amber-400/60 mt-2">Personnaliser →</p>
+                    )}
+                    {inCart && (
+                      <span className="absolute -top-2 -right-2 w-9 h-9 rounded-full bg-amber-500 text-zinc-950 text-lg font-black flex items-center justify-center shadow-lg">
+                        {inCart.quantity}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

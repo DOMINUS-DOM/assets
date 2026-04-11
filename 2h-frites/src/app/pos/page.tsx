@@ -43,17 +43,18 @@ function POSContent() {
   const [lastOrderData, setLastOrderData] = useState<any>(null);
 
   useEffect(() => {
-    const cats = menuStore.getCategories().filter((c) => c.items.length > 0 || c.builder);
-    setCategories(cats);
-    if (cats.length > 0) setActiveCatId(cats[0].id);
-    return menuStore.subscribe(() => {
-      const updated = menuStore.getCategories().filter((c) => c.items.length > 0 || c.builder);
-      setCategories(updated);
-    });
+    const load = () => {
+      const cats = menuStore.getCategories().filter((c) => c.items.length > 0 || c.builder);
+      setCategories(cats);
+      if (cats.length > 0 && !activeCatId) setActiveCatId(cats[0].id);
+    };
+    load();
+    return menuStore.subscribe(load);
   }, []);
 
   const activeCat = categories.find((c) => c.id === activeCatId);
   const activeItems = activeCat?.items.filter((i) => !i.unavailable) || [];
+  const isBuilderCat = !!(activeCat?.builder || activeCat?.slug === 'pain-frites' || activeCat?.slug === 'pains-ronds' || activeCat?.slug === 'grillades' || activeCat?.slug === 'magic-box');
 
   const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const itemCount = cart.reduce((sum, i) => sum + i.quantity, 0);
@@ -103,12 +104,18 @@ function POSContent() {
     }]);
   }, []);
 
-  const handleItemTap = (item: MenuItem) => {
-    // Builder categories
-    if (activeCat?.builder || activeCat?.slug === 'pain-frites') {
+  // Auto-open builder when selecting a builder category
+  const handleCategoryTap = (catId: string) => {
+    setActiveCatId(catId);
+    const cat = categories.find((c) => c.id === catId);
+    // Auto-open pain-frites builder (no items to click)
+    if (cat?.builder && cat?.slug === 'pain-frites') {
       setShowPainFrites(true);
-      return;
     }
+  };
+
+  const handleItemTap = (item: MenuItem) => {
+    // Builders: pains-ronds & grillades have items, magic-box too
     if (activeCat?.slug === 'pains-ronds' || activeCat?.slug === 'grillades') {
       setShowPainRond(item);
       return;
@@ -117,7 +124,6 @@ function POSContent() {
       setShowMagicBox({ item, isExtra: item.id.includes('extra') });
       return;
     }
-
     if (item.sizes && item.sizes.length > 0) {
       setShowSizePopup(item);
     } else {
@@ -179,43 +185,46 @@ function POSContent() {
   return (
     <div className="h-screen flex flex-col bg-zinc-950">
       {/* Top bar */}
-      <header className="flex items-center justify-between px-4 h-12 bg-zinc-900 border-b border-zinc-800 shrink-0">
-        <div className="flex items-center gap-2">
+      <header className="flex items-center justify-between px-4 h-14 bg-zinc-900 border-b border-zinc-800 shrink-0">
+        <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/favicon.png" alt="2H" className="h-6 w-6 object-contain" />
-          <span className="text-sm font-bold text-white">Caisse</span>
-          {user && <span className="text-xs text-zinc-500 ml-2">{user.name}</span>}
+          <img src="/favicon.png" alt="2H" className="h-7 w-7 object-contain" />
+          <span className="text-base font-bold text-white">Caisse POS</span>
+          {user && <span className="text-sm text-zinc-500 ml-1">{user.name}</span>}
         </div>
         <div className="flex items-center gap-3">
           {lastOrder && (
-            <span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-bold animate-pulse">
+            <span className="px-4 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-sm font-bold animate-pulse">
               ✓ {lastOrder}
             </span>
           )}
-          <a href="/admin" className="text-xs text-zinc-500 hover:text-white">Admin</a>
+          <a href="/admin" className="text-sm text-zinc-500 hover:text-white transition-colors">Admin ↗</a>
         </div>
       </header>
 
       {/* Main area: 3 columns */}
       <div className="flex-1 flex overflow-hidden">
         {/* LEFT: Categories */}
-        <div className="w-20 sm:w-24 bg-zinc-900/50 border-r border-zinc-800 overflow-y-auto shrink-0">
+        <div className="w-24 sm:w-28 lg:w-32 bg-zinc-900/50 border-r border-zinc-800 overflow-y-auto shrink-0">
           {categories.map((cat) => {
             const isActive = cat.id === activeCatId;
             return (
               <button
                 key={cat.id}
-                onClick={() => setActiveCatId(cat.id)}
-                className={`w-full py-3 px-1 text-center transition-colors border-l-2 ${
+                onClick={() => handleCategoryTap(cat.id)}
+                className={`w-full py-4 px-1 text-center transition-colors border-l-3 ${
                   isActive
                     ? 'bg-amber-500/10 border-amber-500 text-amber-400'
                     : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'
                 }`}
               >
-                <span className="text-xl block">{cat.icon}</span>
-                <span className="text-[10px] font-medium block mt-1 leading-tight truncate px-0.5">
+                <span className="text-2xl block">{cat.icon}</span>
+                <span className="text-xs font-medium block mt-1.5 leading-tight px-0.5">
                   {getCategory(cat.nameKey)}
                 </span>
+                {cat.builder && (
+                  <span className="text-[9px] text-amber-400/60 block mt-0.5">Composer</span>
+                )}
               </button>
             );
           })}
@@ -223,86 +232,111 @@ function POSContent() {
 
         {/* CENTER: Items grid */}
         <div className="flex-1 overflow-y-auto p-3">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-            {activeItems.map((item) => {
-              const inCart = cart.find((c) => c.menuItemId === item.id);
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleItemTap(item)}
-                  className={`relative p-3 rounded-xl border text-left transition-all active:scale-95 ${
-                    inCart
-                      ? 'bg-amber-500/10 border-amber-500/30'
-                      : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
-                  }`}
-                >
-                  <p className="text-sm font-medium text-white leading-tight truncate">
-                    {getItemName(item.id, item.name)}
-                  </p>
-                  <p className="text-xs text-amber-400 font-bold mt-1">
-                    {item.sizes
-                      ? `${formatPrice(item.sizes[0].price)}–${formatPrice(item.sizes[item.sizes.length - 1].price)} €`
-                      : item.price != null
-                        ? `${formatPrice(item.price)} €`
-                        : ''}
-                  </p>
-                  {item.tags?.includes('popular') && (
-                    <span className="absolute top-1 right-1 text-[8px] px-1 py-0.5 rounded bg-amber-500/20 text-amber-400">★</span>
-                  )}
-                  {inCart && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-zinc-950 text-xs font-bold flex items-center justify-center">
-                      {inCart.quantity}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          {/* Builder category: show big action button */}
+          {isBuilderCat && activeItems.length === 0 && (
+            <div className="flex items-center justify-center h-full">
+              <button
+                onClick={() => {
+                  if (activeCat?.slug === 'pain-frites') setShowPainFrites(true);
+                }}
+                className="px-8 py-6 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 text-center hover:bg-amber-500/20 transition-all active:scale-95"
+              >
+                <span className="text-5xl block mb-3">{activeCat?.icon}</span>
+                <p className="text-lg font-bold text-white">Composer un {getCategory(activeCat?.nameKey || '')}</p>
+                <p className="text-sm text-zinc-400 mt-1">Cliquez pour démarrer</p>
+              </button>
+            </div>
+          )}
+
+          {/* Regular items grid */}
+          {activeItems.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              {activeItems.map((item) => {
+                const inCart = cart.find((c) => c.menuItemId === item.id);
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleItemTap(item)}
+                    className={`relative p-4 rounded-xl border text-left transition-all active:scale-95 ${
+                      inCart
+                        ? 'bg-amber-500/10 border-amber-500/30'
+                        : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
+                    }`}
+                  >
+                    <p className="text-sm font-semibold text-white leading-snug">
+                      {getItemName(item.id, item.name)}
+                    </p>
+                    <p className="text-sm text-amber-400 font-bold mt-1.5">
+                      {item.sizes
+                        ? `${formatPrice(item.sizes[0].price)}–${formatPrice(item.sizes[item.sizes.length - 1].price)} €`
+                        : item.price != null
+                          ? `${formatPrice(item.price)} €`
+                          : ''}
+                    </p>
+                    {(activeCat?.slug === 'pains-ronds' || activeCat?.slug === 'grillades') && (
+                      <span className="text-[10px] text-amber-400/60 mt-1 block">Personnaliser →</span>
+                    )}
+                    {activeCat?.slug === 'magic-box' && (
+                      <span className="text-[10px] text-amber-400/60 mt-1 block">Composer →</span>
+                    )}
+                    {item.tags?.includes('popular') && (
+                      <span className="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">★</span>
+                    )}
+                    {inCart && (
+                      <span className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-amber-500 text-zinc-950 text-xs font-bold flex items-center justify-center">
+                        {inCart.quantity}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* RIGHT: Cart */}
-        <div className="w-64 sm:w-72 lg:w-80 bg-zinc-900/50 border-l border-zinc-800 flex flex-col shrink-0">
-          <div className="px-3 py-2 border-b border-zinc-800 flex items-center justify-between">
-            <span className="text-sm font-bold text-white">{itemCount} article{itemCount > 1 ? 's' : ''}</span>
+        <div className="w-72 sm:w-80 lg:w-96 bg-zinc-900/50 border-l border-zinc-800 flex flex-col shrink-0">
+          <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
+            <span className="text-base font-bold text-white">{itemCount} article{itemCount > 1 ? 's' : ''}</span>
             {cart.length > 0 && (
-              <button onClick={clearCart} className="text-xs text-red-400 hover:text-red-300">Vider</button>
+              <button onClick={clearCart} className="text-sm text-red-400 hover:text-red-300 font-medium">Vider</button>
             )}
           </div>
 
           <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
             {cart.length === 0 ? (
-              <p className="text-zinc-600 text-xs text-center py-8">Tapez un article pour l&apos;ajouter</p>
+              <p className="text-zinc-600 text-sm text-center py-8">Sélectionnez un article</p>
             ) : (
               cart.map((item) => (
-                <div key={item.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-zinc-800/50">
+                <div key={item.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800/50">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-white font-medium truncate">{item.name}</p>
-                    <p className="text-[10px] text-zinc-500">{formatPrice(item.price)} €</p>
+                    <p className="text-sm text-white font-medium truncate">{item.name}</p>
+                    <p className="text-xs text-zinc-500">{formatPrice(item.price)} €</p>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button onClick={() => updateQty(item.id, -1)}
-                      className="w-6 h-6 rounded bg-zinc-700 text-white text-xs font-bold flex items-center justify-center active:scale-90">−</button>
-                    <span className="text-xs font-bold text-white w-4 text-center">{item.quantity}</span>
+                      className="w-8 h-8 rounded-lg bg-zinc-700 text-white text-base font-bold flex items-center justify-center active:scale-90">−</button>
+                    <span className="text-sm font-bold text-white w-5 text-center">{item.quantity}</span>
                     <button onClick={() => updateQty(item.id, 1)}
-                      className="w-6 h-6 rounded bg-zinc-700 text-white text-xs font-bold flex items-center justify-center active:scale-90">+</button>
+                      className="w-8 h-8 rounded-lg bg-zinc-700 text-white text-base font-bold flex items-center justify-center active:scale-90">+</button>
                   </div>
-                  <span className="text-xs text-amber-400 font-bold w-14 text-right">{formatPrice(item.price * item.quantity)} €</span>
-                  <button onClick={() => removeItem(item.id)} className="text-zinc-600 hover:text-red-400 text-xs">✕</button>
+                  <span className="text-sm text-amber-400 font-bold w-16 text-right">{formatPrice(item.price * item.quantity)} €</span>
+                  <button onClick={() => removeItem(item.id)} className="text-zinc-600 hover:text-red-400 text-base p-1">✕</button>
                 </div>
               ))
             )}
           </div>
 
           {/* Total + checkout button */}
-          <div className="px-3 py-3 border-t border-zinc-800 space-y-2">
+          <div className="px-4 py-4 border-t border-zinc-800 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-white">Total</span>
-              <span className="text-xl font-extrabold text-amber-400">{formatPrice(total)} €</span>
+              <span className="text-base font-bold text-white">Total</span>
+              <span className="text-2xl font-extrabold text-amber-400">{formatPrice(total)} €</span>
             </div>
             <button
               onClick={() => setShowCheckout(true)}
               disabled={cart.length === 0}
-              className="w-full py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm active:scale-[0.97] transition-transform disabled:opacity-30"
+              className="w-full py-4 rounded-xl bg-amber-500 text-zinc-950 font-extrabold text-lg active:scale-[0.97] transition-transform disabled:opacity-30"
             >
               Encaisser
             </button>
@@ -313,13 +347,13 @@ function POSContent() {
       {/* Size popup */}
       {showSizePopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowSizePopup(null)}>
-          <div className="bg-zinc-900 rounded-2xl border border-zinc-700 p-5 w-72 space-y-3" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-sm font-bold text-white text-center">{getItemName(showSizePopup.id, showSizePopup.name)}</h3>
+          <div className="bg-zinc-900 rounded-2xl border border-zinc-700 p-6 w-80 space-y-3" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-bold text-white text-center">{getItemName(showSizePopup.id, showSizePopup.name)}</h3>
             <div className="space-y-2">
               {showSizePopup.sizes?.map((size) => (
                 <button key={size.sizeKey}
                   onClick={() => { addToCart(showSizePopup, size.sizeKey); setShowSizePopup(null); }}
-                  className="w-full py-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white font-medium text-sm hover:border-amber-500/30 active:scale-95 transition-all flex items-center justify-between px-4">
+                  className="w-full py-4 rounded-xl bg-zinc-800 border border-zinc-700 text-white font-semibold text-base hover:border-amber-500/30 active:scale-95 transition-all flex items-center justify-between px-5">
                   <span className="capitalize">{size.sizeKey}</span>
                   <span className="text-amber-400 font-bold">{formatPrice(size.price)} €</span>
                 </button>
@@ -332,54 +366,55 @@ function POSContent() {
       {/* Checkout modal */}
       {showCheckout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => { setShowCheckout(false); setOrderError(null); }}>
-          <div className="bg-zinc-900 rounded-2xl border border-zinc-700 p-6 w-96 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-white text-center">Encaisser — {formatPrice(total)} €</h3>
+          <div className="bg-zinc-900 rounded-2xl border border-zinc-700 p-6 w-[28rem] space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-white text-center">Encaisser — {formatPrice(total)} €</h3>
 
             {/* Order type */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <button onClick={() => setOrderType('dine_in')}
-                className={`py-3 rounded-xl text-sm font-bold transition-all ${orderType === 'dine_in' ? 'bg-amber-500 text-zinc-950' : 'bg-zinc-800 text-zinc-400'}`}>
+                className={`py-4 rounded-xl text-base font-bold transition-all ${orderType === 'dine_in' ? 'bg-amber-500 text-zinc-950' : 'bg-zinc-800 text-zinc-400'}`}>
                 🏪 Sur place
               </button>
               <button onClick={() => setOrderType('pickup')}
-                className={`py-3 rounded-xl text-sm font-bold transition-all ${orderType === 'pickup' ? 'bg-amber-500 text-zinc-950' : 'bg-zinc-800 text-zinc-400'}`}>
+                className={`py-4 rounded-xl text-base font-bold transition-all ${orderType === 'pickup' ? 'bg-amber-500 text-zinc-950' : 'bg-zinc-800 text-zinc-400'}`}>
                 🛍️ À emporter
               </button>
             </div>
 
-            {/* Customer name (optional) */}
+            {/* Customer name */}
             <input
               type="text"
               placeholder="Nom du client (optionnel)"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-amber-500/50"
+              className="w-full px-4 py-4 rounded-xl bg-zinc-800 border border-zinc-700 text-white text-base placeholder-zinc-500 focus:outline-none focus:border-amber-500/50"
             />
 
             {/* Payment method */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <button onClick={() => setPaymentMethod('cash')}
-                className={`py-3 rounded-xl text-sm font-bold transition-all ${paymentMethod === 'cash' ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+                className={`py-4 rounded-xl text-base font-bold transition-all ${paymentMethod === 'cash' ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
                 💵 Espèces
               </button>
               <button onClick={() => setPaymentMethod('card')}
-                className={`py-3 rounded-xl text-sm font-bold transition-all ${paymentMethod === 'card' ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+                className={`py-4 rounded-xl text-base font-bold transition-all ${paymentMethod === 'card' ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
                 💳 Carte
               </button>
             </div>
 
-            {/* Error feedback */}
+            {/* Error */}
             {orderError && (
-              <p className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2 text-center">{orderError}</p>
+              <p className="text-base text-red-400 bg-red-500/10 rounded-lg px-4 py-3 text-center">{orderError}</p>
             )}
 
             {/* Submit */}
             <button onClick={handleSubmitOrder} disabled={submitting}
-              className="w-full py-4 rounded-xl bg-amber-500 text-zinc-950 font-extrabold text-lg active:scale-[0.97] transition-transform disabled:opacity-50">
+              className="w-full py-5 rounded-xl bg-amber-500 text-zinc-950 font-extrabold text-xl active:scale-[0.97] transition-transform disabled:opacity-50">
               {submitting ? 'Envoi...' : `Valider — ${formatPrice(total)} €`}
             </button>
 
-            <button onClick={() => { setShowCheckout(false); setOrderError(null); }} className="w-full text-center text-zinc-500 text-sm py-1">Annuler</button>
+            <button onClick={() => { setShowCheckout(false); setOrderError(null); }}
+              className="w-full text-center text-zinc-500 text-base py-2 hover:text-zinc-300 transition-colors">Annuler</button>
           </div>
         </div>
       )}
