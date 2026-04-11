@@ -84,6 +84,87 @@ export default function SignageDashboard() {
         ))}
       </div>
 
+      {/* Built-in displays */}
+      <div>
+        <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">Ecrans integres</h2>
+        <p className="text-xs text-zinc-600 mb-3">Ecrans prets a l&apos;emploi, sans configuration necessaire.</p>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📺</span>
+              <div>
+                <p className="text-sm font-semibold text-white">Suivi des commandes</p>
+                <p className="text-xs text-zinc-500">Commandes en preparation et pretes — ideal pour le comptoir</p>
+              </div>
+            </div>
+            <a href={locationId ? `/display/orders?site=${locationId}` : '/display/orders'} target="_blank" rel="noopener noreferrer"
+              className="text-xs px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 font-medium transition-colors shrink-0">
+              Ouvrir &rarr;
+            </a>
+          </div>
+          <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📋</span>
+              <div>
+                <p className="text-sm font-semibold text-white">Menu dynamique</p>
+                <p className="text-xs text-zinc-500">Rotation automatique des categories du menu avec prix</p>
+              </div>
+            </div>
+            <a href="/display/menu" target="_blank" rel="noopener noreferrer"
+              className="text-xs px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 font-medium transition-colors shrink-0">
+              Ouvrir &rarr;
+            </a>
+          </div>
+          <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🖥️</span>
+              <div>
+                <p className="text-sm font-semibold text-white">Portail d&apos;affichage</p>
+                <p className="text-xs text-zinc-500">Page d&apos;accueil pour choisir le mode d&apos;affichage</p>
+              </div>
+            </div>
+            <a href="/display" target="_blank" rel="noopener noreferrer"
+              className="text-xs px-3 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:bg-zinc-600 font-medium transition-colors shrink-0">
+              Ouvrir &rarr;
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Custom screens */}
+      {screens.length > 0 && (
+        <div>
+          <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">Ecrans personnalises</h2>
+          <div className="space-y-2">
+            {screens.map((screen: any) => {
+              const playlist = getScreenPlaylist(screen.id);
+              return (
+                <div key={screen.id} className="flex items-center justify-between p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">📺</span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-white">{screen.name}</p>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                          screen.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-zinc-700 text-zinc-400'
+                        }`}>{screen.status}</span>
+                      </div>
+                      <p className="text-xs text-zinc-500">
+                        {playlist ? playlist.name : 'Aucune playlist'} — Code : {screen.code}
+                      </p>
+                    </div>
+                  </div>
+                  <a href={`/display/${screen.code}`} target="_blank" rel="noopener noreferrer"
+                    className="text-xs px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 font-medium transition-colors shrink-0">
+                    Ouvrir &rarr;
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Quick actions */}
       <div>
         <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">Actions rapides</h2>
@@ -103,90 +184,6 @@ export default function SignageDashboard() {
         </div>
       </div>
 
-      {/* Recent activity */}
-      {recentScreens.length > 0 && (
-        <div>
-          <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">Activite recente</h2>
-          <div className="space-y-2">
-            {recentScreens.map((screen: any) => {
-              const playlist = getScreenPlaylist(screen.id);
-              return (
-                <div
-                  key={screen.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-white truncate">{screen.name}</p>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                          screen.status === 'active'
-                            ? 'bg-green-500/20 text-green-400'
-                            : screen.status === 'offline'
-                              ? 'bg-red-500/20 text-red-400'
-                              : 'bg-zinc-700 text-zinc-400'
-                        }`}
-                      >
-                        {screen.status}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs text-zinc-500">{screen.resolution} - {screen.orientation === 'landscape' ? 'Paysage' : 'Portrait'}</p>
-                      {playlist ? (
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-medium">
-                          {playlist.name}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-zinc-600 italic">Aucune playlist</span>
-                      )}
-                    </div>
-                  </div>
-                  {screen.code && (
-                    <a
-                      href={`/display/${screen.code}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 font-medium transition-colors shrink-0 ml-3"
-                    >
-                      Apercu
-                    </a>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {screens.length > 3 && (
-        <div>
-          <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">Statut des ecrans</h2>
-          <div className="space-y-2">
-            {screens.slice(3, 8).map((screen: any) => (
-              <div
-                key={screen.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-white">{screen.name}</p>
-                  <p className="text-xs text-zinc-500">{screen.resolution} - {screen.orientation}</p>
-                </div>
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    screen.status === 'active'
-                      ? 'bg-green-500/20 text-green-400'
-                      : screen.status === 'offline'
-                        ? 'bg-red-500/20 text-red-400'
-                        : 'bg-zinc-700 text-zinc-400'
-                  }`}
-                >
-                  {screen.status}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
