@@ -8,15 +8,31 @@ import { useLanguage } from '@/i18n/LanguageContext';
 import { useLocation } from '@/contexts/LocationContext';
 import { formatPrice } from '@/utils/format';
 
+type Period = 'today' | 'week' | 'month' | 'all';
+
+function getStartDate(period: Period): string | null {
+  const now = new Date();
+  if (period === 'today') return now.toISOString().slice(0, 10);
+  if (period === 'week') { now.setDate(now.getDate() - 7); return now.toISOString().slice(0, 10); }
+  if (period === 'month') { now.setMonth(now.getMonth() - 1); return now.toISOString().slice(0, 10); }
+  return null;
+}
+
 export default function AnalyticsPage() {
   const { t } = useLanguage();
   const { locationId } = useLocation();
   const locParam = locationId ? `?locationId=${locationId}` : '';
   const [orders, setOrders] = useState<any[]>([]);
+  const [period, setPeriod] = useState<Period>('today');
 
   useEffect(() => { api.get<any[]>(`/orders${locParam}`).then(setOrders).catch(() => {}); }, [locParam]);
 
-  const completed = orders.filter((o) => ['delivered', 'picked_up'].includes(o.status));
+  const startDate = getStartDate(period);
+  const filteredOrders = startDate
+    ? orders.filter((o) => o.createdAt?.slice(0, 10) >= startDate)
+    : orders;
+
+  const completed = filteredOrders.filter((o) => ['delivered', 'picked_up'].includes(o.status));
   const totalRevenue = completed.reduce((sum, o) => sum + o.total, 0);
   const avgOrder = completed.length > 0 ? totalRevenue / completed.length : 0;
   const pickupCount = completed.filter((o) => o.type === 'pickup').length;
@@ -68,7 +84,28 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-white">{t.ui.ana_title}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-white">{t.ui.ana_title}</h1>
+        <div className="flex gap-1">
+          {([['today', "Aujourd'hui"], ['week', '7 jours'], ['month', '30 jours'], ['all', 'Tout']] as [Period, string][]).map(([p, label]) => (
+            <button key={p} onClick={() => setPeriod(p)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${period === p ? 'bg-amber-500/15 text-amber-400' : 'bg-zinc-900 text-zinc-500 hover:text-zinc-300'}`}>
+              {label}
+            </button>
+          ))}
+          <button onClick={() => {
+            const csv = ['N°,Date,Client,Type,Total,Statut,Paiement',
+              ...completed.map((o) => `${o.orderNumber || o.id},${o.createdAt?.slice(0, 10) || ''},${o.customerName || ''},${o.type},${o.total},${o.status},${o.paymentMethod}`)
+            ].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `analytics-${period}.csv`; a.click();
+          }}
+            className="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-400 text-xs font-medium hover:text-white transition-colors">
+            ↓ CSV
+          </button>
+        </div>
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
