@@ -36,6 +36,7 @@ interface ContentForm {
   bgColor: string;
   textColor: string;
   menuCategories: string[];
+  mediaUrl: string;
 }
 
 const emptyForm: ContentForm = {
@@ -47,6 +48,7 @@ const emptyForm: ContentForm = {
   fontSize: '24',
   bgColor: '#000000',
   textColor: '#ffffff',
+  mediaUrl: '',
   menuCategories: [],
 };
 
@@ -117,6 +119,7 @@ export default function ContentPage() {
   const { locationId } = useLocation();
   const locParam = locationId ? `?locationId=${locationId}` : '';
   const { data: contents, refresh } = useApiData<any[]>(`/signage/content${locParam}`, []);
+  const { data: mediaList } = useApiData<any[]>(`/signage/media${locParam}`, []);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -139,6 +142,9 @@ export default function ContentPage() {
     }
     if (form.type === 'menu') {
       return JSON.stringify({ categories: form.menuCategories });
+    }
+    if (form.type === 'image' || form.type === 'video') {
+      return JSON.stringify({ mediaUrl: form.mediaUrl });
     }
     return '{}';
   };
@@ -188,6 +194,7 @@ export default function ContentPage() {
       bgColor: config.bgColor || '#000000',
       textColor: config.textColor || '#ffffff',
       menuCategories: config.categories || [],
+      mediaUrl: config.mediaUrl || '',
     });
     setEditingId(content.id);
     setShowForm(true);
@@ -329,6 +336,48 @@ export default function ContentPage() {
               </div>
               {categories.length === 0 && (
                 <p className="text-xs text-zinc-600">Aucune categorie trouvee dans le menu.</p>
+              )}
+            </div>
+          )}
+
+          {/* Image/Video media selector */}
+          {(form.type === 'image' || form.type === 'video') && (
+            <div className="space-y-2 pt-2 border-t border-zinc-800">
+              <p className="text-xs text-zinc-500 font-medium">
+                {form.type === 'image' ? 'Selectionnez une image' : 'Selectionnez une video'}
+              </p>
+              {mediaList.filter((m: any) => m.type === form.type).length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-xs text-zinc-600 mb-2">Aucun media de ce type.</p>
+                  <Link href="/admin/signage/media" className="text-xs text-amber-400 hover:text-amber-300">
+                    Aller a la mediatheque &rarr;
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                  {mediaList.filter((m: any) => m.type === form.type).map((m: any) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setForm({ ...form, mediaUrl: m.url })}
+                      className={`aspect-video rounded-lg overflow-hidden border-2 transition-all ${
+                        form.mediaUrl === m.url
+                          ? 'border-amber-500 ring-1 ring-amber-500/30'
+                          : 'border-zinc-700 hover:border-zinc-600'
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={m.thumbnailUrl || m.url}
+                        alt={m.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {form.mediaUrl && (
+                <p className="text-[10px] text-zinc-600 truncate">URL: {form.mediaUrl}</p>
               )}
             </div>
           )}

@@ -12,6 +12,7 @@ export default function SignageDashboard() {
   const { data: contents } = useApiData<any[]>(`/signage/content${locParam}`, []);
   const { data: playlists } = useApiData<any[]>(`/signage/playlists${locParam}`, []);
   const { data: schedules } = useApiData<any[]>(`/signage/schedule${locParam}`, []);
+  const { data: mediaList } = useApiData<any[]>(`/signage/media${locParam}`, []);
 
   const activeScreens = screens.filter((s) => s.status === 'active').length;
   const publishedContents = contents.filter((c) => c.status === 'published').length;
@@ -43,6 +44,13 @@ export default function SignageDashboard() {
       count: playlists.length,
       sub: `${playlists.filter((p: any) => p.status === 'active').length} active${playlists.filter((p: any) => p.status === 'active').length > 1 ? 's' : ''}`,
       href: '/admin/signage/playlists',
+    },
+    {
+      emoji: '\uD83D\uDDBC\uFE0F',
+      label: 'Mediatheque',
+      count: mediaList.length,
+      sub: `${mediaList.filter((m: any) => m.type === 'image').length} images, ${mediaList.filter((m: any) => m.type === 'video').length} videos`,
+      href: '/admin/signage/media',
     },
     {
       emoji: '\uD83D\uDCC5',

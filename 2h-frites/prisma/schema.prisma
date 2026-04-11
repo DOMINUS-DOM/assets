@@ -41,6 +41,7 @@ model Location {
   signageScreens   SignageScreen[]
   signageContents  SignageContent[]
   signagePlaylists SignagePlaylist[]
+  signageMedia     SignageMedia[]
 }
 
 // ═══════════════════════════════════════
@@ -504,4 +505,22 @@ model SignageSchedule {
   priority   Int             @default(0) // higher = takes precedence
   active     Boolean         @default(true)
   createdAt  DateTime        @default(now())
+}
+
+model SignageMedia {
+  id           String   @id @default(cuid())
+  locationId   String
+  location     Location @relation(fields: [locationId], references: [id])
+  name         String   // original filename or user-given name
+  type         String   // image | video
+  url          String   // Cloudinary URL
+  thumbnailUrl String?  // Cloudinary thumbnail (for videos)
+  publicId     String   // Cloudinary public_id for deletion
+  format       String   // jpg, png, mp4, etc.
+  width        Int?
+  height       Int?
+  bytes        Int?     // file size in bytes
+  duration     Float?   // video duration in seconds
+  folder       String   @default("") // user folder/tag
+  createdAt    DateTime @default(now())
 }
