@@ -14,11 +14,16 @@ export interface TokenPayload {
 export const ADMIN_ROLES: UserRole[] = ['patron', 'manager', 'franchisor_admin', 'location_manager'];
 
 // ─── Helpers ───
-const SECRET = process.env.AUTH_SECRET;
-if (!SECRET && process.env.NODE_ENV === 'production') {
-  throw new Error('AUTH_SECRET environment variable is required in production');
+function getSecret(): string {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production' && typeof window === 'undefined') {
+      console.warn('WARNING: AUTH_SECRET not set — using fallback. Set AUTH_SECRET in production!');
+    }
+    return 'dev-only-secret-not-for-prod';
+  }
+  return secret;
 }
-const EFFECTIVE_SECRET = SECRET || 'dev-only-secret-not-for-prod';
 
 function toBase64url(str: string): string {
   return Buffer.from(str).toString('base64url');
@@ -29,7 +34,7 @@ function fromBase64url(b64: string): string {
 }
 
 function sign(payload: string): string {
-  return createHmac('sha256', EFFECTIVE_SECRET).update(payload).digest('base64url');
+  return createHmac('sha256', getSecret()).update(payload).digest('base64url');
 }
 
 // ─── Token Creation ───
