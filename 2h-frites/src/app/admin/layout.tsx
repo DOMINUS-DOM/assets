@@ -28,6 +28,7 @@ interface NavGroup {
 
 function LocationSelector() {
   const { locationId, locations, setLocationId, canSwitch } = useLocation();
+  const { t } = useLanguage();
   if (!canSwitch || locations.length === 0) return null;
 
   return (
@@ -36,7 +37,7 @@ function LocationSelector() {
       onChange={(e) => setLocationId(e.target.value === 'all' ? null : e.target.value)}
       className="w-full px-2.5 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-xs text-white focus:outline-none focus:border-amber-500/50"
     >
-      <option value="all">Tous les sites</option>
+      <option value="all">{t.ui.nav_allSites}</option>
       {locations.map((l) => (
         <option key={l.id} value={l.id}>{l.name}{!l.active ? ' (inactif)' : ''}</option>
       ))}
@@ -52,43 +53,43 @@ function AdminContent({ children }: { children: React.ReactNode }) {
 
   const navGroups: NavGroup[] = [
     {
-      title: 'Principal',
+      title: t.ui.nav_principal,
       items: [
         { href: '/admin', label: t.ui.admin_dashboard, icon: 'dashboard', exact: true, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'], permission: 'dashboard' },
         { href: '/admin/locations', label: t.ui.loc_nav, icon: 'locations', exact: false, roles: ['franchisor_admin'], permission: 'locations' },
       ],
     },
     {
-      title: 'Commandes',
+      title: t.ui.nav_commandes,
       items: [
         { href: '/admin/orders', label: t.ui.admin_orders, icon: 'orders', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin'], permission: 'orders' },
         { href: '/admin/kitchen', label: t.ui.kds_nav, icon: 'kitchen', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin'], permission: 'kitchen' },
-        { href: '/admin/reservations', label: 'R\u00e9servations', icon: 'orders', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'], permission: 'reservations' },
+        { href: '/admin/reservations', label: t.ui.nav_reservations, icon: 'orders', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'], permission: 'reservations' },
       ],
     },
     {
-      title: 'Catalogue',
+      title: t.ui.nav_catalogue,
       items: [
         { href: '/admin/menu', label: t.ui.cms_nav, icon: 'menu', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'menu' },
         { href: '/admin/zones', label: t.ui.zone_nav, icon: 'zones', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'], permission: 'zones' },
-        { href: '/admin/tables', label: 'Salle', icon: 'menu', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'], permission: 'tables' },
-        { href: '/admin/reservations', label: 'Reservations', icon: 'orders', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'], permission: 'tables' },
+        { href: '/admin/tables', label: t.ui.nav_salle, icon: 'menu', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'], permission: 'tables' },
+        { href: '/admin/reservations', label: t.ui.nav_reservations, icon: 'orders', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'], permission: 'tables' },
         { href: '/admin/inventory', label: t.ui.inv_nav, icon: 'inventory', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'inventory' },
-        { href: '/admin/recipes', label: 'Recettes', icon: 'menu', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'recipes' },
+        { href: '/admin/recipes', label: t.ui.nav_recettes, icon: 'menu', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'recipes' },
       ],
     },
     {
-      title: 'Equipe',
+      title: t.ui.nav_equipe,
       items: [
         { href: '/admin/staff', label: t.ui.staff_title, icon: 'staff', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'staff' },
         { href: '/admin/drivers', label: t.ui.admin_drivers, icon: 'drivers', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'drivers' },
         { href: '/admin/recruitment', label: t.ui.admin_recruitment, icon: 'recruitment', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'recruitment' },
         { href: '/admin/payroll', label: t.ui.admin_payroll, icon: 'payroll', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'payroll' },
-        { href: '/admin/users', label: 'Utilisateurs', icon: 'users', exact: false, roles: ['patron', 'franchisor_admin', 'franchisee_owner'], permission: 'users' },
+        { href: '/admin/users', label: t.ui.nav_utilisateurs, icon: 'users', exact: false, roles: ['patron', 'franchisor_admin', 'franchisee_owner'], permission: 'users' },
       ],
     },
     {
-      title: 'Business',
+      title: t.ui.nav_business,
       items: [
         { href: '/admin/payments', label: t.ui.pmt_nav, icon: 'payments', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'payments' },
         { href: '/admin/crm', label: t.ui.crm_nav, icon: 'crm', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'crm' },
@@ -96,17 +97,17 @@ function AdminContent({ children }: { children: React.ReactNode }) {
         { href: '/admin/forecast', label: t.ui.fc_nav, icon: 'forecast', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'forecast' },
         { href: '/admin/channels', label: t.ui.ch_nav, icon: 'channels', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'channels' },
         { href: '/admin/reviews', label: t.ui.rev_nav, icon: 'reviews', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'reviews' },
-        { href: '/admin/reports', label: 'Rapport P&L', icon: 'payroll', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'analytics' },
-        { href: '/admin/invoices', label: 'Factures achat', icon: 'payments', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'invoices' },
-        { href: '/admin/dashboard-finance', label: 'Finances', icon: 'forecast', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'analytics' },
+        { href: '/admin/reports', label: t.ui.nav_rapportPL, icon: 'payroll', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'analytics' },
+        { href: '/admin/invoices', label: t.ui.nav_facturesAchat, icon: 'payments', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'invoices' },
+        { href: '/admin/dashboard-finance', label: t.ui.nav_finances, icon: 'forecast', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'analytics' },
       ],
     },
     {
-      title: 'Outils',
+      title: t.ui.nav_outils,
       items: [
-        { href: '/admin/signage', label: 'Affichage', icon: 'signage', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'], permission: 'signage' },
-        { href: '/admin/qrcode', label: 'QR Codes', icon: 'channels', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'qrcode' },
-        { href: '/admin/audit', label: 'Audit', icon: 'orders', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'settings' },
+        { href: '/admin/signage', label: t.ui.nav_affichage, icon: 'signage', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'], permission: 'signage' },
+        { href: '/admin/qrcode', label: t.ui.nav_qrcodes, icon: 'channels', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'qrcode' },
+        { href: '/admin/audit', label: t.ui.nav_audit, icon: 'orders', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'settings' },
         { href: '/admin/settings', label: t.ui.set_nav, icon: 'settings', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'settings' },
       ],
     },
@@ -134,7 +135,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
           <img src="/favicon.png" alt="2H" className="h-8 w-8 object-contain" />
           <div>
             <p className="font-bold text-sm text-white">2H Admin</p>
-            <p className="text-[10px] text-zinc-500">Gestion du restaurant</p>
+            <p className="text-[10px] text-zinc-500">{t.ui.nav_subtitle}</p>
           </div>
         </Link>
       </div>
@@ -171,7 +172,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
       <div className="px-3 py-3 border-t border-zinc-800/50 space-y-1">
         <Link href="/pos" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-colors font-medium">
           <NavIcon name="payments" />
-          <span>Caisse POS</span>
+          <span>{t.ui.pos_title}</span>
         </Link>
         <Link href="/" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-zinc-500 hover:text-white hover:bg-zinc-800/50 transition-colors">
           <NavIcon name="store" />

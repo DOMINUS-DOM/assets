@@ -3,6 +3,7 @@
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import { api } from '@/lib/api';
 import { useLocation } from '@/contexts/LocationContext';
+import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
 import { menuStore } from '@/stores/menuStore';
 
@@ -42,6 +43,7 @@ interface MenuItemFlat {
 
 export default function RecipesPage() {
   const { locationId } = useLocation();
+  const { t } = useLanguage();
   const categories = useSyncExternalStore(menuStore.subscribe, menuStore.getCategories, menuStore.getCategories);
 
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -115,7 +117,7 @@ export default function RecipesPage() {
   };
 
   const handleDeleteRecipe = async () => {
-    if (!selectedRecipe || !confirm('Supprimer cette recette ?')) return;
+    if (!selectedRecipe || !confirm(t.ui.rec_deleteConfirm)) return;
     await api.post('/recipes', { action: 'delete', id: selectedRecipe.id });
     refresh();
   };
@@ -150,12 +152,12 @@ export default function RecipesPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-white">Recettes</h1>
+      <h1 className="text-xl font-bold text-white">{t.ui.rec_title}</h1>
 
       {/* Search */}
       <input
         className={ic}
-        placeholder="Rechercher un produit..."
+        placeholder={t.ui.rec_searchPlaceholder}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
@@ -163,7 +165,7 @@ export default function RecipesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* LEFT: Menu items list */}
         <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1">
-          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Produits du menu</h2>
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t.ui.rec_menuItems}</h2>
           {filteredItems.map((item) => {
             const recipe = recipeMap.get(item.id);
             const hasRecipe = !!recipe;
@@ -198,7 +200,7 @@ export default function RecipesPage() {
                       </span>
                     )}
                     {hasRecipe && (
-                      <span className="text-zinc-500">co\u00fbt {formatPrice(recipe.totalCost)} \u20ac</span>
+                      <span className="text-zinc-500">{t.ui.rec_cost} {formatPrice(recipe.totalCost)} \u20ac</span>
                     )}
                   </div>
                 </div>
@@ -206,7 +208,7 @@ export default function RecipesPage() {
             );
           })}
           {filteredItems.length === 0 && (
-            <p className="text-zinc-500 text-sm text-center py-6">Aucun produit trouv\u00e9</p>
+            <p className="text-zinc-500 text-sm text-center py-6">{t.ui.rec_noProducts}</p>
           )}
         </div>
 
@@ -214,16 +216,16 @@ export default function RecipesPage() {
         <div className="space-y-3">
           {!selectedItem && (
             <div className="p-8 rounded-xl bg-zinc-900 border border-zinc-800/50 text-center">
-              <p className="text-zinc-500 text-sm">S\u00e9lectionnez un produit pour voir sa recette</p>
+              <p className="text-zinc-500 text-sm">{t.ui.rec_selectProduct}</p>
             </div>
           )}
 
           {selectedItem && !selectedRecipe && (
             <div className="p-6 rounded-xl bg-zinc-900 border border-zinc-800/50 text-center space-y-3">
-              <p className="text-sm text-zinc-400">Aucune recette pour <span className="text-white font-medium">{selectedItem.name}</span></p>
+              <p className="text-sm text-zinc-400">{t.ui.rec_noRecipe} <span className="text-white font-medium">{selectedItem.name}</span></p>
               <button onClick={handleCreateRecipe}
                 className="px-4 py-2 rounded-lg bg-amber-500 text-zinc-950 font-bold text-sm">
-                Cr\u00e9er la recette
+                {t.ui.rec_createRecipe}
               </button>
             </div>
           )}

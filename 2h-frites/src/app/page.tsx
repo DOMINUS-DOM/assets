@@ -117,7 +117,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen max-w-lg mx-auto pb-20">
+    <div className="min-h-screen max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto pb-20">
       <Header
         view={view}
         categoryName={activeCategory ? getCategory(activeCategory.nameKey) : undefined}

@@ -3,21 +3,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useLocation } from '@/contexts/LocationContext';
+import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
 
 type Tab = 'all' | 'draft' | 'validated' | 'paid';
 type View = 'list' | 'create' | 'detail';
 
-const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  draft: { label: 'Brouillon', cls: 'bg-zinc-700 text-zinc-300' },
-  validated: { label: 'Validee', cls: 'bg-blue-500/20 text-blue-400' },
-  paid: { label: 'Payee', cls: 'bg-emerald-500/20 text-emerald-400' },
+const STATUS_BADGE: Record<string, { labelKey: string; cls: string }> = {
+  draft: { labelKey: 'inv_purchase_draft', cls: 'bg-zinc-700 text-zinc-300' },
+  validated: { labelKey: 'inv_purchase_validated', cls: 'bg-blue-500/20 text-blue-400' },
+  paid: { labelKey: 'inv_purchase_paid', cls: 'bg-emerald-500/20 text-emerald-400' },
 };
 
 const ic = 'w-full px-3 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm focus:outline-none focus:border-amber-500/50';
 
 export default function InvoicesPage() {
   const { locationId } = useLocation();
+  const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>('all');
   const [view, setView] = useState<View>('list');
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -71,7 +73,7 @@ export default function InvoicesPage() {
   });
 
   const handleUploadImage = async (file: File) => {
-    if (!locationId) { alert('Selectionnez un site d\'abord'); return; }
+    if (!locationId) { alert(t.ui.inv_purchase_selectSite); return; }
     setUploading(true);
     try {
       const fd = new FormData();
@@ -98,7 +100,7 @@ export default function InvoicesPage() {
   };
 
   const handleExtract = async () => {
-    if (!form.imageUrl) { alert('Uploadez une image d\'abord'); return; }
+    if (!form.imageUrl) { alert(t.ui.inv_purchase_uploadFirst); return; }
     setExtracting(true);
     try {
       const data = await api.post<any>('/invoices/purchase/extract', { imageUrl: form.imageUrl });
@@ -162,7 +164,7 @@ export default function InvoicesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Supprimer cette facture brouillon ?')) return;
+    if (!confirm(t.ui.inv_purchase_deleteConfirm)) return;
     try {
       await api.post('/invoices/purchase', { action: 'delete', id });
       setView('list');
@@ -192,10 +194,10 @@ export default function InvoicesPage() {
   const calcGrand = () => calcSubtotal() + calcVat();
 
   const TABS: { key: Tab; label: string }[] = [
-    { key: 'all', label: 'Toutes' },
-    { key: 'draft', label: 'Brouillon' },
-    { key: 'validated', label: 'Validees' },
-    { key: 'paid', label: 'Payees' },
+    { key: 'all', label: t.ui.inv_purchase_all },
+    { key: 'draft', label: t.ui.inv_purchase_draft },
+    { key: 'validated', label: t.ui.inv_purchase_validated },
+    { key: 'paid', label: t.ui.inv_purchase_paid },
   ];
 
   // ─── DETAIL VIEW ───
@@ -205,19 +207,19 @@ export default function InvoicesPage() {
     return (
       <div className="space-y-4">
         <button onClick={() => { setView('list'); setSelectedInvoice(null); }}
-          className="text-sm text-zinc-400 hover:text-white">&larr; Retour</button>
+          className="text-sm text-zinc-400 hover:text-white">&larr; {t.ui.inv_purchase_back}</button>
 
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-white">Facture {inv.invoiceNumber || '#' + inv.id.slice(-6)}</h1>
-          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${badge.cls}`}>{badge.label}</span>
+          <h1 className="text-xl font-bold text-white">{t.ui.inv_purchase_invoiceTitle} {inv.invoiceNumber || '#' + inv.id.slice(-6)}</h1>
+          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${badge.cls}`}>{t.ui[badge.labelKey]}</span>
         </div>
 
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-2">
           <div className="grid grid-cols-2 gap-4 text-sm">
-            <div><span className="text-zinc-500">Fournisseur:</span> <span className="text-white">{inv.supplier?.name || '-'}</span></div>
-            <div><span className="text-zinc-500">Date:</span> <span className="text-white">{inv.invoiceDate}</span></div>
-            <div><span className="text-zinc-500">Echeance:</span> <span className="text-white">{inv.dueDate || '-'}</span></div>
-            <div><span className="text-zinc-500">N:</span> <span className="text-white">{inv.invoiceNumber || '-'}</span></div>
+            <div><span className="text-zinc-500">{t.ui.inv_purchase_supplier}:</span> <span className="text-white">{inv.supplier?.name || '-'}</span></div>
+            <div><span className="text-zinc-500">{t.ui.inv_purchase_dateLabel}:</span> <span className="text-white">{inv.invoiceDate}</span></div>
+            <div><span className="text-zinc-500">{t.ui.inv_purchase_dueDate}:</span> <span className="text-white">{inv.dueDate || '-'}</span></div>
+            <div><span className="text-zinc-500">{t.ui.inv_purchase_numberLabel}:</span> <span className="text-white">{inv.invoiceNumber || '-'}</span></div>
           </div>
           {inv.notes && <p className="text-xs text-zinc-500 italic mt-2">{inv.notes}</p>}
           {inv.imageUrl && (
@@ -230,7 +232,7 @@ export default function InvoicesPage() {
 
         {/* Lines */}
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
-          <h3 className="text-xs font-bold text-zinc-400 uppercase mb-3">Lignes</h3>
+          <h3 className="text-xs font-bold text-zinc-400 uppercase mb-3">{t.ui.inv_purchase_lines}</h3>
           <div className="space-y-2">
             {(inv.lines || []).map((line: any) => (
               <div key={line.id} className="flex items-center justify-between text-sm py-1.5 border-b border-zinc-800/30 last:border-0">
@@ -247,9 +249,9 @@ export default function InvoicesPage() {
             ))}
           </div>
           <div className="mt-4 pt-3 border-t border-zinc-700 space-y-1">
-            <div className="flex justify-between text-sm"><span className="text-zinc-400">Sous-total HT</span><span className="text-white">{formatPrice(inv.subtotal)} &euro;</span></div>
-            <div className="flex justify-between text-sm"><span className="text-zinc-400">TVA</span><span className="text-white">{formatPrice(inv.totalVat)} &euro;</span></div>
-            <div className="flex justify-between text-sm font-bold border-t border-zinc-700 pt-2"><span className="text-white">Total TTC</span><span className="text-amber-400">{formatPrice(inv.grandTotal)} &euro;</span></div>
+            <div className="flex justify-between text-sm"><span className="text-zinc-400">{t.ui.inv_purchase_subtotal}</span><span className="text-white">{formatPrice(inv.subtotal)} &euro;</span></div>
+            <div className="flex justify-between text-sm"><span className="text-zinc-400">{t.ui.inv_purchase_vat}</span><span className="text-white">{formatPrice(inv.totalVat)} &euro;</span></div>
+            <div className="flex justify-between text-sm font-bold border-t border-zinc-700 pt-2"><span className="text-white">{t.ui.inv_purchase_totalTTC}</span><span className="text-amber-400">{formatPrice(inv.grandTotal)} &euro;</span></div>
           </div>
         </div>
 
@@ -258,14 +260,14 @@ export default function InvoicesPage() {
           {inv.status === 'draft' && (
             <>
               <button onClick={() => handleStatusChange(inv.id, 'validated')}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold">Valider</button>
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold">{t.ui.inv_purchase_validate}</button>
               <button onClick={() => handleDelete(inv.id)}
-                className="px-4 py-2 rounded-lg bg-red-600/20 text-red-400 text-sm font-medium">Supprimer</button>
+                className="px-4 py-2 rounded-lg bg-red-600/20 text-red-400 text-sm font-medium">{t.ui.inv_purchase_deleteBtn}</button>
             </>
           )}
           {inv.status === 'validated' && (
             <button onClick={() => handleStatusChange(inv.id, 'paid')}
-              className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-bold">Marquer payee</button>
+              className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-bold">{t.ui.inv_purchase_markPaid}</button>
           )}
         </div>
       </div>
@@ -277,13 +279,13 @@ export default function InvoicesPage() {
     return (
       <div className="space-y-4">
         <button onClick={() => { setView('list'); resetForm(); }}
-          className="text-sm text-zinc-400 hover:text-white">&larr; Retour</button>
+          className="text-sm text-zinc-400 hover:text-white">&larr; {t.ui.inv_purchase_back}</button>
 
-        <h1 className="text-xl font-bold text-white">Nouvelle facture fournisseur</h1>
+        <h1 className="text-xl font-bold text-white">{t.ui.inv_purchase_newTitle}</h1>
 
         {/* Image upload */}
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-3">
-          <h3 className="text-xs font-bold text-zinc-400 uppercase">Photo de la facture</h3>
+          <h3 className="text-xs font-bold text-zinc-400 uppercase">{t.ui.inv_purchase_photo}</h3>
           {form.imageUrl ? (
             <div className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -293,7 +295,7 @@ export default function InvoicesPage() {
             </div>
           ) : (
             <label className="flex flex-col items-center justify-center h-32 rounded-lg border-2 border-dashed border-zinc-700 hover:border-amber-500/50 cursor-pointer transition-colors">
-              <span className="text-zinc-500 text-sm">{uploading ? 'Upload en cours...' : 'Cliquez pour uploader'}</span>
+              <span className="text-zinc-500 text-sm">{uploading ? t.ui.inv_purchase_uploading : t.ui.inv_purchase_clickUpload}</span>
               <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) handleUploadImage(f);
@@ -303,51 +305,51 @@ export default function InvoicesPage() {
           {form.imageUrl && (
             <button onClick={handleExtract} disabled={extracting}
               className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-bold disabled:opacity-50">
-              {extracting ? 'Extraction IA en cours...' : 'Extraire avec IA'}
+              {extracting ? t.ui.inv_purchase_extracting : t.ui.inv_purchase_extractAI}
             </button>
           )}
         </div>
 
         {/* Header fields */}
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-3">
-          <h3 className="text-xs font-bold text-zinc-400 uppercase">Informations</h3>
+          <h3 className="text-xs font-bold text-zinc-400 uppercase">{t.ui.inv_purchase_info}</h3>
           <div className="grid grid-cols-2 gap-2">
             <select className={ic} value={form.supplierId} onChange={(e) => setForm({ ...form, supplierId: e.target.value })}>
-              <option value="">Fournisseur</option>
+              <option value="">{t.ui.inv_purchase_supplier}</option>
               {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
-            <input className={ic} placeholder="N de facture" value={form.invoiceNumber} onChange={(e) => setForm({ ...form, invoiceNumber: e.target.value })} />
+            <input className={ic} placeholder={t.ui.inv_purchase_invoiceNum} value={form.invoiceNumber} onChange={(e) => setForm({ ...form, invoiceNumber: e.target.value })} />
             <input className={ic} type="date" value={form.invoiceDate} onChange={(e) => setForm({ ...form, invoiceDate: e.target.value })} />
-            <input className={ic} type="date" placeholder="Echeance" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
+            <input className={ic} type="date" placeholder={t.ui.inv_purchase_dueDate} value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
           </div>
-          <textarea className={ic} placeholder="Notes" rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+          <textarea className={ic} placeholder={t.ui.inv_purchase_notesLabel} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
         </div>
 
         {/* Lines */}
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase">Lignes</h3>
-            <button onClick={addLine} className="text-xs text-amber-400 hover:text-amber-300 font-medium">+ Ligne</button>
+            <h3 className="text-xs font-bold text-zinc-400 uppercase">{t.ui.inv_purchase_lines}</h3>
+            <button onClick={addLine} className="text-xs text-amber-400 hover:text-amber-300 font-medium">{t.ui.inv_purchase_addLine}</button>
           </div>
           {lines.map((line, i) => (
             <div key={i} className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-500">Ligne {i + 1}</span>
+                <span className="text-xs text-zinc-500">{t.ui.inv_purchase_lineN} {i + 1}</span>
                 {lines.length > 1 && (
                   <button onClick={() => removeLine(i)} className="text-xs text-red-400 hover:text-red-300">&times;</button>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <input className={ic} placeholder="Description" value={line.description}
+                <input className={ic} placeholder={t.ui.inv_purchase_description} value={line.description}
                   onChange={(e) => updateLine(i, 'description', e.target.value)} />
                 <select className={ic} value={line.ingredientId}
                   onChange={(e) => updateLine(i, 'ingredientId', e.target.value)}>
-                  <option value="">Ingredient (optionnel)</option>
+                  <option value="">{t.ui.inv_purchase_ingredient}</option>
                   {ingredients.map((ing) => <option key={ing.id} value={ing.id}>{ing.name}</option>)}
                 </select>
-                <input className={ic} type="number" step="0.01" placeholder="Quantite" value={line.quantity}
+                <input className={ic} type="number" step="0.01" placeholder={t.ui.inv_purchase_quantity} value={line.quantity}
                   onChange={(e) => updateLine(i, 'quantity', parseFloat(e.target.value) || 0)} />
-                <input className={ic} type="number" step="0.01" placeholder="Prix unitaire" value={line.unitPrice}
+                <input className={ic} type="number" step="0.01" placeholder={t.ui.inv_purchase_unitPrice} value={line.unitPrice}
                   onChange={(e) => updateLine(i, 'unitPrice', parseFloat(e.target.value) || 0)} />
                 <select className={ic} value={line.vatRate}
                   onChange={(e) => updateLine(i, 'vatRate', parseFloat(e.target.value))}>
@@ -357,7 +359,7 @@ export default function InvoicesPage() {
                   <option value={0.21}>TVA 21%</option>
                 </select>
                 <div className="flex items-center px-3 text-sm text-amber-400 font-bold">
-                  = {formatPrice(calcLineTotal(line))} &euro; HT
+                  = {formatPrice(calcLineTotal(line))} &euro; {t.ui.inv_purchase_htSuffix}
                 </div>
               </div>
             </div>
@@ -366,10 +368,10 @@ export default function InvoicesPage() {
 
         {/* Totals */}
         <div className="p-4 rounded-xl bg-zinc-900 border border-amber-500/30 space-y-1">
-          <div className="flex justify-between text-sm"><span className="text-zinc-400">Sous-total HT</span><span className="text-white font-bold">{formatPrice(calcSubtotal())} &euro;</span></div>
-          <div className="flex justify-between text-sm"><span className="text-zinc-400">TVA</span><span className="text-white">{formatPrice(calcVat())} &euro;</span></div>
+          <div className="flex justify-between text-sm"><span className="text-zinc-400">{t.ui.inv_purchase_subtotal}</span><span className="text-white font-bold">{formatPrice(calcSubtotal())} &euro;</span></div>
+          <div className="flex justify-between text-sm"><span className="text-zinc-400">{t.ui.inv_purchase_vat}</span><span className="text-white">{formatPrice(calcVat())} &euro;</span></div>
           <div className="flex justify-between text-sm font-bold border-t border-zinc-700 pt-2">
-            <span className="text-white">Total TTC</span>
+            <span className="text-white">{t.ui.inv_purchase_totalTTC}</span>
             <span className="text-amber-400 text-lg">{formatPrice(calcGrand())} &euro;</span>
           </div>
         </div>
@@ -377,10 +379,10 @@ export default function InvoicesPage() {
         {/* Submit */}
         <div className="flex gap-2">
           <button onClick={() => { setView('list'); resetForm(); }}
-            className="flex-1 py-3 rounded-lg bg-zinc-800 text-zinc-300 text-sm font-medium">Annuler</button>
+            className="flex-1 py-3 rounded-lg bg-zinc-800 text-zinc-300 text-sm font-medium">{t.ui.inv_purchase_cancelBtn}</button>
           <button onClick={handleCreate} disabled={loading}
             className="flex-1 py-3 rounded-lg bg-amber-500 text-zinc-950 font-bold text-sm disabled:opacity-50">
-            {loading ? 'Enregistrement...' : 'Enregistrer'}
+            {loading ? t.ui.inv_purchase_saving : t.ui.inv_purchase_save}
           </button>
         </div>
       </div>
@@ -391,9 +393,9 @@ export default function InvoicesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white">Factures fournisseurs</h1>
+        <h1 className="text-xl font-bold text-white">{t.ui.inv_purchase_title}</h1>
         <button onClick={() => setView('create')}
-          className="px-4 py-2 rounded-lg bg-amber-500 text-zinc-950 font-bold text-sm">+ Nouvelle facture</button>
+          className="px-4 py-2 rounded-lg bg-amber-500 text-zinc-950 font-bold text-sm">{t.ui.inv_purchase_new}</button>
       </div>
 
       {/* Tabs */}
@@ -414,7 +416,7 @@ export default function InvoicesPage() {
       {/* Filters */}
       <div className="flex gap-2 flex-wrap">
         <select className={`${ic} !w-auto`} value={filterSupplier} onChange={(e) => setFilterSupplier(e.target.value)}>
-          <option value="">Tous fournisseurs</option>
+          <option value="">{t.ui.inv_purchase_allSuppliers}</option>
           {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
         <input type="date" className={`${ic} !w-auto`} value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} placeholder="Du" />
@@ -431,8 +433,8 @@ export default function InvoicesPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div>
-                    <p className="text-sm font-medium text-white">{inv.supplier?.name || 'Sans fournisseur'}</p>
-                    <p className="text-xs text-zinc-500">{inv.invoiceDate} &middot; {inv.invoiceNumber || 'Sans numero'}</p>
+                    <p className="text-sm font-medium text-white">{inv.supplier?.name || t.ui.inv_purchase_noSupplier}</p>
+                    <p className="text-xs text-zinc-500">{inv.invoiceDate} &middot; {inv.invoiceNumber || t.ui.inv_purchase_noNumber}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -440,14 +442,14 @@ export default function InvoicesPage() {
                     <p className="text-sm font-bold text-amber-400">{formatPrice(inv.grandTotal)} &euro;</p>
                     <p className="text-xs text-zinc-500">TVA {formatPrice(inv.totalVat)} &euro;</p>
                   </div>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${badge.cls}`}>{badge.label}</span>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${badge.cls}`}>{t.ui[badge.labelKey]}</span>
                 </div>
               </div>
             </button>
           );
         })}
         {filteredInvoices.length === 0 && (
-          <p className="text-zinc-500 text-sm text-center py-8">Aucune facture</p>
+          <p className="text-zinc-500 text-sm text-center py-8">{t.ui.inv_purchase_noInvoices}</p>
         )}
       </div>
     </div>

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { useLocation } from '@/contexts/LocationContext';
 import { useApiData } from '@/hooks/useApiData';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 // ─── Types ───
 
@@ -44,13 +45,13 @@ interface FloorTable {
 
 const STATUSES = ['pending', 'confirmed', 'seated', 'completed', 'cancelled', 'no_show'] as const;
 
-const STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> = {
-  pending:   { bg: 'bg-amber-500/20 border-amber-500/40', text: 'text-amber-400', label: 'En attente' },
-  confirmed: { bg: 'bg-blue-500/20 border-blue-500/40', text: 'text-blue-400', label: 'Confirmee' },
-  seated:    { bg: 'bg-emerald-500/20 border-emerald-500/40', text: 'text-emerald-400', label: 'Installee' },
-  completed: { bg: 'bg-zinc-600/20 border-zinc-500/40', text: 'text-zinc-400', label: 'Terminee' },
-  cancelled: { bg: 'bg-red-500/10 border-red-500/30', text: 'text-red-400 line-through', label: 'Annulee' },
-  no_show:   { bg: 'bg-red-500/20 border-red-500/40', text: 'text-red-400', label: 'No-show' },
+const STATUS_STYLE: Record<string, { bg: string; text: string; labelKey: string }> = {
+  pending:   { bg: 'bg-amber-500/20 border-amber-500/40', text: 'text-amber-400', labelKey: 'res_admin_pending' },
+  confirmed: { bg: 'bg-blue-500/20 border-blue-500/40', text: 'text-blue-400', labelKey: 'res_admin_confirmedStatus' },
+  seated:    { bg: 'bg-emerald-500/20 border-emerald-500/40', text: 'text-emerald-400', labelKey: 'res_admin_seatedStatus' },
+  completed: { bg: 'bg-zinc-600/20 border-zinc-500/40', text: 'text-zinc-400', labelKey: 'res_admin_completedStatus' },
+  cancelled: { bg: 'bg-red-500/10 border-red-500/30', text: 'text-red-400 line-through', labelKey: 'res_admin_cancelledStatus' },
+  no_show:   { bg: 'bg-red-500/20 border-red-500/40', text: 'text-red-400', labelKey: 'res_admin_noShow' },
 };
 
 const HOURS_START = 11;
@@ -77,6 +78,7 @@ function todayStr(): string {
 
 export default function ReservationsPage() {
   const { locationId } = useLocation();
+  const { t } = useLanguage();
   const [date, setDate] = useState(todayStr());
   const [showModal, setShowModal] = useState(false);
   const [detailRes, setDetailRes] = useState<Reservation | null>(null);
@@ -178,7 +180,7 @@ export default function ReservationsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Supprimer cette reservation ?')) return;
+    if (!confirm(t.ui.res_admin_deleteConfirm)) return;
     try {
       await api.post('/reservations', { action: 'delete', id });
       refresh();
@@ -207,7 +209,7 @@ export default function ReservationsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-xl font-bold text-white">Reservations</h1>
+        <h1 className="text-xl font-bold text-white">{t.ui.res_admin_title}</h1>
         <div className="flex items-center gap-2">
           <button onClick={() => shiftDate(-1)} className="px-2.5 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white text-sm">&larr;</button>
           <input
@@ -217,12 +219,12 @@ export default function ReservationsPage() {
             className="px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm focus:outline-none focus:border-amber-500/50"
           />
           <button onClick={() => shiftDate(1)} className="px-2.5 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white text-sm">&rarr;</button>
-          <button onClick={() => setDate(todayStr())} className="px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white text-xs">Aujourd&apos;hui</button>
+          <button onClick={() => setDate(todayStr())} className="px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white text-xs">{t.ui.res_admin_today}</button>
           <button
             onClick={() => { setPrefill({}); setShowModal(true); }}
             className="px-3 py-1.5 rounded-lg bg-amber-500 text-black font-medium text-sm hover:bg-amber-400"
           >
-            + Reservation
+            {t.ui.res_admin_newRes}
           </button>
         </div>
       </div>
@@ -230,10 +232,10 @@ export default function ReservationsPage() {
       {/* Stats bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total', value: stats.total, color: 'text-white' },
-          { label: 'Confirmees', value: stats.confirmed, color: 'text-blue-400' },
-          { label: 'En salle', value: stats.seated, color: 'text-emerald-400' },
-          { label: 'Tables libres', value: stats.available, color: 'text-amber-400' },
+          { label: t.ui.res_admin_total, value: stats.total, color: 'text-white' },
+          { label: t.ui.res_admin_confirmed, value: stats.confirmed, color: 'text-blue-400' },
+          { label: t.ui.res_admin_seated, value: stats.seated, color: 'text-emerald-400' },
+          { label: t.ui.res_admin_freeTables, value: stats.available, color: 'text-amber-400' },
         ].map((s) => (
           <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-3">
             <p className="text-xs text-zinc-500">{s.label}</p>
@@ -245,10 +247,10 @@ export default function ReservationsPage() {
       {/* Timeline grid */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="min-w-[800px]">
+          <div className="min-w-[800px] hidden lg:block">
             {/* Time header */}
             <div className="flex border-b border-zinc-800">
-              <div className="w-24 shrink-0 px-3 py-2 text-xs text-zinc-500 font-medium border-r border-zinc-800">Table</div>
+              <div className="w-24 shrink-0 px-3 py-2 text-xs text-zinc-500 font-medium border-r border-zinc-800">{t.ui.res_admin_table}</div>
               <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${SLOT_COUNT}, minmax(48px, 1fr))` }}>
                 {Array.from({ length: SLOT_COUNT }, (_, i) => {
                   const t = slotIndexToTime(i);
@@ -335,10 +337,10 @@ export default function ReservationsPage() {
       </div>
 
       {/* List view for mobile */}
-      <div className="block lg:hidden space-y-2">
-        <h2 className="text-sm font-medium text-zinc-400">Liste des reservations</h2>
+      <div className="lg:hidden space-y-2">
+        <h2 className="text-sm font-medium text-zinc-400">{t.ui.res_admin_listTitle}</h2>
         {reservations.length === 0 && (
-          <p className="text-xs text-zinc-600 py-4 text-center">Aucune reservation pour cette date</p>
+          <p className="text-xs text-zinc-600 py-4 text-center">{t.ui.res_admin_noRes}</p>
         )}
         {reservations.map((r) => {
           const style = STATUS_STYLE[r.status] || STATUS_STYLE.pending;
@@ -358,7 +360,7 @@ export default function ReservationsPage() {
                   {r.tables.map((rt) => `T${rt.table?.number || '?'}`).join(', ')}
                 </span>
                 <span className={`text-[10px] px-1.5 py-0.5 rounded ${style.bg} ${style.text}`}>
-                  {style.label}
+                  {t.ui[style.labelKey]}
                 </span>
               </div>
             </button>
@@ -404,6 +406,7 @@ function DetailModal({
   onStatusChange: (id: string, status: string) => void;
   onDelete: (id: string) => void;
 }) {
+  const { t } = useLanguage();
   const style = STATUS_STYLE[res.status] || STATUS_STYLE.pending;
   const nextStatuses: Record<string, string[]> = {
     pending: ['confirmed', 'cancelled'],
@@ -425,45 +428,45 @@ function DetailModal({
 
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-zinc-500 text-xs">Date</p>
+            <p className="text-zinc-500 text-xs">{t.ui.res_admin_date}</p>
             <p className="text-white">{res.date}</p>
           </div>
           <div>
-            <p className="text-zinc-500 text-xs">Horaire</p>
+            <p className="text-zinc-500 text-xs">{t.ui.res_admin_schedule}</p>
             <p className="text-white">{res.timeSlot} - {res.endTime}</p>
           </div>
           <div>
-            <p className="text-zinc-500 text-xs">Couverts</p>
-            <p className="text-white">{res.partySize} personnes</p>
+            <p className="text-zinc-500 text-xs">{t.ui.res_admin_coversLabel}</p>
+            <p className="text-white">{res.partySize} {t.ui.res_admin_personnes}</p>
           </div>
           <div>
-            <p className="text-zinc-500 text-xs">Statut</p>
-            <p className={style.text}>{style.label}</p>
+            <p className="text-zinc-500 text-xs">{t.ui.res_admin_status}</p>
+            <p className={style.text}>{t.ui[style.labelKey]}</p>
           </div>
           <div>
-            <p className="text-zinc-500 text-xs">Telephone</p>
+            <p className="text-zinc-500 text-xs">{t.ui.res_admin_phone}</p>
             <p className="text-white">{res.customerPhone || '-'}</p>
           </div>
           <div>
-            <p className="text-zinc-500 text-xs">Email</p>
+            <p className="text-zinc-500 text-xs">{t.ui.res_admin_email}</p>
             <p className="text-white text-xs">{res.customerEmail || '-'}</p>
           </div>
           <div className="col-span-2">
-            <p className="text-zinc-500 text-xs">Tables</p>
+            <p className="text-zinc-500 text-xs">{t.ui.res_admin_tables}</p>
             <p className="text-white">
               {res.tables.length > 0
-                ? res.tables.map((rt) => `Table ${rt.table?.number || '?'} (${rt.table?.capacity || '?'}p)`).join(', ')
-                : 'Aucune table assignee'}
+                ? res.tables.map((rt) => `${t.ui.res_admin_table} ${rt.table?.number || '?'} (${rt.table?.capacity || '?'}p)`).join(', ')
+                : t.ui.res_admin_noTable}
             </p>
           </div>
           {res.notes && (
             <div className="col-span-2">
-              <p className="text-zinc-500 text-xs">Notes</p>
+              <p className="text-zinc-500 text-xs">{t.ui.res_admin_notes}</p>
               <p className="text-white text-sm">{res.notes}</p>
             </div>
           )}
           <div>
-            <p className="text-zinc-500 text-xs">Source</p>
+            <p className="text-zinc-500 text-xs">{t.ui.res_admin_source}</p>
             <p className="text-white capitalize">{res.source}</p>
           </div>
         </div>
@@ -479,7 +482,7 @@ function DetailModal({
                   onClick={() => onStatusChange(res.id, s)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${st.bg} ${st.text} hover:brightness-125`}
                 >
-                  {st.label}
+                  {t.ui[st.labelKey]}
                 </button>
               );
             })}
@@ -491,7 +494,7 @@ function DetailModal({
             onClick={() => onDelete(res.id)}
             className="text-xs text-red-400 hover:text-red-300"
           >
-            Supprimer
+            {t.ui.res_admin_delete}
           </button>
         </div>
       </div>
@@ -516,6 +519,7 @@ function CreateModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     date,
     timeSlot: prefill.time || '12:00',
@@ -560,7 +564,7 @@ function CreateModal({
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md p-5 space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">Nouvelle Reservation</h2>
+          <h2 className="text-lg font-bold text-white">{t.ui.res_admin_newTitle}</h2>
           <button onClick={onClose} className="text-zinc-500 hover:text-white text-lg">&times;</button>
         </div>
 
@@ -568,7 +572,7 @@ function CreateModal({
           {/* Date & Time */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Date</label>
+              <label className="text-xs text-zinc-500 block mb-1">{t.ui.res_admin_date}</label>
               <input
                 type="date"
                 value={form.date}
@@ -577,7 +581,7 @@ function CreateModal({
               />
             </div>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Heure</label>
+              <label className="text-xs text-zinc-500 block mb-1">{t.ui.res_admin_time}</label>
               <select
                 value={form.timeSlot}
                 onChange={(e) => update('timeSlot', e.target.value)}
@@ -594,7 +598,7 @@ function CreateModal({
           {/* Duration & Party size */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Duree (min)</label>
+              <label className="text-xs text-zinc-500 block mb-1">{t.ui.res_admin_duration}</label>
               <select
                 value={form.duration}
                 onChange={(e) => update('duration', parseInt(e.target.value))}
@@ -606,7 +610,7 @@ function CreateModal({
               </select>
             </div>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Couverts</label>
+              <label className="text-xs text-zinc-500 block mb-1">{t.ui.res_admin_covers}</label>
               <input
                 type="number"
                 min={1}
@@ -620,18 +624,18 @@ function CreateModal({
 
           {/* Customer info */}
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Nom du client *</label>
+            <label className="text-xs text-zinc-500 block mb-1">{t.ui.res_admin_customerName}</label>
             <input
               type="text"
               value={form.customerName}
               onChange={(e) => update('customerName', e.target.value)}
-              placeholder="Nom complet"
+              placeholder={t.ui.res_admin_namePlaceholder}
               className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-amber-500/50"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Telephone</label>
+              <label className="text-xs text-zinc-500 block mb-1">{t.ui.res_admin_phone}</label>
               <input
                 type="tel"
                 value={form.customerPhone}
@@ -641,7 +645,7 @@ function CreateModal({
               />
             </div>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Email</label>
+              <label className="text-xs text-zinc-500 block mb-1">{t.ui.res_admin_email}</label>
               <input
                 type="email"
                 value={form.customerEmail}
@@ -654,19 +658,19 @@ function CreateModal({
 
           {/* Notes */}
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Notes</label>
+            <label className="text-xs text-zinc-500 block mb-1">{t.ui.res_admin_notes}</label>
             <textarea
               value={form.notes}
               onChange={(e) => update('notes', e.target.value)}
               rows={2}
-              placeholder="Allergies, occasion speciale..."
+              placeholder={t.ui.res_admin_notesPlaceholder}
               className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-amber-500/50 resize-none"
             />
           </div>
 
           {/* Table selection */}
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Tables</label>
+            <label className="text-xs text-zinc-500 block mb-1">{t.ui.res_admin_tables}</label>
             <div className="flex flex-wrap gap-2">
               {tables.filter((t) => t.active).map((t) => (
                 <button
@@ -690,14 +694,14 @@ function CreateModal({
             onClick={onClose}
             className="flex-1 px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400 text-sm hover:text-white"
           >
-            Annuler
+            {t.ui.res_admin_cancel}
           </button>
           <button
             onClick={handleSubmit}
             disabled={saving || !form.customerName}
             className="flex-1 px-3 py-2 rounded-lg bg-amber-500 text-black font-medium text-sm hover:bg-amber-400 disabled:opacity-50"
           >
-            {saving ? 'Enregistrement...' : 'Creer'}
+            {saving ? t.ui.res_admin_saving : t.ui.res_admin_create}
           </button>
         </div>
       </div>

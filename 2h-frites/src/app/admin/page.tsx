@@ -53,7 +53,7 @@ export default function AdminDashboard() {
       {/* Welcome */}
       <div>
         <h1 className="text-xl font-bold text-white dark:text-white text-gray-900">
-          Bonjour{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋
+          {t.ui.dash_hello}{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋
         </h1>
         <p className="text-xs text-zinc-500 mt-1">
           {locationName} — {new Date().toLocaleDateString('fr-BE', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -62,17 +62,17 @@ export default function AdminDashboard() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        <StatCard icon="orders" label="Commandes du jour" value={todayOrders.length} />
-        <StatCard icon="payroll" label="Chiffre du jour" value={`${formatPrice(revenue)} €`} />
-        <StatCard icon="analytics" label="Panier moyen" value={`${formatPrice(avgTicket)} €`} />
-        <StatCard icon="kitchen" label="En cours" value={activeOrders.length} />
+        <StatCard icon="orders" label={t.ui.dash_ordersToday} value={todayOrders.length} />
+        <StatCard icon="payroll" label={t.ui.dash_revenueToday} value={`${formatPrice(revenue)} €`} />
+        <StatCard icon="analytics" label={t.ui.dash_avgTicket} value={`${formatPrice(avgTicket)} €`} />
+        <StatCard icon="kitchen" label={t.ui.dash_inProgress} value={activeOrders.length} />
       </div>
 
       {/* Active orders requiring attention */}
       {activeOrders.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">Commandes actives</h2>
+            <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">{t.ui.dash_activeOrders}</h2>
             <Link href="/admin/orders" className="text-xs text-amber-400">{t.ui.admin_seeAll}</Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -122,12 +122,12 @@ export default function AdminDashboard() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">
-                Tâches du jour
+                {t.ui.dash_todayTasks}
                 {pendingTasks.length > 0 && (
                   <span className="ml-2 bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">{pendingTasks.length}</span>
                 )}
               </h2>
-              <Link href="/admin/staff" className="text-xs text-amber-400">Voir tout</Link>
+              <Link href="/admin/staff" className="text-xs text-amber-400">{t.ui.dash_seeAll}</Link>
             </div>
 
             {/* Quick add */}
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
                 type="text"
                 value={quickTaskTitle}
                 onChange={(e) => setQuickTaskTitle(e.target.value)}
-                placeholder="Ajouter une tâche rapide..."
+                placeholder={t.ui.dash_addTaskPlaceholder}
                 className="flex-1 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-amber-500/50"
               />
               <button type="submit" disabled={!quickTaskTitle.trim()}
@@ -160,12 +160,12 @@ export default function AdminDashboard() {
                   </div>
                 ))}
                 {pendingTasks.length > 5 && (
-                  <Link href="/admin/staff" className="block text-center text-xs text-zinc-500 py-1">+{pendingTasks.length - 5} autres tâches</Link>
+                  <Link href="/admin/staff" className="block text-center text-xs text-zinc-500 py-1">+{pendingTasks.length - 5} {t.ui.dash_moreTasks}</Link>
                 )}
               </div>
             ) : (
               <p className="text-xs text-zinc-600 py-3 text-center">
-                {completedTasks.length > 0 ? `✅ ${completedTasks.length} tâche${completedTasks.length > 1 ? 's' : ''} terminée${completedTasks.length > 1 ? 's' : ''}` : 'Aucune tâche pour aujourd\'hui'}
+                {completedTasks.length > 0 ? `✅ ${completedTasks.length} ${t.ui.dash_tasksCompleted}` : t.ui.dash_noTasksToday}
               </p>
             )}
 
@@ -184,23 +184,23 @@ export default function AdminDashboard() {
 
       {/* Quick actions */}
       <div>
-        <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">Acces rapide</h2>
+        <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">{t.ui.dash_quickAccess}</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <Link href="/pos" className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center hover:bg-amber-500/15 transition-colors">
             <NavIcon name="payments" className="mx-auto text-amber-400 mb-1" />
-            <p className="text-xs font-bold text-amber-400">Caisse POS</p>
+            <p className="text-xs font-bold text-amber-400">{t.ui.dash_posCaisse}</p>
           </Link>
           <Link href="/admin/kitchen" className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-center hover:border-zinc-700 transition-colors">
             <NavIcon name="kitchen" className="mx-auto text-zinc-400 mb-1" />
-            <p className="text-xs font-medium text-zinc-300">Cuisine</p>
+            <p className="text-xs font-medium text-zinc-300">{t.ui.dash_kitchen}</p>
           </Link>
           <Link href="/admin/orders" className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-center hover:border-zinc-700 transition-colors">
             <NavIcon name="orders" className="mx-auto text-zinc-400 mb-1" />
-            <p className="text-xs font-medium text-zinc-300">Commandes</p>
+            <p className="text-xs font-medium text-zinc-300">{t.ui.dash_orders}</p>
           </Link>
           <Link href="/admin/analytics" className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-center hover:border-zinc-700 transition-colors">
             <NavIcon name="analytics" className="mx-auto text-zinc-400 mb-1" />
-            <p className="text-xs font-medium text-zinc-300">Analytics</p>
+            <p className="text-xs font-medium text-zinc-300">{t.ui.dash_analytics}</p>
           </Link>
         </div>
       </div>
@@ -208,7 +208,7 @@ export default function AdminDashboard() {
       {/* Multi-site comparison (only for franchisor viewing all sites) */}
       {isAllSites && locations.length > 1 && (
         <div>
-          <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">Comparaison des sites</h2>
+          <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">{t.ui.dash_siteComparison}</h2>
           <div className="space-y-2">
             {locations.map((loc) => {
               const siteOrders = orders.filter((o: any) => o.locationId === loc.id);
@@ -219,12 +219,12 @@ export default function AdminDashboard() {
                 <div key={loc.id} className="flex items-center justify-between p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
                   <div>
                     <p className="text-sm font-semibold text-white">{loc.name}</p>
-                    <p className="text-xs text-zinc-500">{siteTodayOrders.length} commandes aujourd&apos;hui</p>
+                    <p className="text-xs text-zinc-500">{siteTodayOrders.length} {t.ui.dash_ordersHere}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-bold text-amber-400">{formatPrice(siteRevenue)} €</p>
                     {siteActive > 0 && (
-                      <p className="text-[10px] text-emerald-400">{siteActive} en cours</p>
+                      <p className="text-[10px] text-emerald-400">{siteActive} {t.ui.dash_ongoing}</p>
                     )}
                   </div>
                 </div>
@@ -255,7 +255,7 @@ export default function AdminDashboard() {
             </Link>
           ))}
           {orders.length === 0 && (
-            <p className="text-center text-zinc-500 py-8 text-sm">Aucune commande pour le moment</p>
+            <p className="text-center text-zinc-500 py-8 text-sm">{t.ui.dash_noOrders}</p>
           )}
         </div>
       </div>

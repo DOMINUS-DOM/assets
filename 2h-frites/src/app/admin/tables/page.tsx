@@ -160,7 +160,7 @@ export default function TablesPage() {
       )}
 
       {/* Table grid */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {filtered.map((table) => (
           <div key={table.id} className={`p-3 rounded-xl border ${STATUS_COLORS[table.status]}`}>
             <div className="flex items-center justify-between mb-2">
@@ -177,19 +177,19 @@ export default function TablesPage() {
             </div>
             <div className="grid grid-cols-2 gap-1">
               <button onClick={() => handleStatusChange(table.id, 'free')}
-                className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${table.status === 'free' ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-emerald-400'}`}>
+                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${table.status === 'free' ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-emerald-400'}`}>
                 Lib\u00e9rer
               </button>
               <button onClick={() => handleStatusChange(table.id, 'occupied')}
-                className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${table.status === 'occupied' ? 'bg-amber-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-amber-400'}`}>
+                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${table.status === 'occupied' ? 'bg-amber-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-amber-400'}`}>
                 Occuper
               </button>
               <button onClick={() => handleStatusChange(table.id, 'reserved')}
-                className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${table.status === 'reserved' ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-blue-400'}`}>
+                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${table.status === 'reserved' ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-blue-400'}`}>
                 R\u00e9server
               </button>
               <button onClick={() => handleStatusChange(table.id, 'cleaning')}
-                className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${table.status === 'cleaning' ? 'bg-zinc-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
+                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${table.status === 'cleaning' ? 'bg-zinc-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
                 Nettoyage
               </button>
             </div>
