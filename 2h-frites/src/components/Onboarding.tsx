@@ -18,12 +18,13 @@ const WELCOME_WORDS = ['Bienvenue', 'Welcome', 'Bienvenido', 'Welkom'];
    ANIMATED DEMOS — one per slide
    ═══════════════════════════════════════════ */
 
-/* Slide 1: Welcome — bouncing fries + sparkles */
+/* Slide 1: Welcome — logo + food icons */
 function DemoWelcome() {
   return (
-    <div className="flex flex-col items-center gap-3">
-      <span className="text-7xl animate-bounce" style={{ animationDuration: '1.5s' }}>🍟</span>
-      <div className="flex gap-2 mt-2">
+    <div className="flex flex-col items-center gap-4">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.png" alt="2H Frites" className="h-16 w-auto animate-fade-in" />
+      <div className="flex gap-2 mt-1">
         {['🍔', '🥤', '🥩', '🫙', '🥗'].map((e, i) => (
           <span
             key={i}
@@ -38,32 +39,77 @@ function DemoWelcome() {
   );
 }
 
-/* Slide 2: Browse — mini category cards appear */
-function DemoBrowse() {
+/* Slide 2: Browse — clickable category cards */
+function DemoBrowse({ onSelectCategory }: { onSelectCategory?: (slug: string) => void }) {
   const cats = [
-    { icon: '🍟', name: 'Frites' },
-    { icon: '🥩', name: 'Viandes' },
-    { icon: '🍔', name: 'Burgers' },
-    { icon: '🫙', name: 'Sauces' },
+    { icon: '🍟', name: 'Frites', slug: 'frites' },
+    { icon: '🥖', name: 'Pain-frites', slug: 'pain-frites' },
+    { icon: '🍔', name: 'Pains ronds', slug: 'pains-ronds' },
+    { icon: '🥩', name: 'Viandes', slug: 'viandes' },
+    { icon: '🫙', name: 'Sauces', slug: 'sauces' },
+    { icon: '🎁', name: 'Magic Box', slug: 'magic-box' },
   ];
   return (
-    <div className="grid grid-cols-2 gap-2 w-52 mx-auto">
+    <div className="grid grid-cols-3 gap-2 w-64 mx-auto">
       {cats.map((c, i) => (
-        <div
+        <button
           key={i}
+          onClick={() => onSelectCategory?.(c.slug)}
           className="flex flex-col items-center gap-1 py-3 rounded-xl bg-zinc-800/80 border border-zinc-700/50
-            animate-slide-up"
-          style={{ animationDelay: `${300 + i * 120}ms`, animationFillMode: 'backwards' }}
+            hover:border-amber-500/40 hover:bg-zinc-800 active:scale-95 transition-all
+            animate-slide-up cursor-pointer"
+          style={{ animationDelay: `${300 + i * 100}ms`, animationFillMode: 'backwards' }}
         >
           <span className="text-2xl">{c.icon}</span>
-          <span className="text-[11px] text-zinc-300 font-medium">{c.name}</span>
-        </div>
+          <span className="text-[10px] text-zinc-300 font-medium">{c.name}</span>
+        </button>
       ))}
     </div>
   );
 }
 
-/* Slide 3: Add to cart — item with + button animating */
+/* Slide 3: Pain-frites builder — step animation */
+function DemoPainFrites() {
+  const [step, setStep] = useState(0);
+  const steps = [
+    { emoji: '🥖🍟', label: 'Pain + Frites', sub: '5,00 €' },
+    { emoji: '🥩', label: '+ Viande', sub: '+3,00 €' },
+    { emoji: '🫙', label: '+ Sauce', sub: '+0,90 €' },
+    { emoji: '🥬', label: '+ Garniture', sub: '+0,60 €' },
+  ];
+
+  useEffect(() => {
+    const timers = steps.map((_, i) => setTimeout(() => setStep(i), 600 + i * 800));
+    const reset = setTimeout(() => setStep(0), 600 + steps.length * 800 + 1000);
+    return () => { timers.forEach(clearTimeout); clearTimeout(reset); };
+  }, []);
+
+  return (
+    <div className="w-56 mx-auto space-y-2">
+      {steps.map((s, i) => (
+        <div
+          key={i}
+          className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-300 ${
+            i <= step ? 'bg-zinc-800 border border-amber-500/20 opacity-100' : 'bg-zinc-800/30 border border-zinc-800/20 opacity-30'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className={`text-lg transition-transform duration-300 ${i === step ? 'scale-125' : ''}`}>{s.emoji}</span>
+            <span className={`text-xs font-medium ${i <= step ? 'text-white' : 'text-zinc-600'}`}>{s.label}</span>
+          </div>
+          <span className={`text-xs font-bold ${i <= step ? 'text-amber-400' : 'text-zinc-700'}`}>{s.sub}</span>
+        </div>
+      ))}
+      {step >= 3 && (
+        <div className="text-center pt-1 animate-fade-in">
+          <span className="text-xs font-bold text-emerald-400">Total : 9,50 €</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Slide 4: Add to cart — item with + button animating */
 function DemoAddToCart() {
   const [added, setAdded] = useState(0);
 
@@ -112,7 +158,7 @@ function DemoAddToCart() {
   );
 }
 
-/* Slide 4: Choose pickup or delivery — toggle animation */
+/* Slide 5: Choose pickup or delivery */
 function DemoOrderType() {
   const [mode, setMode] = useState<'pickup' | 'delivery'>('pickup');
 
@@ -154,7 +200,7 @@ function DemoOrderType() {
   );
 }
 
-/* Slide 5: Track order — animated status timeline */
+/* Slide 6: Track order */
 function DemoTrack() {
   const [step, setStep] = useState(0);
   const steps = [
@@ -190,20 +236,23 @@ function DemoTrack() {
   );
 }
 
-/* Slide 6: Ready! — party emojis */
+/* Slide 7: Ready! */
 function DemoReady() {
-  const emojis = ['🎉', '🍟', '🎊', '😋', '🔥', '❤️'];
   return (
-    <div className="flex flex-wrap justify-center gap-3 w-56 mx-auto">
-      {emojis.map((e, i) => (
-        <span
-          key={i}
-          className="text-4xl animate-scale-in"
-          style={{ animationDelay: `${200 + i * 150}ms`, animationFillMode: 'backwards' }}
-        >
-          {e}
-        </span>
-      ))}
+    <div className="flex flex-col items-center gap-4">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.png" alt="2H Frites" className="h-14 w-auto" />
+      <div className="flex flex-wrap justify-center gap-3 w-56 mx-auto">
+        {['🎉', '😋', '🔥', '❤️'].map((e, i) => (
+          <span
+            key={i}
+            className="text-4xl animate-scale-in"
+            style={{ animationDelay: `${200 + i * 150}ms`, animationFillMode: 'backwards' }}
+          >
+            {e}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -214,12 +263,13 @@ function DemoReady() {
 interface SlideConfig {
   titleKey: string;
   descKey: string;
-  Demo: React.FC;
+  Demo: React.FC<{ onSelectCategory?: (slug: string) => void }>;
 }
 
 const SLIDES: SlideConfig[] = [
   { titleKey: 'onb_title1', descKey: 'onb_desc1', Demo: DemoWelcome },
   { titleKey: 'onb_title2', descKey: 'onb_desc2', Demo: DemoBrowse },
+  { titleKey: 'onb_title_painfrites', descKey: 'onb_desc_painfrites', Demo: DemoPainFrites },
   { titleKey: 'onb_title3', descKey: 'onb_desc3', Demo: DemoAddToCart },
   { titleKey: 'onb_title4', descKey: 'onb_desc4', Demo: DemoOrderType },
   { titleKey: 'onb_title5', descKey: 'onb_desc5', Demo: DemoTrack },
@@ -230,7 +280,7 @@ const SLIDES: SlideConfig[] = [
    MAIN ONBOARDING COMPONENT
    ═══════════════════════════════════════════ */
 interface OnboardingProps {
-  onComplete: () => void;
+  onComplete: (selectedCategory?: string) => void;
 }
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
@@ -260,6 +310,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     [setLocale]
   );
 
+  const handleSelectCategory = useCallback((slug: string) => {
+    onComplete(slug);
+  }, [onComplete]);
+
   const goNext = useCallback(() => {
     if (slideIndex === SLIDES.length - 1) { onComplete(); return; }
     setSlideIndex((i) => i + 1);
@@ -283,13 +337,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     return (
       <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col items-center justify-center px-6 animate-fade-in">
         <div className="text-center mb-10">
-          <span className="text-6xl block mb-4 animate-bounce" style={{ animationDuration: '2s' }}>🍟</span>
-          <h1 className="text-2xl font-extrabold">
-            <span className="text-amber-400">2H</span>{' '}
-            <span className="text-white">Frites Artisanales</span>
-          </h1>
-          <p className="text-zinc-500 text-xs font-medium mt-1 tracking-wider uppercase">Les Deux Haine</p>
-          <div className="mt-6 h-8 flex items-center justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="2H Frites Artisanales" className="h-16 w-auto mx-auto mb-4" />
+          <div className="mt-4 h-8 flex items-center justify-center">
             <p className={`text-zinc-400 text-lg font-medium transition-opacity duration-300 ${fadeWelcome ? 'opacity-100' : 'opacity-0'}`}>
               {WELCOME_WORDS[welcomeIndex]} 👋
             </p>
@@ -332,7 +382,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-2">
         <span className="text-xs text-zinc-500 font-medium">{slideIndex + 1} / {SLIDES.length}</span>
-        <button onClick={onComplete} className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors px-3 py-1 rounded-lg active:bg-zinc-800">
+        <button onClick={() => onComplete()} className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors px-3 py-1 rounded-lg active:bg-zinc-800">
           {t.ui.onbSkip} →
         </button>
       </div>
@@ -340,11 +390,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         <div key={slideKey} className="relative mb-8 min-h-[200px] flex items-center justify-center animate-fade-in">
-          <Demo />
+          <Demo onSelectCategory={handleSelectCategory} />
         </div>
         <div key={`text-${slideKey}`} className="text-center animate-slide-up">
-          <h2 className="text-xl font-bold text-white mb-2">{t.ui[slide.titleKey]}</h2>
-          <p className="text-zinc-400 text-sm leading-relaxed max-w-[300px] mx-auto">{t.ui[slide.descKey]}</p>
+          <h2 className="text-xl font-bold text-white mb-2">{t.ui[slide.titleKey] || slide.titleKey}</h2>
+          <p className="text-zinc-400 text-sm leading-relaxed max-w-[300px] mx-auto">{t.ui[slide.descKey] || slide.descKey}</p>
         </div>
       </div>
 

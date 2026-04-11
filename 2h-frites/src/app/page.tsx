@@ -63,9 +63,13 @@ export default function HomePage() {
     setReady(true);
   }, []);
 
-  const handleOnboardingComplete = useCallback(() => {
+  const handleOnboardingComplete = useCallback((selectedCategory?: string) => {
     try { localStorage.setItem('2h-onboarded', 'true'); } catch {}
     setShowOnboarding(false);
+    if (selectedCategory) {
+      // Navigate to the selected category from onboarding
+      setTimeout(() => handleSelectCategory(selectedCategory), 100);
+    }
   }, []);
 
   const handleReplayTutorial = useCallback(() => {
