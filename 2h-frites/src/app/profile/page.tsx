@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { api } from '@/lib/api';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -64,10 +65,41 @@ export default function ProfilePage() {
       </header>
 
       <div className="px-4 pt-6 space-y-8">
-        {/* Role badge */}
+        {/* Avatar + Role */}
         <div className="text-center">
-          <div className="w-16 h-16 rounded-full bg-amber-500/20 text-amber-400 font-bold text-2xl flex items-center justify-center mx-auto mb-3">
-            {user.name.charAt(0)}
+          <div className="relative inline-block mb-3">
+            <div className="w-20 h-20 rounded-full bg-amber-500/20 text-amber-400 font-bold text-3xl flex items-center justify-center overflow-hidden">
+              {user.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                user.name.charAt(0)
+              )}
+            </div>
+            <label className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center cursor-pointer hover:bg-amber-400 transition-colors">
+              <span className="text-xs">📷</span>
+              <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('locationId', user.locationId || 'global');
+                formData.append('name', `avatar-${user.id}`);
+                try {
+                  const token = localStorage.getItem('2h-auth-token');
+                  const res = await fetch('/api/signage/media', {
+                    method: 'POST',
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                    body: formData,
+                  });
+                  const media = await res.json();
+                  if (media.url) {
+                    await api.post('/auth', { action: 'updateAvatar', avatarUrl: media.url });
+                    window.location.reload();
+                  }
+                } catch {}
+              }} />
+            </label>
           </div>
           <p className="text-lg font-bold text-white">{user.name}</p>
           <span className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium ${ROLE_LABELS[user.role]}`}>

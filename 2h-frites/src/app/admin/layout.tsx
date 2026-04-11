@@ -9,29 +9,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import UserMenu from '@/components/auth/UserMenu';
 import NotificationBell from '@/components/NotificationBell';
 import { useLocation } from '@/contexts/LocationContext';
-
-// ─── Icons (inline SVG for each nav section) ───
-const ICONS: Record<string, string> = {
-  dashboard: '📊',
-  locations: '📍',
-  orders: '📋',
-  kitchen: '👨‍🍳',
-  menu: '🍽️',
-  zones: '🗺️',
-  inventory: '📦',
-  crm: '👥',
-  staff: '👤',
-  drivers: '🛵',
-  recruitment: '📝',
-  payments: '💳',
-  analytics: '📈',
-  forecast: '🔮',
-  channels: '📡',
-  reviews: '⭐',
-  payroll: '💰',
-  signage: '📺',
-  settings: '⚙️',
-};
+import NavIcon from '@/components/admin/NavIcon';
 
 // ─── Nav groups ───
 interface NavItem {
@@ -161,7 +139,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
                       ? 'bg-amber-500/15 text-amber-400'
                       : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
                   }`}>
-                  <span className="text-base w-5 text-center">{ICONS[n.icon] || '•'}</span>
+                  <NavIcon name={n.icon} />
                   <span className="truncate">{n.label}</span>
                 </Link>
               );
@@ -173,7 +151,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
       {/* Bottom links */}
       <div className="px-3 py-3 border-t border-zinc-800/50 space-y-1">
         <Link href="/" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-zinc-500 hover:text-white hover:bg-zinc-800/50 transition-colors">
-          <span className="text-base w-5 text-center">🏪</span>
+          <NavIcon name="store" />
           <span>{t.ui.admin_clientMenu}</span>
         </Link>
       </div>
@@ -181,9 +159,9 @@ function AdminContent({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex">
+    <div className="min-h-screen bg-zinc-950 dark:bg-zinc-950 bg-gray-50 flex">
       {/* Sidebar — desktop (fixed) */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-56 xl:w-60 bg-zinc-900/50 border-r border-zinc-800/50 fixed inset-y-0 left-0 z-30">
+      <aside className="hidden lg:flex lg:flex-col lg:w-56 xl:w-60 dark:bg-zinc-900/50 bg-white border-r dark:border-zinc-800/50 border-gray-200 fixed inset-y-0 left-0 z-30">
         {sidebar}
       </aside>
 
@@ -200,7 +178,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <div className="flex-1 lg:ml-56 xl:ml-60 flex flex-col min-h-screen">
         {/* Top bar */}
-        <header className="sticky top-0 z-20 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50">
+        <header className="sticky top-0 z-20 dark:bg-zinc-950/95 bg-white/95 backdrop-blur-md border-b dark:border-zinc-800/50 border-gray-200">
           <div className="flex items-center justify-between h-14 px-4">
             <div className="flex items-center gap-3">
               {/* Mobile hamburger */}

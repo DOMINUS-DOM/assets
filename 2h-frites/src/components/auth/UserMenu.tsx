@@ -48,8 +48,13 @@ export default function UserMenu() {
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen(!open)}
-        className="w-9 h-9 rounded-full bg-amber-500/20 text-amber-400 font-bold text-sm flex items-center justify-center active:scale-95 transition-transform">
-        {initial}
+        className="w-9 h-9 rounded-full bg-amber-500/20 text-amber-400 font-bold text-sm flex items-center justify-center active:scale-95 transition-transform overflow-hidden">
+        {user.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+        ) : (
+          initial
+        )}
       </button>
 
       {open && (

@@ -38,8 +38,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" suppressHydrationWarning>
-      <body className="font-sans">
+    <html lang="fr" className="dark" suppressHydrationWarning>
+      <body className="font-sans bg-zinc-950 dark:bg-zinc-950 light:bg-white text-white dark:text-white light:text-gray-900 transition-colors">
         <ErrorBoundary>
           <Providers>{children}</Providers>
         </ErrorBoundary>

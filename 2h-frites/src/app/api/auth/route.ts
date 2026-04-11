@@ -70,5 +70,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
+  if (action === 'updateAvatar') {
+    const auth = getAuthUser(req);
+    if (!auth) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    const { avatarUrl } = body;
+    await prisma.user.update({ where: { id: auth.userId }, data: { avatarUrl: avatarUrl || null } });
+    return NextResponse.json({ ok: true });
+  }
+
   return NextResponse.json({ error: 'unknown_action' }, { status: 400 });
 }

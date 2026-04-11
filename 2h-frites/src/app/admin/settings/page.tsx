@@ -4,14 +4,16 @@ import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useApiData } from '@/hooks/useApiData';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { formatPrice } from '@/utils/format';
 
 const DAY_NAMES = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
-type Tab = 'general' | 'hours' | 'delivery' | 'closedDays';
+type Tab = 'general' | 'hours' | 'delivery' | 'closedDays' | 'display';
 
 export default function SettingsPage() {
   const { t } = useLanguage();
+  const { theme, setTheme } = useTheme();
   const [settings, setSettings] = useState<any>({});
   const [tab, setTab] = useState<Tab>('general');
   const [saved, setSaved] = useState(false);
@@ -38,6 +40,7 @@ export default function SettingsPage() {
     { key: 'hours', label: t.ui.set_hours },
     { key: 'delivery', label: t.ui.set_delivery },
     { key: 'closedDays', label: t.ui.set_closedDays },
+    { key: 'display', label: 'Interface' },
   ];
 
   return (
@@ -206,6 +209,43 @@ export default function SettingsPage() {
               </div>
             ))}
             {settings.closedDates.length === 0 && <p className="text-zinc-500 text-sm text-center py-4">{t.ui.set_noClosedDays}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* ─── DISPLAY ─── */}
+      {tab === 'display' && (
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-sm font-bold text-white dark:text-white text-gray-900 mb-3">Theme</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => setTheme('dark')}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  theme === 'dark' ? 'border-amber-500 bg-zinc-900' : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-600'
+                }`}>
+                <div className="w-full h-16 rounded-lg bg-zinc-950 border border-zinc-800 mb-3 flex items-center px-3 gap-2">
+                  <div className="w-8 h-full bg-zinc-900 rounded" />
+                  <div className="flex-1 space-y-1">
+                    <div className="h-2 bg-zinc-800 rounded w-3/4" />
+                    <div className="h-2 bg-zinc-800 rounded w-1/2" />
+                  </div>
+                </div>
+                <p className={`text-sm font-medium ${theme === 'dark' ? 'text-amber-400' : 'text-zinc-400'}`}>Mode sombre</p>
+              </button>
+              <button onClick={() => setTheme('light')}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  theme === 'light' ? 'border-amber-500 bg-zinc-900' : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-600'
+                }`}>
+                <div className="w-full h-16 rounded-lg bg-white border border-gray-200 mb-3 flex items-center px-3 gap-2">
+                  <div className="w-8 h-full bg-gray-100 rounded" />
+                  <div className="flex-1 space-y-1">
+                    <div className="h-2 bg-gray-200 rounded w-3/4" />
+                    <div className="h-2 bg-gray-200 rounded w-1/2" />
+                  </div>
+                </div>
+                <p className={`text-sm font-medium ${theme === 'light' ? 'text-amber-400' : 'text-zinc-400'}`}>Mode clair</p>
+              </button>
+            </div>
           </div>
         </div>
       )}

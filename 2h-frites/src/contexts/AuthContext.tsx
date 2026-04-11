@@ -12,6 +12,7 @@ interface SafeUser {
   phone: string;
   role: UserRole;
   active: boolean;
+  avatarUrl?: string | null;
   driverId?: string | null;
   locationId?: string | null;
 }
