@@ -1,9 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
+import { useEffect, useRef } from 'react';
 
-// Leaflet CSS must be loaded
 const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 
 interface Zone {
@@ -12,7 +10,7 @@ interface Zone {
   fee: number;
   color: string;
   center: [number, number];
-  radius: number; // meters
+  radius: number;
 }
 
 interface DeliveryMapProps {
@@ -24,13 +22,13 @@ interface DeliveryMapProps {
 }
 
 export default function DeliveryMap({ zones, drivers = [], customerLocation, center = [50.479, 4.186], height = '400px' }: DeliveryMapProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<any>(null);
-  const [L, setL] = useState<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const leafletRef = useRef<any>(null);
 
-  // Load Leaflet dynamically (SSR-safe)
+  // Load Leaflet + init map once
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !containerRef.current) return;
 
     // Load CSS
     if (!document.querySelector(`link[href="${LEAFLET_CSS}"]`)) {
@@ -40,37 +38,77 @@ export default function DeliveryMap({ zones, drivers = [], customerLocation, cen
       document.head.appendChild(link);
     }
 
-    // Load Leaflet
+    let cancelled = false;
+
     import('leaflet').then((leaflet) => {
-      setL(leaflet.default);
+      if (cancelled || !containerRef.current) return;
+      const L = leaflet.default;
+      leafletRef.current = L;
+
+      // Prevent double init
+      if (mapInstanceRef.current) return;
+
+      const m = L.map(containerRef.current).setView(center, 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 18,
+      }).addTo(m);
+
+      mapInstanceRef.current = m;
+
+      // Draw initial content
+      drawContent(L, m, zones, drivers, customerLocation);
     });
+
+    return () => {
+      cancelled = true;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Initialize map
+  // Update content when data changes
   useEffect(() => {
-    if (!L || !mapRef.current || map) return;
+    const L = leafletRef.current;
+    const map = mapInstanceRef.current;
+    if (!L || !map) return;
 
-    const m = L.map(mapRef.current).setView(center, 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
-      maxZoom: 18,
-    }).addTo(m);
+    // Small delay to ensure map is fully initialized
+    const timer = setTimeout(() => {
+      try {
+        drawContent(L, map, zones, drivers, customerLocation);
+      } catch {}
+    }, 100);
 
-    setMap(m);
-    return () => { m.remove(); };
-  }, [L, center]);
+    return () => clearTimeout(timer);
+  }, [zones, drivers, customerLocation]);
 
-  // Draw zones
-  useEffect(() => {
-    if (!map || !L) return;
+  return (
+    <div
+      ref={containerRef}
+      style={{ height, width: '100%', borderRadius: '12px', overflow: 'hidden' }}
+      className="bg-zinc-800"
+    />
+  );
+}
 
-    // Clear existing layers
+function drawContent(L: any, map: any, zones: any[], drivers: any[], customerLocation?: [number, number]) {
+  if (!map || !L) return;
+
+  try {
+    // Clear existing overlay layers
     map.eachLayer((layer: any) => {
-      if (layer._isZone || layer._isDriver || layer._isCustomer) map.removeLayer(layer);
+      if (layer._isZone || layer._isDriver || layer._isCustomer) {
+        map.removeLayer(layer);
+      }
     });
 
     // Draw zone circles
     zones.forEach((zone) => {
+      if (!zone.center || !zone.radius) return;
       const circle = L.circle(zone.center, {
         radius: zone.radius,
         color: zone.color,
@@ -79,11 +117,10 @@ export default function DeliveryMap({ zones, drivers = [], customerLocation, cen
         weight: 2,
       }).addTo(map);
       circle._isZone = true;
-
       circle.bindPopup(`
         <div style="text-align:center;font-family:sans-serif;">
           <strong>${zone.name}</strong><br>
-          <span style="color:${zone.color};font-size:18px;font-weight:bold;">${zone.fee.toFixed(2)} €</span><br>
+          <span style="color:${zone.color};font-size:18px;font-weight:bold;">${(zone.fee || 0).toFixed(2)} €</span><br>
           <small>Frais de livraison</small>
         </div>
       `);
@@ -91,6 +128,7 @@ export default function DeliveryMap({ zones, drivers = [], customerLocation, cen
 
     // Draw drivers
     drivers.forEach((drv) => {
+      if (!drv.lat || !drv.lng) return;
       const icon = L.divIcon({
         html: `<div style="background:#f59e0b;color:#000;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:bold;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);">🛵</div>`,
         iconSize: [32, 32],
@@ -111,13 +149,7 @@ export default function DeliveryMap({ zones, drivers = [], customerLocation, cen
       const marker = L.marker(customerLocation, { icon }).addTo(map);
       marker._isCustomer = true;
     }
-  }, [map, L, zones, drivers, customerLocation]);
-
-  return (
-    <div
-      ref={mapRef}
-      style={{ height, width: '100%', borderRadius: '12px', overflow: 'hidden' }}
-      className="bg-zinc-800"
-    />
-  );
+  } catch (e) {
+    console.warn('[DeliveryMap] Draw error:', e);
+  }
 }
