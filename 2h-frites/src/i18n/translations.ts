@@ -242,6 +242,7 @@ const fr: Translations = {
   },
   categories: {
     frites: 'Frites',
+    pain_frites: 'Pain-frites',
     magic_box: 'Magic Box',
     viandes: 'Viandes',
     sauces: 'Sauces',
@@ -560,6 +561,7 @@ const en: Translations = {
   },
   categories: {
     frites: 'Fries',
+    pain_frites: 'Fries Sandwich',
     magic_box: 'Magic Box',
     viandes: 'Meats & Snacks',
     sauces: 'Sauces',
@@ -878,6 +880,7 @@ const es: Translations = {
   },
   categories: {
     frites: 'Patatas fritas',
+    pain_frites: 'Bocadillo de patatas',
     magic_box: 'Magic Box',
     viandes: 'Carnes y snacks',
     sauces: 'Salsas',
@@ -1196,6 +1199,7 @@ const nl: Translations = {
   },
   categories: {
     frites: 'Friet',
+    pain_frites: 'Broodje friet',
     magic_box: 'Magic Box',
     viandes: 'Vlees & Snacks',
     sauces: 'Sauzen',

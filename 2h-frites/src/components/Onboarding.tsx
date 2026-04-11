@@ -41,13 +41,14 @@ function DemoWelcome() {
 
 /* Slide 2: Browse — clickable category cards */
 function DemoBrowse({ onSelectCategory }: { onSelectCategory?: (slug: string) => void }) {
+  const { getCategory } = useLanguage();
   const cats = [
-    { icon: '🍟', name: 'Frites', slug: 'frites' },
-    { icon: '🥖', name: 'Pain-frites', slug: 'pain-frites' },
-    { icon: '🍔', name: 'Pains ronds', slug: 'pains-ronds' },
-    { icon: '🥩', name: 'Viandes', slug: 'viandes' },
-    { icon: '🫙', name: 'Sauces', slug: 'sauces' },
-    { icon: '🎁', name: 'Magic Box', slug: 'magic-box' },
+    { icon: '🍟', nameKey: 'frites', slug: 'frites' },
+    { icon: '🥖', nameKey: 'pain_frites', slug: 'pain-frites' },
+    { icon: '🍔', nameKey: 'pains_ronds', slug: 'pains-ronds' },
+    { icon: '🥩', nameKey: 'viandes', slug: 'viandes' },
+    { icon: '🫙', nameKey: 'sauces', slug: 'sauces' },
+    { icon: '🎁', nameKey: 'magic_box', slug: 'magic-box' },
   ];
   return (
     <div className="grid grid-cols-3 gap-2 w-64 mx-auto">
@@ -61,7 +62,7 @@ function DemoBrowse({ onSelectCategory }: { onSelectCategory?: (slug: string) =>
           style={{ animationDelay: `${300 + i * 100}ms`, animationFillMode: 'backwards' }}
         >
           <span className="text-2xl">{c.icon}</span>
-          <span className="text-[10px] text-zinc-300 font-medium">{c.name}</span>
+          <span className="text-[10px] text-zinc-300 font-medium">{getCategory(c.nameKey)}</span>
         </button>
       ))}
     </div>
