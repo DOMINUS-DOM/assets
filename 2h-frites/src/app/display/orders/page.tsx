@@ -1,23 +1,22 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 
-const STATUS_CONFIG: Record<string, { label: string; emoji: string; bg: string }> = {
-  preparing: { label: 'En préparation', emoji: '👨‍🍳', bg: 'bg-amber-500/20 border-amber-500/30' },
-  ready: { label: 'PRÊTE !', emoji: '✅', bg: 'bg-emerald-500/20 border-emerald-500/30 animate-pulse' },
-};
-
-export default function DisplayOrdersPage() {
+function DisplayOrdersContent() {
+  const searchParams = useSearchParams();
+  const siteId = searchParams.get('site');
   const [orders, setOrders] = useState<any[]>([]);
   const [time, setTime] = useState(new Date());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [lastReadyCount, setLastReadyCount] = useState(0);
 
   useEffect(() => {
-    const fetch = async () => {
+    const locParam = siteId ? `?locationId=${siteId}` : '';
+    const fetchOrders = async () => {
       try {
-        const all = await api.get<any[]>('/orders');
+        const all = await api.get<any[]>(`/orders${locParam}`);
         const active = all.filter((o: any) => ['preparing', 'ready'].includes(o.status));
         // Play sound when new order becomes ready
         const readyCount = active.filter((o: any) => o.status === 'ready').length;
@@ -28,8 +27,8 @@ export default function DisplayOrdersPage() {
         setOrders(active);
       } catch {}
     };
-    fetch();
-    const interval = setInterval(fetch, 4000);
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 4000);
     return () => clearInterval(interval);
   }, [lastReadyCount]);
 
@@ -106,5 +105,13 @@ export default function DisplayOrdersPage() {
         <p className="text-xs text-zinc-500">Commandez sur 2hfrites.be 🍟</p>
       </div>
     </div>
+  );
+}
+
+export default function DisplayOrdersPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-950 flex items-center justify-center"><span className="text-4xl">🍟</span></div>}>
+      <DisplayOrdersContent />
+    </Suspense>
   );
 }
