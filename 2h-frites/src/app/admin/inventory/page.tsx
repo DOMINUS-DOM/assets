@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { formatPrice } from '@/utils/format';
 
 const CAT_EMOJI: Record<string, string> = { frites: '🍟', viandes: '🥩', sauces: '🫙', pains: '🥖', boissons: '🥤', legumes: '🥬', autre: '📦' };
@@ -11,6 +12,7 @@ type Tab = 'stock' | 'alerts' | 'suppliers' | 'movements';
 
 export default function InventoryPage() {
   const { t } = useLanguage();
+  const { locationId } = useLocation();
   const [tab, setTab] = useState<Tab>('stock');
   const [ingredients, setIngredients] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -20,7 +22,8 @@ export default function InventoryPage() {
 
   const refresh = async () => {
     try {
-      const data = await api.get<{ ingredients: any[]; suppliers: any[]; movements: any[] }>('/inventory');
+      const locParam = locationId ? `?locationId=${locationId}` : '';
+      const data = await api.get<{ ingredients: any[]; suppliers: any[]; movements: any[] }>(`/inventory${locParam}`);
       setIngredients(data.ingredients); setSuppliers(data.suppliers); setMovements(data.movements);
     } catch {}
   };

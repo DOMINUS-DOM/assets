@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { formatPrice } from '@/utils/format';
 import Link from 'next/link';
 
@@ -16,6 +17,7 @@ type Tab = 'employees' | 'planning' | 'tasks' | 'leaves' | 'clock';
 export default function StaffPage() {
   const { t } = useLanguage();
   const { hasRole } = useAuth();
+  const { locationId } = useLocation();
   const [tab, setTab] = useState<Tab>('employees');
   const [employees, setEmployees] = useState<any[]>([]);
   const [shifts, setShifts] = useState<any[]>([]);
@@ -26,7 +28,8 @@ export default function StaffPage() {
 
   const refresh = async () => {
     try {
-      const data = await api.get<{ employees: any[]; shifts: any[]; timeEntries: any[]; leaveRequests: any[]; tasks: any[] }>('/staff');
+      const locParam = locationId ? `?locationId=${locationId}` : '';
+      const data = await api.get<{ employees: any[]; shifts: any[]; timeEntries: any[]; leaveRequests: any[]; tasks: any[] }>(`/staff${locParam}`);
       setEmployees(data.employees);
       setShifts(data.shifts.filter((s: any) => s.date === today));
       setEntries(data.timeEntries.filter((e: any) => e.date === today));

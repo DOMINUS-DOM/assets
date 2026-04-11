@@ -2,6 +2,7 @@
 
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useApiData } from '@/hooks/useApiData';
+import { useLocation } from '@/contexts/LocationContext';
 import { formatPrice } from '@/utils/format';
 import Link from 'next/link';
 
@@ -16,7 +17,9 @@ function StatCard({ label, value, emoji }: { label: string; value: string | numb
 }
 
 export default function AdminDashboard() {
-  const { data: orders } = useApiData<any[]>('/orders', []);
+  const { locationId } = useLocation();
+  const locParam = locationId ? `?locationId=${locationId}` : '';
+  const { data: orders } = useApiData<any[]>(`/orders${locParam}`, []);
   const { t } = useLanguage();
 
   const revenue = orders.reduce((sum, o) => sum + o.total, 0);

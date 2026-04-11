@@ -7,6 +7,25 @@ import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import UserMenu from '@/components/auth/UserMenu';
 import NotificationBell from '@/components/NotificationBell';
+import { useLocation } from '@/contexts/LocationContext';
+
+function LocationSelector() {
+  const { locationId, locations, setLocationId, canSwitch } = useLocation();
+  if (!canSwitch || locations.length <= 1) return null;
+
+  return (
+    <select
+      value={locationId || 'all'}
+      onChange={(e) => setLocationId(e.target.value === 'all' ? null : e.target.value)}
+      className="px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700 text-xs text-white focus:outline-none focus:border-amber-500/50"
+    >
+      <option value="all">Tous les sites</option>
+      {locations.filter((l) => l.active).map((l) => (
+        <option key={l.id} value={l.id}>{l.name}</option>
+      ))}
+    </select>
+  );
+}
 
 function AdminContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -45,6 +64,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
             <span className="font-bold text-sm"><span className="text-amber-400">2H</span> Admin</span>
           </Link>
           <div className="flex items-center gap-2">
+            <LocationSelector />
             <Link href="/" className="text-xs text-zinc-500 hover:text-amber-400 transition-colors">{t.ui.admin_clientMenu}</Link>
             <NotificationBell />
             <UserMenu />

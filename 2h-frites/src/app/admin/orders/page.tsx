@@ -4,13 +4,16 @@ import { useState } from 'react';
 import { OrderStatus } from '@/types/order';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useApiData } from '@/hooks/useApiData';
+import { useLocation } from '@/contexts/LocationContext';
 import { formatPrice } from '@/utils/format';
 import Link from 'next/link';
 
 const STATUSES: (OrderStatus | 'all')[] = ['all', 'received', 'preparing', 'ready', 'delivering', 'delivered', 'picked_up', 'cancelled'];
 
 export default function OrdersPage() {
-  const { data: orders } = useApiData<any[]>('/orders', []);
+  const { locationId } = useLocation();
+  const locParam = locationId ? `?locationId=${locationId}` : '';
+  const { data: orders } = useApiData<any[]>(`/orders${locParam}`, []);
   const [filter, setFilter] = useState<OrderStatus | 'all'>('all');
   const { t } = useLanguage();
 

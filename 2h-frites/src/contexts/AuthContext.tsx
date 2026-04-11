@@ -13,6 +13,7 @@ interface SafeUser {
   role: UserRole;
   active: boolean;
   driverId?: string | null;
+  locationId?: string | null;
 }
 
 interface AuthContextType {

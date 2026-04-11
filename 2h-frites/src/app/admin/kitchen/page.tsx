@@ -5,6 +5,7 @@ import { OrderStatus } from '@/types/order';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { useLocation } from '@/contexts/LocationContext';
 import { formatPrice } from '@/utils/format';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
@@ -14,14 +15,16 @@ const STATUS_FLOW: Record<string, OrderStatus> = {
 
 function KDSContent() {
   const { t } = useLanguage();
+  const { locationId } = useLocation();
   const [orders, setOrders] = useState<any[]>([]);
   const [lastCount, setLastCount] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    const locParam = locationId ? `?locationId=${locationId}` : '';
     const refresh = async () => {
       try {
-        const all = await api.get<any[]>('/orders');
+        const all = await api.get<any[]>(`/orders${locParam}`);
         const active = all.filter((o: any) => ['received', 'preparing', 'ready'].includes(o.status));
         if (active.filter((o: any) => o.status === 'received').length > lastCount) {
           try { audioRef.current?.play(); } catch {}

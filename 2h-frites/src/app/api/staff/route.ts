@@ -6,12 +6,14 @@ import { getAuthUser, ADMIN_ROLES, forbidden } from '@/lib/auth';
 export async function GET(req: NextRequest) {
   const auth = getAuthUser(req);
   if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
+  const locationId = req.nextUrl.searchParams.get('locationId');
+  const locFilter = locationId ? { locationId } : {};
   const [employees, shifts, timeEntries, leaveRequests, tasks] = await Promise.all([
-    prisma.employee.findMany({ orderBy: { name: 'asc' } }),
-    prisma.shift.findMany({ orderBy: { date: 'desc' } }),
+    prisma.employee.findMany({ where: locFilter, orderBy: { name: 'asc' } }),
+    prisma.shift.findMany({ where: locFilter, orderBy: { date: 'desc' } }),
     prisma.timeEntry.findMany({ orderBy: { clockIn: 'desc' }, take: 50 }),
     prisma.leaveRequest.findMany({ orderBy: { createdAt: 'desc' } }),
-    prisma.task.findMany({ orderBy: { date: 'desc' } }),
+    prisma.task.findMany({ where: locFilter, orderBy: { date: 'desc' } }),
   ]);
   return NextResponse.json({ employees, shifts, timeEntries, leaveRequests, tasks });
 }

@@ -5,8 +5,11 @@ import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden } from '@/lib/auth';
 
 let orderCounter = 100;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const locationId = req.nextUrl.searchParams.get('locationId');
+  const where = locationId ? { locationId } : {};
   const orders = await prisma.order.findMany({
+    where,
     include: { items: true, statusHistory: { orderBy: { at: 'asc' } } },
     orderBy: { createdAt: 'desc' },
   });
@@ -38,6 +41,7 @@ export async function POST(req: NextRequest) {
         paymentStatus: body.paymentStatus || 'pending',
         total: body.total,
         userId: body.userId,
+        locationId: body.locationId || null,
         items: { create: body.items },
         statusHistory: { create: { status: 'received' } },
       },

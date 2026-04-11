@@ -6,8 +6,10 @@ import { getAuthUser, ADMIN_ROLES, forbidden } from '@/lib/auth';
 export async function GET(req: NextRequest) {
   const auth = getAuthUser(req);
   if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
+  const locationId = req.nextUrl.searchParams.get('locationId');
+  const locFilter = locationId ? { locationId } : {};
   const [ingredients, suppliers, movements] = await Promise.all([
-    prisma.ingredient.findMany({ orderBy: { name: 'asc' } }),
+    prisma.ingredient.findMany({ where: locFilter, orderBy: { name: 'asc' } }),
     prisma.supplier.findMany({ orderBy: { name: 'asc' } }),
     prisma.stockMovement.findMany({ orderBy: { date: 'desc' }, take: 50 }),
   ]);

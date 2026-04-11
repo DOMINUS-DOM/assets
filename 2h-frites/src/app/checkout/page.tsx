@@ -66,7 +66,7 @@ export default function CheckoutPage() {
         deliveryNotes: orderType === 'delivery' ? instructions : null,
         pickupTime: orderType === 'pickup' ? pickupTime : null,
         paymentMethod, paymentStatus: paymentMethod === 'online' ? 'paid' : 'pending',
-        total: grandTotal, userId: user?.id || null,
+        total: grandTotal, userId: user?.id || null, locationId: user?.locationId || null,
         items: items.map((i) => ({ menuItemId: i.menuItemId, name: i.name, price: i.price, quantity: i.quantity, sizeKey: i.sizeKey || null, categoryId: i.categoryId })),
       });
       clearCart();
