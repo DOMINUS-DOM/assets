@@ -105,7 +105,7 @@ function DriverContent() {
                     <div key={o.id} className="flex justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50 text-sm">
                       <div>
                         <p className="text-white font-medium">{o.id}</p>
-                        <p className="text-xs text-zinc-500">{o.customer.name}</p>
+                        <p className="text-xs text-zinc-500">{o.customerName || '—'}</p>
                       </div>
                       <span className="text-emerald-400 font-bold">{formatPrice(o.total)} €</span>
                     </div>

@@ -145,11 +145,11 @@ export default function PayrollPage() {
               <div>
                 <p className="text-sm font-bold text-white">{getName(ts.employeeId)}</p>
                 <p className="text-xs text-zinc-500">
-                  {t.ui.pay_regular}: {ts.regularHours.toFixed(1)}h
-                  {ts.overtimeHours > 0 && <span className="text-amber-400 ml-2">+ {ts.overtimeHours.toFixed(1)}h {t.ui.pay_overtime}</span>}
+                  {t.ui.pay_regular}: {(ts.regularHours || 0).toFixed(1)}h
+                  {(ts.overtimeHours || 0) > 0 && <span className="text-amber-400 ml-2">+ {(ts.overtimeHours || 0).toFixed(1)}h {t.ui.pay_overtime}</span>}
                 </p>
               </div>
-              <span className="text-lg font-extrabold text-amber-400">{ts.totalHours.toFixed(1)}h</span>
+              <span className="text-lg font-extrabold text-amber-400">{(ts.totalHours || 0).toFixed(1)}h</span>
             </div>
           ))}
         </div>
@@ -185,12 +185,12 @@ export default function PayrollPage() {
               {/* Detail breakdown */}
               <div className="text-xs space-y-1 pt-2 border-t border-zinc-800">
                 <div className="flex justify-between text-zinc-400">
-                  <span>{t.ui.pay_regular} ({slip.regularHours.toFixed(1)}h × {formatPrice(slip.hourlyRate)} €)</span>
-                  <span>{formatPrice(slip.grossRegular)} €</span>
+                  <span>{t.ui.pay_regular} ({(slip.regularHours || 0).toFixed(1)}h × {formatPrice(slip.hourlyRate || 0)} €)</span>
+                  <span>{formatPrice(slip.grossRegular || 0)} €</span>
                 </div>
-                {slip.overtimeHours > 0 && (
+                {(slip.overtimeHours || 0) > 0 && (
                   <div className="flex justify-between text-amber-400/80">
-                    <span>{t.ui.pay_overtime} ({slip.overtimeHours.toFixed(1)}h × {formatPrice(slip.overtimeRate)} €)</span>
+                    <span>{t.ui.pay_overtime} ({(slip.overtimeHours || 0).toFixed(1)}h × {formatPrice(slip.overtimeRate || 0)} €)</span>
                     <span>{formatPrice(slip.grossOvertime)} €</span>
                   </div>
                 )}

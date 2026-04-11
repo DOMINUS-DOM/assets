@@ -125,7 +125,7 @@ export default function PaymentsPage() {
                       {t.ui[`pmt_status_${txn.status}`]}
                     </span>
                   </div>
-                  <p className="text-xs text-zinc-500 mt-0.5">{order?.customer.name || '—'} — {new Date(txn.createdAt).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' })}</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">{order?.customerName || '—'} — {new Date(txn.createdAt).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' })}</p>
                   {txn.reference && <p className="text-[10px] text-zinc-600">ref: {txn.reference}</p>}
                 </div>
                 <div className="text-right">
@@ -149,14 +149,14 @@ export default function PaymentsPage() {
       {tab === 'invoices' && (
         <div className="space-y-3">
           <p className="text-xs text-zinc-500">{t.ui.pmt_invoicesHint}</p>
-          {orders.filter((o) => o.payment.status === 'paid').map((order) => {
+          {orders.filter((o) => o.paymentStatus === 'paid').map((order) => {
             const invoice: any = null; // TODO: fetch from API
             return (
               <div key={order.id} className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <p className="text-sm font-bold text-white">{order.id}</p>
-                    <p className="text-xs text-zinc-500">{order.customer.name} — {formatPrice(order.total)} €</p>
+                    <p className="text-sm font-bold text-white">{order.orderNumber || order.id}</p>
+                    <p className="text-xs text-zinc-500">{order.customerName || '—'} — {formatPrice(order.total)} €</p>
                   </div>
                   {invoice ? (
                     <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-400">

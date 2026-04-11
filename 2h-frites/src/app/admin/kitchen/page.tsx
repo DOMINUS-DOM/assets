@@ -60,7 +60,7 @@ function KDSContent() {
         </div>
         <div className="flex items-center gap-2 text-xs text-zinc-400">
           <span>{order.type === 'pickup' ? '🏪' : '🛵'}</span>
-          <span>{order.customer.name}</span>
+          <span>{order.customerName || '—'}</span>
           {order.pickupTime && <span className="text-amber-400">🕐 {order.pickupTime}</span>}
         </div>
         <div className="space-y-1">
