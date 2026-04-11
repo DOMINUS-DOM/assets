@@ -46,12 +46,20 @@ function KioskContent() {
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway'>('dine_in');
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(sessionStorage.getItem('kiosk-cart') || '[]'); } catch { return []; }
+  });
   const [sizePopup, setSizePopup] = useState<MenuItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Persist cart to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('kiosk-cart', JSON.stringify(cart));
+  }, [cart]);
 
   // Load menu
   useEffect(() => {
@@ -156,15 +164,12 @@ function KioskContent() {
     setSubmitting(true);
     setOrderError(null);
     try {
-      const res = await fetch('/api/orders', {
+      const res = await fetch('/api/kiosk', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Kiosk-Key': process.env.NEXT_PUBLIC_KIOSK_API_KEY || '',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'create',
-          type: 'pickup',
+          type: orderType === 'dine_in' ? 'dine_in' : 'pickup',
           customerName: tableNumber ? `Borne Table ${tableNumber}` : 'Borne',
           customerPhone: '',
           customerEmail: null,

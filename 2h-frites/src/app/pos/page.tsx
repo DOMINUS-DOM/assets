@@ -35,12 +35,20 @@ function POSContent() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
-  const [cart, setCart] = useState<POSCartItem[]>([]);
+  const [cart, setCart] = useState<POSCartItem[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(sessionStorage.getItem('pos-cart') || '[]'); } catch { return []; }
+  });
   const [showCheckout, setShowCheckout] = useState(false);
   const [showSizePopup, setShowSizePopup] = useState<MenuItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [lastOrder, setLastOrder] = useState<string | null>(null);
   const [lastOrderData, setLastOrderData] = useState<any>(null);
+
+  // Persist cart to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('pos-cart', JSON.stringify(cart));
+  }, [cart]);
 
   useEffect(() => {
     const load = () => {

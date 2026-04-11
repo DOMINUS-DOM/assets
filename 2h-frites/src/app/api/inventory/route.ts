@@ -1,13 +1,14 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthUser, ADMIN_ROLES, forbidden } from '@/lib/auth';
+import { getAuthUser, ADMIN_ROLES, forbidden, enforceLocation } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   const auth = getAuthUser(req);
   if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
   const locationId = req.nextUrl.searchParams.get('locationId');
-  const locFilter = locationId ? { locationId } : {};
+  const effectiveLocation = enforceLocation(auth, locationId);
+  const locFilter = effectiveLocation ? { locationId: effectiveLocation } : {};
   const [ingredients, suppliers, movements] = await Promise.all([
     prisma.ingredient.findMany({ where: locFilter, orderBy: { name: 'asc' } }),
     prisma.supplier.findMany({ orderBy: { name: 'asc' } }),

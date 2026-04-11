@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden } from '@/lib/auth';
+import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden, enforceLocation } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   const auth = getAuthUser(req);
@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
   if (!ADMIN_ROLES.includes(auth.role)) return forbidden();
 
   const locationId = req.nextUrl.searchParams.get('locationId');
-  const where = locationId ? { locationId } : {};
+  const effectiveLocation = enforceLocation(auth, locationId);
+  const where = effectiveLocation ? { locationId: effectiveLocation } : {};
 
   const contents = await prisma.signageContent.findMany({
     where,

@@ -1,9 +1,21 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden, enforceLocation, verifyToken } from '@/lib/auth';
+import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden, enforceLocation } from '@/lib/auth';
 
-let orderCounter = 100;
+// Generate unique order number from DB (no in-memory counter)
+async function nextOrderNumber(): Promise<string> {
+  const latest = await prisma.order.findFirst({
+    orderBy: { createdAt: 'desc' },
+    select: { orderNumber: true },
+  });
+  let num = 101;
+  if (latest?.orderNumber) {
+    const match = latest.orderNumber.match(/ORD-(\d+)/);
+    if (match) num = parseInt(match[1], 10) + 1;
+  }
+  return `ORD-${String(num).padStart(3, '0')}`;
+}
 
 export async function GET(req: NextRequest) {
   const orderNumber = req.nextUrl.searchParams.get('orderNumber');
@@ -54,10 +66,10 @@ export async function POST(req: NextRequest) {
     const isClientOrder = body.customerPhone || body.customerEmail;
     if (!auth && !isKiosk && !isClientOrder) return unauthorized();
 
-    orderCounter++;
+    const orderNumber = await nextOrderNumber();
     const order = await prisma.order.create({
       data: {
-        orderNumber: `ORD-${String(orderCounter).padStart(3, '0')}`,
+        orderNumber,
         type: body.type,
         customerName: body.customerName,
         customerPhone: body.customerPhone,
