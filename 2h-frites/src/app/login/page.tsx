@@ -55,17 +55,6 @@ export default function LoginPage() {
           <br />
           <Link href="/forgot-password" className="text-zinc-500 text-xs">{t.ui.auth_forgotPassword}</Link>
         </div>
-
-        {/* Demo accounts hint */}
-        <div className="mt-8 p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
-          <p className="text-xs text-zinc-500 mb-2 font-medium">Demo :</p>
-          <div className="space-y-1 text-xs text-zinc-400">
-            <p>patron@2hfrites.be / patron123</p>
-            <p>employe@2hfrites.be / employe123</p>
-            <p>karim@2hfrites.be / livreur123</p>
-            <p>client@2hfrites.be / client123</p>
-          </div>
-        </div>
       </div>
     </div>
   );
