@@ -15,6 +15,16 @@ const STATUS_COLORS: Record<string, string> = {
 
 type Tab = 'transactions' | 'report' | 'invoices';
 
+type Period = 'today' | 'week' | 'month' | 'all';
+
+function getStartDate(period: Period): string | null {
+  const now = new Date();
+  if (period === 'today') return now.toISOString().slice(0, 10);
+  if (period === 'week') { now.setDate(now.getDate() - 7); return now.toISOString().slice(0, 10); }
+  if (period === 'month') { now.setMonth(now.getMonth() - 1); return now.toISOString().slice(0, 10); }
+  return null;
+}
+
 export default function PaymentsPage() {
   const { t } = useLanguage();
   const { locationId } = useLocation();
@@ -25,6 +35,15 @@ export default function PaymentsPage() {
   const today = new Date().toISOString().slice(0, 10);
   const [reportDate, setReportDate] = useState(today);
   const [report, setReport] = useState<any>(null);
+  const [period, setPeriod] = useState<Period>('today');
+
+  const startDate = getStartDate(period);
+  const filteredTransactions = startDate
+    ? transactions.filter((txn: any) => txn.createdAt?.slice(0, 10) >= startDate)
+    : transactions;
+  const filteredOrders = startDate
+    ? orders.filter((o: any) => o.createdAt?.slice(0, 10) >= startDate)
+    : orders;
 
   const refresh = async () => {
     try { const o = await api.get<any[]>(`/orders${locParam}`); setOrders(o); } catch {}
@@ -36,10 +55,10 @@ export default function PaymentsPage() {
 
   useEffect(() => {
     // Compute basic report from orders
-    const paid = orders.filter((o: any) => o.paymentStatus === 'paid');
+    const paid = filteredOrders.filter((o: any) => o.paymentStatus === 'paid');
     const total = paid.reduce((s: number, o: any) => s + o.total, 0);
     setReport({ totalRevenue: total, orderCount: paid.length, totalVat: Math.round(total * 0.06 * 100) / 100, cashTotal: 0, onlineTotal: total, refundTotal: 0, avgOrderValue: paid.length > 0 ? Math.round(total / paid.length * 100) / 100 : 0 });
-  }, [reportDate, transactions]);
+  }, [reportDate, filteredOrders]);
 
   const ic = 'px-3 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm focus:outline-none focus:border-amber-500/50';
 
@@ -51,7 +70,30 @@ export default function PaymentsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-white">{t.ui.pmt_title}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-white">{t.ui.pmt_title}</h1>
+        <div className="flex gap-1">
+          {([['today', "Aujourd'hui"], ['week', '7 jours'], ['month', '30 jours'], ['all', 'Tout']] as [Period, string][]).map(([p, label]) => (
+            <button key={p} onClick={() => setPeriod(p)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${period === p ? 'bg-amber-500/15 text-amber-400' : 'bg-zinc-900 text-zinc-500 hover:text-zinc-300'}`}>
+              {label}
+            </button>
+          ))}
+          <button onClick={() => {
+            const rows = filteredTransactions.map((txn: any) => {
+              const order = orders.find((o: any) => o.id === txn.orderId);
+              return `${txn.orderId},${txn.createdAt?.slice(0, 10) || ''},${order?.customerName || ''},${txn.method},${txn.amount},${txn.status},${txn.reference || ''}`;
+            });
+            const csv = ['Commande,Date,Client,Methode,Montant,Statut,Reference', ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `payments-${period}.csv`; a.click();
+          }}
+            className="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-400 text-xs font-medium hover:text-white transition-colors">
+            ↓ CSV
+          </button>
+        </div>
+      </div>
 
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {TABS.map((tb) => (
@@ -112,8 +154,8 @@ export default function PaymentsPage() {
       {/* ─── TRANSACTIONS TAB ─── */}
       {tab === 'transactions' && (
         <div className="space-y-2">
-          {transactions.length === 0 && <p className="text-center text-zinc-500 py-8 text-sm">{t.ui.pmt_noTransactions}</p>}
-          {transactions.map((txn) => {
+          {filteredTransactions.length === 0 && <p className="text-center text-zinc-500 py-8 text-sm">{t.ui.pmt_noTransactions}</p>}
+          {filteredTransactions.map((txn) => {
             const order = orders.find((o) => o.id === txn.orderId);
             return (
               <div key={txn.id} className="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50">
@@ -149,7 +191,7 @@ export default function PaymentsPage() {
       {tab === 'invoices' && (
         <div className="space-y-3">
           <p className="text-xs text-zinc-500">{t.ui.pmt_invoicesHint}</p>
-          {orders.filter((o) => o.paymentStatus === 'paid').map((order) => {
+          {filteredOrders.filter((o) => o.paymentStatus === 'paid').map((order) => {
             const invoice: any = null; // TODO: fetch from API
             return (
               <div key={order.id} className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">

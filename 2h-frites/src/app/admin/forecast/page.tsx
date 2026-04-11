@@ -8,13 +8,29 @@ import { formatPrice } from '@/utils/format';
 
 const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
+type Period = 'today' | 'week' | 'month' | 'all';
+
+function getStartDate(period: Period): string | null {
+  const now = new Date();
+  if (period === 'today') return now.toISOString().slice(0, 10);
+  if (period === 'week') { now.setDate(now.getDate() - 7); return now.toISOString().slice(0, 10); }
+  if (period === 'month') { now.setMonth(now.getMonth() - 1); return now.toISOString().slice(0, 10); }
+  return null;
+}
+
 export default function ForecastPage() {
   const { t } = useLanguage();
   const { locationId } = useLocation();
   const locParam = locationId ? `?locationId=${locationId}` : '';
   const [orders, setOrders] = useState<any[]>([]);
+  const [period, setPeriod] = useState<Period>('all');
 
   useEffect(() => { api.get<any[]>(`/orders${locParam}`).then(setOrders).catch(() => {}); }, [locParam]);
+
+  const startDate = getStartDate(period);
+  const filteredOrders = startDate
+    ? orders.filter((o: any) => o.createdAt?.slice(0, 10) >= startDate)
+    : orders;
 
   // Build daily patterns from order history
   const patterns = useMemo(() => {
@@ -24,7 +40,7 @@ export default function ForecastPage() {
     for (let d = 0; d < 7; d++) dayStats[d] = { count: 0, revenue: 0, days: 1 };
     for (let h = 10; h < 24; h++) hourStats[h] = { count: 0 };
 
-    orders.forEach((o: any) => {
+    filteredOrders.forEach((o: any) => {
       const date = new Date(o.createdAt);
       const day = date.getDay();
       const hour = date.getHours();
@@ -34,7 +50,7 @@ export default function ForecastPage() {
     });
 
     return { dayStats, hourStats };
-  }, [orders]);
+  }, [filteredOrders]);
 
   // Simple forecast: tomorrow = average of same weekday
   const tomorrow = new Date();
@@ -46,19 +62,39 @@ export default function ForecastPage() {
   // Top items prediction
   const topItems = useMemo(() => {
     const counts: Record<string, { name: string; count: number }> = {};
-    orders.forEach((o: any) => (o.items || []).forEach((item: any) => {
+    filteredOrders.forEach((o: any) => (o.items || []).forEach((item: any) => {
       if (!counts[item.menuItemId]) counts[item.menuItemId] = { name: item.name, count: 0 };
       counts[item.menuItemId].count += item.quantity;
     }));
     return Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 8);
-  }, [orders]);
+  }, [filteredOrders]);
 
   const maxDayCount = Math.max(...Object.values(patterns.dayStats).map((s) => s.count), 1);
   const maxHourCount = Math.max(...Object.values(patterns.hourStats).map((s) => s.count), 1);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-white">{t.ui.fc_title}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-white">{t.ui.fc_title}</h1>
+        <div className="flex gap-1">
+          {([['today', "Aujourd'hui"], ['week', '7 jours'], ['month', '30 jours'], ['all', 'Tout']] as [Period, string][]).map(([p, label]) => (
+            <button key={p} onClick={() => setPeriod(p)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${period === p ? 'bg-amber-500/15 text-amber-400' : 'bg-zinc-900 text-zinc-500 hover:text-zinc-300'}`}>
+              {label}
+            </button>
+          ))}
+          <button onClick={() => {
+            const rows = filteredOrders.map((o: any) => `${o.orderNumber || o.id},${o.createdAt?.slice(0, 10) || ''},${o.customerName || ''},${o.type},${o.total},${o.status}`);
+            const csv = ['N°,Date,Client,Type,Total,Statut', ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `forecast-${period}.csv`; a.click();
+          }}
+            className="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-400 text-xs font-medium hover:text-white transition-colors">
+            ↓ CSV
+          </button>
+        </div>
+      </div>
 
       {/* Tomorrow forecast */}
       <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-zinc-900 to-zinc-900 border border-amber-500/20">
