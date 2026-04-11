@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden, enforceLocation } from '@/lib/auth';
+import { logAudit } from '@/lib/audit';
 
 // Generate unique order number from DB (no in-memory counter)
 async function nextOrderNumber(): Promise<string> {
@@ -90,6 +91,7 @@ export async function POST(req: NextRequest) {
       },
       include: { items: true, statusHistory: true },
     });
+    logAudit({ userId: auth?.userId, locationId: order.locationId, action: 'create', entity: 'Order', entityId: order.id, changes: { orderNumber, total: body.total, channel: isKiosk ? 'kiosk' : 'website' } });
     return NextResponse.json(order);
   }
 
@@ -102,6 +104,7 @@ export async function POST(req: NextRequest) {
     }
     await prisma.order.update({ where: { id: orderId }, data: { status } });
     await prisma.statusEntry.create({ data: { orderId, status } });
+    logAudit({ userId: auth.userId, action: 'status_change', entity: 'Order', entityId: orderId, changes: { status } });
     return NextResponse.json({ ok: true });
   }
 

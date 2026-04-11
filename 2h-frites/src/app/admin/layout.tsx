@@ -93,6 +93,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
         { href: '/admin/forecast', label: t.ui.fc_nav, icon: 'forecast', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'forecast' },
         { href: '/admin/channels', label: t.ui.ch_nav, icon: 'channels', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'channels' },
         { href: '/admin/reviews', label: t.ui.rev_nav, icon: 'reviews', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'reviews' },
+        { href: '/admin/reports', label: 'Rapport P&L', icon: 'payroll', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'analytics' },
       ],
     },
     {
@@ -100,6 +101,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
       items: [
         { href: '/admin/signage', label: 'Affichage', icon: 'signage', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'], permission: 'signage' },
         { href: '/admin/qrcode', label: 'QR Codes', icon: 'channels', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'qrcode' },
+        { href: '/admin/audit', label: 'Audit', icon: 'orders', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'settings' },
         { href: '/admin/settings', label: t.ui.set_nav, icon: 'settings', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'settings' },
       ],
     },

@@ -32,6 +32,36 @@ function POSContent() {
   const { getCategory, getItemName } = useLanguage();
   const { user } = useAuth();
   const { locationId } = useLocation();
+  const [isOnline, setIsOnline] = useState(true);
+  const [offlineCount, setOfflineCount] = useState(0);
+
+  useEffect(() => {
+    const update = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    setIsOnline(navigator.onLine);
+
+    // Listen for SW messages about offline queue
+    const handleMsg = (e: MessageEvent) => {
+      if (e.data?.type === 'OFFLINE_QUEUE_COUNT') setOfflineCount(e.data.count || 0);
+      if (e.data?.type === 'OFFLINE_SYNC_DONE') { setOfflineCount(0); refresh(); }
+    };
+    navigator.serviceWorker?.addEventListener('message', handleMsg);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+      navigator.serviceWorker?.removeEventListener('message', handleMsg);
+    };
+  }, []);
+
+  // Try to flush offline queue when coming back online
+  useEffect(() => {
+    if (isOnline && offlineCount > 0) {
+      navigator.serviceWorker?.controller?.postMessage({ type: 'FLUSH_OFFLINE_QUEUE' });
+    }
+  }, [isOnline, offlineCount]);
+
+  const refresh = () => {};
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
@@ -201,6 +231,16 @@ function POSContent() {
           {user && <span className="text-sm text-zinc-500 ml-1">{user.name}</span>}
         </div>
         <div className="flex items-center gap-3">
+          {!isOnline && (
+            <span className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-xs font-bold animate-pulse">
+              Hors ligne
+            </span>
+          )}
+          {offlineCount > 0 && (
+            <span className="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 text-xs font-bold">
+              {offlineCount} en attente
+            </span>
+          )}
           {lastOrder && (
             <span className="px-4 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-sm font-bold animate-pulse">
               ✓ {lastOrder}

@@ -84,7 +84,12 @@ export default function MenuCMSPage() {
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{cat.icon}</span>
                   <div>
-                    <p className="text-sm font-semibold text-white">{getCategory(cat.nameKey)}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-white">{getCategory(cat.nameKey)}</p>
+                      {cat.builder && (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">BUILDER</span>
+                      )}
+                    </div>
                     <p className="text-xs text-zinc-500">{available}/{total} {t.ui.cms_available}</p>
                   </div>
                 </div>

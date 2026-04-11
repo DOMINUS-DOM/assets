@@ -3,6 +3,7 @@ import { getAuthUser, unauthorized, forbidden } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { hasPermission, canManageRole, ROLE_HIERARCHY } from '@/lib/permissions';
+import { logAudit } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,6 +120,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    logAudit({ userId: caller.id, action: 'create', entity: 'User', entityId: user.id, changes: { email: email.toLowerCase(), role, name } });
     return NextResponse.json({ user });
   }
 
