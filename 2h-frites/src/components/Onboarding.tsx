@@ -71,12 +71,13 @@ function DemoBrowse({ onSelectCategory }: { onSelectCategory?: (slug: string) =>
 
 /* Slide 3: Pain-frites builder — step animation */
 function DemoPainFrites() {
+  const { t } = useLanguage();
   const [step, setStep] = useState(0);
   const steps = [
-    { emoji: '🥖🍟', label: 'Pain + Frites', sub: '5,00 €' },
-    { emoji: '🥩', label: '+ Viande', sub: '+3,00 €' },
-    { emoji: '🫙', label: '+ Sauce', sub: '+0,90 €' },
-    { emoji: '🥬', label: '+ Garniture', sub: '+0,60 €' },
+    { emoji: '🥖🍟', labelKey: 'onb_bread_frites', sub: '5,00 €' },
+    { emoji: '🥩', labelKey: 'onb_meat', sub: '+3,00 €' },
+    { emoji: '🫙', labelKey: 'onb_sauce', sub: '+0,90 €' },
+    { emoji: '🥬', labelKey: 'onb_topping', sub: '+0,60 €' },
   ];
 
   useEffect(() => {
@@ -96,14 +97,14 @@ function DemoPainFrites() {
         >
           <div className="flex items-center gap-2">
             <span className={`text-lg transition-transform duration-300 ${i === step ? 'scale-125' : ''}`}>{s.emoji}</span>
-            <span className={`text-xs font-medium ${i <= step ? 'text-white' : 'text-zinc-600'}`}>{s.label}</span>
+            <span className={`text-xs font-medium ${i <= step ? 'text-white' : 'text-zinc-600'}`}>{t.ui[s.labelKey]}</span>
           </div>
           <span className={`text-xs font-bold ${i <= step ? 'text-amber-400' : 'text-zinc-700'}`}>{s.sub}</span>
         </div>
       ))}
       {step >= 3 && (
         <div className="text-center pt-1 animate-fade-in">
-          <span className="text-xs font-bold text-emerald-400">Total : 9,50 €</span>
+          <span className="text-xs font-bold text-emerald-400">{t.ui.onb_total} : 9,50 €</span>
         </div>
       )}
     </div>
@@ -112,6 +113,7 @@ function DemoPainFrites() {
 
 /* Slide 4: Add to cart — item with + button animating */
 function DemoAddToCart() {
+  const { t } = useLanguage();
   const [added, setAdded] = useState(0);
 
   useEffect(() => {
@@ -152,7 +154,7 @@ function DemoAddToCart() {
       {added > 0 && (
         <div className="flex items-center justify-center gap-2 pt-2 animate-fade-in">
           <span className="text-sm">🛒</span>
-          <span className="text-xs font-bold text-amber-400">{added} article{added > 1 ? 's' : ''}</span>
+          <span className="text-xs font-bold text-amber-400">{added} {t.ui.onb_articles}</span>
         </div>
       )}
     </div>
@@ -161,6 +163,7 @@ function DemoAddToCart() {
 
 /* Slide 5: Choose pickup or delivery */
 function DemoOrderType() {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<'pickup' | 'delivery'>('pickup');
 
   useEffect(() => {
@@ -176,24 +179,24 @@ function DemoOrderType() {
         <div className={`py-3 rounded-xl text-center text-sm font-semibold transition-all duration-500 ${
           mode === 'pickup' ? 'bg-amber-500 text-zinc-950 scale-105' : 'bg-zinc-800 text-zinc-500 scale-95'
         }`}>
-          🏪 Retrait
+          🏪 {t.ui.onb_pickup}
         </div>
         <div className={`py-3 rounded-xl text-center text-sm font-semibold transition-all duration-500 ${
           mode === 'delivery' ? 'bg-amber-500 text-zinc-950 scale-105' : 'bg-zinc-800 text-zinc-500 scale-95'
         }`}>
-          🛵 Livraison
+          🛵 {t.ui.onb_delivery}
         </div>
       </div>
       <div className="p-3 rounded-xl bg-zinc-800/60 border border-zinc-700/30 animate-fade-in" key={mode}>
         {mode === 'pickup' ? (
           <div className="text-center space-y-1">
             <span className="text-3xl">🏪</span>
-            <p className="text-[11px] text-zinc-300">On prépare, tu viens chercher !</p>
+            <p className="text-[11px] text-zinc-300">{t.ui.onb_pickup_desc}</p>
           </div>
         ) : (
           <div className="text-center space-y-1">
             <span className="text-3xl">🛵</span>
-            <p className="text-[11px] text-zinc-300">On te livre à la maison !</p>
+            <p className="text-[11px] text-zinc-300">{t.ui.onb_delivery_desc}</p>
           </div>
         )}
       </div>
@@ -203,13 +206,14 @@ function DemoOrderType() {
 
 /* Slide 6: Track order */
 function DemoTrack() {
+  const { t } = useLanguage();
   const [step, setStep] = useState(0);
   const steps = [
-    { emoji: '📋', label: 'Reçue' },
-    { emoji: '👨‍🍳', label: 'En cuisine' },
-    { emoji: '✅', label: 'Prête !' },
-    { emoji: '🛵', label: 'En route' },
-    { emoji: '🎉', label: 'Livrée !' },
+    { emoji: '📋', labelKey: 'onb_track_received' },
+    { emoji: '👨‍🍳', labelKey: 'onb_track_cooking' },
+    { emoji: '✅', labelKey: 'onb_track_ready' },
+    { emoji: '🛵', labelKey: 'onb_track_onway' },
+    { emoji: '🎉', labelKey: 'onb_track_delivered' },
   ];
 
   useEffect(() => {
@@ -229,7 +233,7 @@ function DemoTrack() {
           }`}
         >
           <span className={`text-lg transition-transform duration-300 ${i === step ? 'scale-125' : ''}`}>{s.emoji}</span>
-          <span className={`text-xs font-medium transition-colors ${i <= step ? 'text-white' : 'text-zinc-600'}`}>{s.label}</span>
+          <span className={`text-xs font-medium transition-colors ${i <= step ? 'text-white' : 'text-zinc-600'}`}>{t.ui[s.labelKey]}</span>
           {i === step && <span className="ml-auto text-amber-400 text-[10px] font-bold animate-pulse">●</span>}
         </div>
       ))}
