@@ -23,15 +23,28 @@ export default function CRMPage() {
     { id: 'rw-3', name: '-5€ sur la commande', pointsCost: 100, description: 'Réduction de 5€', active: true },
   ]);
   const [filter, setFilter] = useState<string>('all');
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     const fetchCRM = async () => { try { const d = await api.get<{ customers: any[] }>(`/crm${locParam}`); setCustomers(d.customers); } catch {} };
     fetchCRM();
-  }, []);
+  }, [locParam]);
 
   const segments = { total: customers.length, new: customers.filter((c: any) => c.segment === 'new').length, regular: customers.filter((c: any) => c.segment === 'regular').length, vip: customers.filter((c: any) => c.segment === 'vip').length };
-  const filtered = filter === 'all' ? customers : customers.filter((c) => c.segment === filter);
+  const bySegment = filter === 'all' ? customers : customers.filter((c) => c.segment === filter);
+  const filtered = search
+    ? bySegment.filter((c) => c.name?.toLowerCase().includes(search.toLowerCase()) || c.phone?.includes(search) || c.email?.toLowerCase().includes(search.toLowerCase()))
+    : bySegment;
   const totalRevenue = customers.reduce((sum, c) => sum + c.totalSpent, 0);
+
+  const exportCSV = () => {
+    const csv = ['Nom,Tel,Email,Segment,Commandes,Points,Total depense',
+      ...customers.map((c) => `${c.name},${c.phone},${c.email || ''},${c.segment},${c.totalOrders},${c.loyaltyPoints},${c.totalSpent}`)
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'clients.csv'; a.click();
+  };
 
   const TABS: { key: Tab; label: string }[] = [
     { key: 'customers', label: t.ui.crm_customers },
@@ -41,7 +54,15 @@ export default function CRMPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-white">{t.ui.crm_title}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-white shrink-0">{t.ui.crm_title}</h1>
+        <div className="flex items-center gap-2">
+          <input type="text" placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)}
+            className="px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-xs placeholder-zinc-500 focus:outline-none focus:border-amber-500/50 w-40" />
+          <button onClick={exportCSV}
+            className="px-3 py-2 rounded-lg bg-zinc-800 text-zinc-400 text-xs font-medium hover:text-white">↓ CSV</button>
+        </div>
+      </div>
 
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {TABS.map((tb) => (
