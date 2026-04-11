@@ -44,7 +44,38 @@ export async function POST(req: NextRequest) {
 
   if (body.action === 'toggleTask') {
     const task = await prisma.task.findUnique({ where: { id: body.id } });
-    if (task) await prisma.task.update({ where: { id: body.id }, data: { completed: !task.completed } });
+    if (task) {
+      await prisma.task.update({
+        where: { id: body.id },
+        data: {
+          completed: !task.completed,
+          completedAt: !task.completed ? new Date() : null,
+        },
+      });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.action === 'completeTaskWithPhoto') {
+    await prisma.task.update({
+      where: { id: body.id },
+      data: {
+        completed: true,
+        completedAt: new Date(),
+        completionPhotoUrl: body.completionPhotoUrl,
+      },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.action === 'updateTask') {
+    const { id, ...data } = body.data || {};
+    if (id) await prisma.task.update({ where: { id }, data });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.action === 'deleteTask') {
+    await prisma.task.delete({ where: { id: body.id } });
     return NextResponse.json({ ok: true });
   }
 

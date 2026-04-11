@@ -131,15 +131,23 @@ model LeaveRequest {
 }
 
 model Task {
-  id         String    @id @default(cuid())
-  employeeId String?
-  employee   Employee? @relation(fields: [employeeId], references: [id])
-  locationId String?
-  location   Location? @relation(fields: [locationId], references: [id])
-  title      String
-  date       String
-  completed  Boolean   @default(false)
-  category   String
+  id                 String    @id @default(cuid())
+  employeeId         String?
+  employee           Employee? @relation(fields: [employeeId], references: [id])
+  locationId         String?
+  location           Location? @relation(fields: [locationId], references: [id])
+  title              String
+  description        String    @default("")
+  date               String
+  dueTime            String?   // HH:mm
+  completed          Boolean   @default(false)
+  completedAt        DateTime?
+  category           String    // prep, cleaning, restock, other
+  priority           String    @default("medium") // low, medium, high, urgent
+  photoUrl           String?   // reference photo from admin
+  completionPhotoUrl String?   // proof photo from employee
+  requiresPhoto      Boolean   @default(false)
+  createdAt          DateTime  @default(now())
 }
 
 // ═══════════════════════════════════════

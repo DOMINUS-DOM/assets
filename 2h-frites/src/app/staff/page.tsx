@@ -110,17 +110,87 @@ function StaffContent() {
         <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">{t.ui.staff_myTasks}</h2>
         {myTasks.length === 0 && <p className="text-zinc-500 text-sm py-2">{t.ui.staff_noTasks}</p>}
         <div className="space-y-2">
-          {myTasks.map((tk) => (
-            <div key={tk.id} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900 border border-zinc-800/50">
-              <button onClick={() => api.post('/staff', { action: 'toggleTask', id: tk.id }).then(refresh)}
-                className={`w-6 h-6 rounded-md border-2 flex items-center justify-center text-xs shrink-0 ${tk.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-600'}`}>
-                {tk.completed ? '✓' : ''}
-              </button>
-              <span className={`text-sm ${tk.completed ? 'text-zinc-500 line-through' : 'text-white'}`}>
-                {CAT_EMOJI[tk.category]} {tk.title}
-              </span>
-            </div>
-          ))}
+          {myTasks.map((tk) => {
+            const PRIO_COLORS: Record<string, string> = { low: 'bg-emerald-500/15 text-emerald-400', medium: 'bg-amber-500/15 text-amber-400', high: 'bg-red-500/15 text-red-400', urgent: 'bg-purple-500/15 text-purple-400' };
+            return (
+              <div key={tk.id} className={`p-3 rounded-xl bg-zinc-900 border border-zinc-800/50 ${tk.completed ? 'opacity-60' : ''}`}>
+                <div className="flex items-start gap-3">
+                  {/* Checkbox — if requires photo and not complete, don't allow simple toggle */}
+                  {tk.requiresPhoto && !tk.completed ? (
+                    <label className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-xs shrink-0 cursor-pointer">
+                      📷
+                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('locationId', 'global');
+                        formData.append('name', `task-proof-${tk.id}`);
+                        try {
+                          const token = localStorage.getItem('2h-auth-token');
+                          const res = await fetch('/api/signage/media', {
+                            method: 'POST',
+                            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                            body: formData,
+                          });
+                          const media = await res.json();
+                          if (media.url) {
+                            await api.post('/staff', { action: 'completeTaskWithPhoto', id: tk.id, completionPhotoUrl: media.url });
+                            refresh();
+                          }
+                        } catch {}
+                      }} />
+                    </label>
+                  ) : (
+                    <button onClick={() => api.post('/staff', { action: 'toggleTask', id: tk.id }).then(refresh)}
+                      className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center text-sm shrink-0 transition-colors ${
+                        tk.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-600 hover:border-zinc-500'
+                      }`}>
+                      {tk.completed ? '✓' : ''}
+                    </button>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-sm font-medium ${tk.completed ? 'text-zinc-500 line-through' : 'text-white'}`}>
+                        {CAT_EMOJI[tk.category]} {tk.title}
+                      </span>
+                      {tk.priority && tk.priority !== 'medium' && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${PRIO_COLORS[tk.priority] || ''}`}>
+                          {tk.priority === 'urgent' ? '⚡ Urgent' : tk.priority === 'high' ? '🔴 High' : '🟢 Low'}
+                        </span>
+                      )}
+                      {tk.dueTime && (
+                        <span className="text-[10px] text-zinc-500">🕐 {tk.dueTime}</span>
+                      )}
+                    </div>
+                    {tk.description && (
+                      <p className="text-xs text-zinc-400 mt-1 line-clamp-2">{tk.description}</p>
+                    )}
+                    {tk.photoUrl && (
+                      <div className="mt-2">
+                        <p className="text-[10px] text-zinc-500 mb-1">📎 Photo de référence :</p>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={tk.photoUrl} alt="Référence" className="h-20 w-auto rounded-lg border border-zinc-700" />
+                      </div>
+                    )}
+                    {tk.requiresPhoto && !tk.completed && (
+                      <p className="text-[10px] text-amber-400 mt-1">📷 Photo preuve requise pour valider</p>
+                    )}
+                    {tk.completionPhotoUrl && (
+                      <div className="mt-2">
+                        <p className="text-[10px] text-emerald-400 mb-1">✓ Photo preuve :</p>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={tk.completionPhotoUrl} alt="Preuve" className="h-20 w-auto rounded-lg border border-emerald-700/30" />
+                      </div>
+                    )}
+                    {tk.completedAt && (
+                      <p className="text-[10px] text-zinc-600 mt-1">Validée le {new Date(tk.completedAt).toLocaleString('fr-BE')}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -175,7 +245,7 @@ function StaffContent() {
               return (
                 <div key={slip.id} className="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50">
                   <div>
-                    <p className="text-sm text-white font-medium">{slip.regularHours.toFixed(1)}h + {slip.overtimeHours.toFixed(1)}h sup</p>
+                    <p className="text-sm text-white font-medium">{(slip.regularHours || 0).toFixed(1)}h + {(slip.overtimeHours || 0).toFixed(1)}h sup</p>
                     <p className="text-xs text-zinc-500">{t.ui[`pay_status_${slip.status}`]}</p>
                   </div>
                   <span className={`text-lg font-extrabold ${colors[slip.status]}`}>{formatPrice(slip.netTotal)} €</span>

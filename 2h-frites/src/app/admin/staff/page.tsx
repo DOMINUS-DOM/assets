@@ -27,6 +27,44 @@ export default function StaffPage() {
   const today = new Date().toISOString().slice(0, 10);
   const [viewDate, setViewDate] = useState(today);
 
+  const ic = 'w-full px-3 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm focus:outline-none focus:border-amber-500/50';
+
+  // Task form state
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDesc, setTaskDesc] = useState('');
+  const [taskCategory, setTaskCategory] = useState('prep');
+  const [taskPriority, setTaskPriority] = useState('medium');
+  const [taskEmployee, setTaskEmployee] = useState('');
+  const [taskDueTime, setTaskDueTime] = useState('');
+  const [taskPhotoUrl, setTaskPhotoUrl] = useState('');
+  const [taskRequiresPhoto, setTaskRequiresPhoto] = useState(false);
+  const [taskFilter, setTaskFilter] = useState('all');
+
+  const PRIORITY_COLORS: Record<string, string> = { low: 'bg-emerald-500/15 text-emerald-400', medium: 'bg-amber-500/15 text-amber-400', high: 'bg-red-500/15 text-red-400', urgent: 'bg-purple-500/15 text-purple-400' };
+  const PRIORITY_LABELS: Record<string, string> = { low: 'Low', medium: 'Medium', high: 'High', urgent: 'Urgent' };
+
+  const resetTaskForm = () => {
+    setTaskTitle(''); setTaskDesc(''); setTaskCategory('prep'); setTaskPriority('medium');
+    setTaskEmployee(''); setTaskDueTime(''); setTaskPhotoUrl(''); setTaskRequiresPhoto(false);
+  };
+
+  const submitTask = async () => {
+    if (!taskTitle.trim()) return;
+    await api.post('/staff', {
+      action: 'addTask',
+      data: {
+        title: taskTitle.trim(), description: taskDesc.trim(), category: taskCategory,
+        priority: taskPriority, employeeId: taskEmployee || null, locationId,
+        date: viewDate, dueTime: taskDueTime || null, photoUrl: taskPhotoUrl || null,
+        requiresPhoto: taskRequiresPhoto,
+      },
+    });
+    resetTaskForm(); setShowTaskForm(false); refresh();
+  };
+
+  const filteredTasks = taskFilter === 'all' ? tasks : tasks.filter((t: any) => t.priority === taskFilter);
+
   const refresh = async () => {
     try {
       const locParam = locationId ? `?locationId=${locationId}` : '';
@@ -151,22 +189,155 @@ export default function StaffPage() {
 
       {/* ─── TASKS TAB ─── */}
       {tab === 'tasks' && (
-        <div className="space-y-2">
-          {tasks.map((tk) => (
-            <div key={tk.id} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900 border border-zinc-800/50">
-              <button onClick={() => api.post('/staff', { action: 'toggleTask', id: tk.id }).then(refresh)}
-                className={`w-6 h-6 rounded-md border-2 flex items-center justify-center text-xs shrink-0 transition-colors ${tk.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-600 text-transparent'}`}>
-                ✓
+        <div className="space-y-3">
+          {/* Create Task Toggle */}
+          {hasRole('patron', 'manager') && (
+            <button onClick={() => setShowTaskForm(!showTaskForm)}
+              className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800/50 text-sm font-medium text-amber-400 hover:bg-zinc-800/70 transition-colors">
+              <span>{showTaskForm ? '✕ Fermer' : '＋ Nouvelle tâche'}</span>
+              <span className="text-zinc-600 text-xs">{showTaskForm ? '' : `${tasks.length} tâche${tasks.length !== 1 ? 's' : ''}`}</span>
+            </button>
+          )}
+
+          {/* Create Task Form */}
+          {showTaskForm && (
+            <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-3">
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Titre *</label>
+                <input type="text" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} placeholder="Ex: Préparer les sauces" className={ic} />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Description</label>
+                <textarea value={taskDesc} onChange={(e) => setTaskDesc(e.target.value)} rows={2} placeholder="Instructions détaillées..." className={ic + ' resize-none'} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-zinc-400 mb-1 block">Catégorie</label>
+                  <select value={taskCategory} onChange={(e) => setTaskCategory(e.target.value)} className={ic}>
+                    <option value="prep">🔪 Préparation</option>
+                    <option value="cleaning">🧹 Nettoyage</option>
+                    <option value="restock">📦 Réassort</option>
+                    <option value="other">📌 Autre</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-zinc-400 mb-1 block">Priorité</label>
+                  <select value={taskPriority} onChange={(e) => setTaskPriority(e.target.value)} className={ic}>
+                    <option value="low">🟢 Low</option>
+                    <option value="medium">🟡 Medium</option>
+                    <option value="high">🔴 High</option>
+                    <option value="urgent">🟣 Urgent</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-zinc-400 mb-1 block">Assigné à</label>
+                  <select value={taskEmployee} onChange={(e) => setTaskEmployee(e.target.value)} className={ic}>
+                    <option value="">Équipe (non assigné)</option>
+                    {employees.filter((e) => e.active).map((e) => (
+                      <option key={e.id} value={e.id}>{e.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-zinc-400 mb-1 block">Heure limite</label>
+                  <input type="time" value={taskDueTime} onChange={(e) => setTaskDueTime(e.target.value)} className={ic} />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-zinc-400 mb-1 block">Photo de référence (URL)</label>
+                <input type="text" value={taskPhotoUrl} onChange={(e) => setTaskPhotoUrl(e.target.value)} placeholder="https://res.cloudinary.com/..." className={ic} />
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="reqPhoto" checked={taskRequiresPhoto} onChange={(e) => setTaskRequiresPhoto(e.target.checked)}
+                  className="w-4 h-4 rounded bg-zinc-800 border-zinc-600 text-amber-500 focus:ring-amber-500/30" />
+                <label htmlFor="reqPhoto" className="text-xs text-zinc-400">Exiger une photo preuve à la complétion</label>
+              </div>
+              <button onClick={submitTask} disabled={!taskTitle.trim()}
+                className="w-full py-2.5 rounded-lg bg-amber-500 text-black text-sm font-bold hover:bg-amber-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                Créer la tâche
               </button>
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium ${tk.completed ? 'text-zinc-500 line-through' : 'text-white'}`}>
-                  {CAT_EMOJI[tk.category]} {tk.title}
-                </p>
-                <p className="text-[10px] text-zinc-500">{tk.employeeId ? getName(tk.employeeId) : t.ui.staff_unassigned}</p>
+            </div>
+          )}
+
+          {/* Filter bar */}
+          <div className="flex gap-1.5 overflow-x-auto">
+            {['all', 'urgent', 'high', 'medium', 'low'].map((f) => (
+              <button key={f} onClick={() => setTaskFilter(f)}
+                className={`whitespace-nowrap px-3 py-1 rounded-lg text-xs font-medium transition-colors ${taskFilter === f ? 'bg-amber-500/15 text-amber-400' : 'bg-zinc-900 text-zinc-500 hover:text-zinc-400'}`}>
+                {f === 'all' ? 'Toutes' : PRIORITY_LABELS[f]}
+              </button>
+            ))}
+          </div>
+
+          {/* Task list */}
+          {filteredTasks.map((tk: any) => (
+            <div key={tk.id} className={`p-3.5 rounded-xl bg-zinc-900 border transition-colors ${tk.completed ? 'border-zinc-800/30 opacity-60' : 'border-zinc-800/50'}`}>
+              <div className="flex items-start gap-3">
+                {/* Toggle complete */}
+                <button onClick={() => api.post('/staff', { action: 'toggleTask', id: tk.id }).then(refresh)}
+                  className={`w-6 h-6 rounded-md border-2 flex items-center justify-center text-xs shrink-0 mt-0.5 transition-colors ${tk.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-600 text-transparent hover:border-zinc-400'}`}>
+                  ✓
+                </button>
+
+                <div className="flex-1 min-w-0">
+                  {/* Title row with badges */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm" title={tk.category}>{CAT_EMOJI[tk.category] || '📌'}</span>
+                    <p className={`text-sm font-semibold ${tk.completed ? 'text-zinc-500 line-through' : 'text-white'}`}>{tk.title}</p>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${PRIORITY_COLORS[tk.priority] || PRIORITY_COLORS.medium}`}>
+                      {PRIORITY_LABELS[tk.priority] || 'Medium'}
+                    </span>
+                  </div>
+
+                  {/* Description preview */}
+                  {tk.description && (
+                    <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{tk.description}</p>
+                  )}
+
+                  {/* Meta row */}
+                  <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                    <span className="text-[10px] text-zinc-500">
+                      👤 {tk.employeeId ? getName(tk.employeeId) : 'Équipe'}
+                    </span>
+                    {tk.dueTime && (
+                      <span className="text-[10px] text-zinc-500">⏰ {tk.dueTime}</span>
+                    )}
+                    {tk.completed && tk.completedAt && (
+                      <span className="text-[10px] text-emerald-400/70">
+                        ✓ {new Date(tk.completedAt).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Photo reference thumbnail */}
+                  {tk.photoUrl && (
+                    <div className="mt-2">
+                      <img src={tk.photoUrl} alt="Référence" className="w-16 h-16 rounded-lg object-cover border border-zinc-700" />
+                    </div>
+                  )}
+
+                  {/* Completion photo */}
+                  {tk.completionPhotoUrl && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <img src={tk.completionPhotoUrl} alt="Preuve" className="w-16 h-16 rounded-lg object-cover border border-emerald-700/50" />
+                      <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">✓ Photo preuve</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Delete button (admin only) */}
+                {hasRole('patron', 'manager') && (
+                  <button onClick={() => api.post('/staff', { action: 'deleteTask', id: tk.id }).then(refresh)}
+                    className="text-zinc-600 hover:text-red-400 text-xs shrink-0 transition-colors p-1" title="Supprimer">
+                    🗑
+                  </button>
+                )}
               </div>
             </div>
           ))}
-          {tasks.length === 0 && <p className="text-zinc-500 text-sm py-4 text-center">{t.ui.staff_noTasks}</p>}
+          {filteredTasks.length === 0 && <p className="text-zinc-500 text-sm py-4 text-center">{t.ui.staff_noTasks}</p>}
         </div>
       )}
 
