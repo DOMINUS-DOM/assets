@@ -27,12 +27,13 @@ function OrderContent() {
     if (!orderId) return;
     const fetchOrder = async () => {
       try {
-        const orders = await api.get<any[]>('/orders');
-        setOrder(orders.find((o) => o.orderNumber === orderId || o.id === orderId));
+        // Use single-order lookup (public endpoint, no auth required)
+        const order = await api.get<any>(`/orders?orderNumber=${encodeURIComponent(orderId)}`);
+        if (order && !order.error) setOrder(order);
       } catch {}
     };
     fetchOrder();
-    const interval = setInterval(fetchOrder, 10000); // poll every 10s
+    const interval = setInterval(fetchOrder, 10000);
     return () => clearInterval(interval);
   }, [orderId]);
 

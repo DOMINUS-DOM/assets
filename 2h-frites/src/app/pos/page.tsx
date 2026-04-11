@@ -129,11 +129,13 @@ function POSContent() {
   const [orderType, setOrderType] = useState<'pickup' | 'dine_in'>('dine_in');
   const [customerName, setCustomerName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   const handleSubmitOrder = async () => {
     if (cart.length === 0) return;
     if (submitting) return;
     setSubmitting(true);
+    setOrderError(null);
     try {
       const order = await api.post<any>('/orders', {
         action: 'create',
@@ -165,9 +167,11 @@ function POSContent() {
       setCart([]);
       setShowCheckout(false);
       setCustomerName('');
+      setOrderError(null);
       setTimeout(() => setLastOrder(null), 5000);
-    } catch (e) {
+    } catch (e: any) {
       console.error('POS order error:', e);
+      setOrderError(e?.error || 'Erreur lors de la commande. Réessayez.');
     }
     setSubmitting(false);
   };
@@ -327,7 +331,7 @@ function POSContent() {
 
       {/* Checkout modal */}
       {showCheckout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowCheckout(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => { setShowCheckout(false); setOrderError(null); }}>
           <div className="bg-zinc-900 rounded-2xl border border-zinc-700 p-6 w-96 space-y-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-white text-center">Encaisser — {formatPrice(total)} €</h3>
 
@@ -364,13 +368,18 @@ function POSContent() {
               </button>
             </div>
 
+            {/* Error feedback */}
+            {orderError && (
+              <p className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2 text-center">{orderError}</p>
+            )}
+
             {/* Submit */}
             <button onClick={handleSubmitOrder} disabled={submitting}
               className="w-full py-4 rounded-xl bg-amber-500 text-zinc-950 font-extrabold text-lg active:scale-[0.97] transition-transform disabled:opacity-50">
               {submitting ? 'Envoi...' : `Valider — ${formatPrice(total)} €`}
             </button>
 
-            <button onClick={() => setShowCheckout(false)} className="w-full text-center text-zinc-500 text-sm py-1">Annuler</button>
+            <button onClick={() => { setShowCheckout(false); setOrderError(null); }} className="w-full text-center text-zinc-500 text-sm py-1">Annuler</button>
           </div>
         </div>
       )}

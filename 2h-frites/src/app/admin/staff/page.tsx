@@ -140,12 +140,18 @@ export default function StaffPage() {
         )}
       </div>
       <div className="flex gap-1.5 overflow-x-auto pb-1">
-        {visibleTabs.map((tb) => (
-          <button key={tb.key} onClick={() => setTab(tb.key)}
-            className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${tab === tb.key ? 'bg-amber-500/15 text-amber-400' : 'bg-zinc-900 text-zinc-500'}`}>
-            {tb.label}
-          </button>
-        ))}
+        {visibleTabs.map((tb) => {
+          const pendingTasks = tb.key === 'tasks' ? tasks.filter((t: any) => !t.completed).length : 0;
+          return (
+            <button key={tb.key} onClick={() => setTab(tb.key)}
+              className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${tab === tb.key ? 'bg-amber-500/15 text-amber-400' : 'bg-zinc-900 text-zinc-500'}`}>
+              {tb.label}
+              {tb.key === 'tasks' && pendingTasks > 0 && (
+                <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">{pendingTasks}</span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* ─── EMPLOYEES TAB ─── */}

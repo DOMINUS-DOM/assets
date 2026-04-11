@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useApiData } from '@/hooks/useApiData';
 import { useLocation } from '@/contexts/LocationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatPrice } from '@/utils/format';
+import { api } from '@/lib/api';
 import Link from 'next/link';
 import NavIcon from '@/components/admin/NavIcon';
 
@@ -26,7 +28,9 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const locParam = locationId ? `?locationId=${locationId}` : '';
   const { data: orders } = useApiData<any[]>(`/orders${locParam}`, []);
+  const { data: staffData, refresh: refreshStaff } = useApiData<{ tasks: any[] }>(`/staff${locParam}`, { tasks: [] });
   const { t } = useLanguage();
+  const [quickTaskTitle, setQuickTaskTitle] = useState('');
 
   // Today's orders
   const today = new Date().toISOString().slice(0, 10);
@@ -94,6 +98,89 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Tasks widget */}
+      {(() => {
+        const todayTasks = (staffData.tasks || []).filter((t: any) => t.date === today);
+        const pendingTasks = todayTasks.filter((t: any) => !t.completed);
+        const completedTasks = todayTasks.filter((t: any) => t.completed);
+        const PRIO_DOT: Record<string, string> = { urgent: 'bg-purple-500', high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-emerald-500' };
+
+        const handleQuickAdd = async () => {
+          if (!quickTaskTitle.trim()) return;
+          try {
+            await api.post('/staff', {
+              action: 'addTask',
+              data: { title: quickTaskTitle.trim(), description: '', category: 'other', priority: 'medium', date: today, locationId: locationId || null },
+            });
+            setQuickTaskTitle('');
+            refreshStaff();
+          } catch {}
+        };
+
+        return (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">
+                Tâches du jour
+                {pendingTasks.length > 0 && (
+                  <span className="ml-2 bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">{pendingTasks.length}</span>
+                )}
+              </h2>
+              <Link href="/admin/staff" className="text-xs text-amber-400">Voir tout</Link>
+            </div>
+
+            {/* Quick add */}
+            <form onSubmit={(e) => { e.preventDefault(); handleQuickAdd(); }}
+              className="flex gap-2 mb-3">
+              <input
+                type="text"
+                value={quickTaskTitle}
+                onChange={(e) => setQuickTaskTitle(e.target.value)}
+                placeholder="Ajouter une tâche rapide..."
+                className="flex-1 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-amber-500/50"
+              />
+              <button type="submit" disabled={!quickTaskTitle.trim()}
+                className="px-3 py-2 rounded-lg bg-amber-500 text-zinc-950 font-bold text-sm disabled:opacity-30 transition-opacity">+</button>
+            </form>
+
+            {/* Pending tasks */}
+            {pendingTasks.length > 0 ? (
+              <div className="space-y-1.5 mb-2">
+                {pendingTasks.slice(0, 5).map((tk: any) => (
+                  <div key={tk.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-zinc-900 border border-zinc-800/50">
+                    <button
+                      onClick={async () => { await api.post('/staff', { action: 'toggleTask', id: tk.id }); refreshStaff(); }}
+                      className="w-5 h-5 rounded border-2 border-zinc-600 hover:border-amber-500 shrink-0 transition-colors" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white truncate">{tk.title}</p>
+                      {tk.dueTime && <span className="text-[10px] text-zinc-500">⏰ {tk.dueTime}</span>}
+                    </div>
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${PRIO_DOT[tk.priority] || PRIO_DOT.medium}`} title={tk.priority} />
+                  </div>
+                ))}
+                {pendingTasks.length > 5 && (
+                  <Link href="/admin/staff" className="block text-center text-xs text-zinc-500 py-1">+{pendingTasks.length - 5} autres tâches</Link>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-zinc-600 py-3 text-center">
+                {completedTasks.length > 0 ? `✅ ${completedTasks.length} tâche${completedTasks.length > 1 ? 's' : ''} terminée${completedTasks.length > 1 ? 's' : ''}` : 'Aucune tâche pour aujourd\'hui'}
+              </p>
+            )}
+
+            {/* Progress bar */}
+            {todayTasks.length > 0 && (
+              <div className="flex items-center gap-2 mt-1">
+                <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${(completedTasks.length / todayTasks.length) * 100}%` }} />
+                </div>
+                <span className="text-[10px] text-zinc-500 shrink-0">{completedTasks.length}/{todayTasks.length}</span>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Quick actions */}
       <div>
