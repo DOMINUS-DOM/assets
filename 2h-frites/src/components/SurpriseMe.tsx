@@ -3,7 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { menuStore } from '@/stores/menuStore';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useCart } from '@/contexts/CartContext';
 import { MenuItem, Category } from '@/types';
+import { formatPrice } from '@/utils/format';
 
 const EMOJIS = ['🍟', '🍔', '🥩', '🌭', '🥖', '🔥', '🥗', '🎁'];
 
@@ -15,6 +17,7 @@ interface SurpriseMeProps {
 
 export default function SurpriseMe({ onClose }: SurpriseMeProps) {
   const { t, getItemName, getCategory, getDescription } = useLanguage();
+  const { addItem } = useCart();
   const [phase, setPhase] = useState<'spinning' | 'reveal'>('spinning');
   const [emojiIndex, setEmojiIndex] = useState(0);
   const [pick, setPick] = useState<{ item: MenuItem; category: Category } | null>(null);
@@ -105,11 +108,21 @@ export default function SurpriseMe({ onClose }: SurpriseMeProps) {
                 🎲 {t.ui.surpriseRetry}
               </button>
               <button
-                onClick={onClose}
+                onClick={() => {
+                  if (pick?.item.price != null) {
+                    addItem({
+                      menuItemId: pick.item.id,
+                      name: getItemName(pick.item.id, pick.item.name),
+                      price: pick.item.price,
+                      categoryId: pick.category.id,
+                    });
+                  }
+                  onClose();
+                }}
                 className="flex-1 py-3 rounded-xl bg-amber-500 text-zinc-950 font-semibold
                   active:scale-95 transition-transform"
               >
-                👍 {t.ui.surpriseNice}
+                🛒 Ajouter
               </button>
             </div>
           </div>

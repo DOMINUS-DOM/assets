@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { MenuItem } from '@/types';
 import { useLanguage } from '@/i18n/LanguageContext';
 import Badge from './Badge';
 import FavoriteButton from './FavoriteButton';
-import AddToCartButton from './cart/AddToCartButton';
+import PainRondBuilder from './PainRondBuilder';
+import { formatPrice } from '@/utils/format';
 
 interface MagicBoxCardProps {
   items: MenuItem[];
@@ -12,10 +14,9 @@ interface MagicBoxCardProps {
   onToggleFavorite: (id: string) => void;
 }
 
-import { formatPrice } from '@/utils/format';
-
 export default function MagicBoxCard({ items, isFavorite, onToggleFavorite }: MagicBoxCardProps) {
   const { getItemName, getDescription } = useLanguage();
+  const [builderItem, setBuilderItem] = useState<MenuItem | null>(null);
 
   return (
     <div className="space-y-4 animate-slide-up">
@@ -52,17 +53,23 @@ export default function MagicBoxCard({ items, isFavorite, onToggleFavorite }: Ma
             )}
             {item.price != null && (
               <div className="mt-3">
-                <AddToCartButton
-                  menuItemId={item.id}
-                  name={getItemName(item.id, item.name)}
-                  price={item.price}
-                  categoryId="magic_box"
-                />
+                <button
+                  onClick={() => setBuilderItem(item)}
+                  className="w-full py-2.5 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm
+                    active:scale-[0.97] transition-transform flex items-center justify-center gap-2"
+                >
+                  <span>Personnaliser & ajouter</span>
+                  <span>→</span>
+                </button>
               </div>
             )}
           </div>
         </div>
       ))}
+
+      {builderItem && (
+        <PainRondBuilder item={builderItem} onClose={() => setBuilderItem(null)} />
+      )}
     </div>
   );
 }
