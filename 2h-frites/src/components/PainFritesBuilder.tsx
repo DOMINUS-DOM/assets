@@ -7,17 +7,10 @@ import { MenuItem } from '@/types';
 import { CartExtra } from '@/types/order';
 import { formatPrice } from '@/utils/format';
 
-const BASE_PRICE = 5.00; // Pain + frites inclus
+const BASE_PRICE = 5.00;
 
 type Step = 'frites' | 'meat' | 'sauce' | 'toppings' | 'summary';
 const STEPS: Step[] = ['frites', 'meat', 'sauce', 'toppings', 'summary'];
-const STEP_LABELS: Record<Step, string> = {
-  frites: 'Vos frites',
-  meat: 'Viande (max 2)',
-  sauce: 'Sauce (max 2)',
-  toppings: 'Garnitures',
-  summary: 'Récapitulatif',
-};
 
 interface Props {
   onClose: () => void;
@@ -25,7 +18,7 @@ interface Props {
 }
 
 export default function PainFritesBuilder({ onClose, onAdd }: Props) {
-  const { getItemName } = useLanguage();
+  const { t, getItemName } = useLanguage();
   const [step, setStep] = useState<Step>('frites');
   const [withSalt, setWithSalt] = useState(true);
   const [withSpice, setWithSpice] = useState(false);
@@ -44,12 +37,20 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
 
   const stepIndex = STEPS.indexOf(step);
 
+  const STEP_LABELS: Record<Step, string> = {
+    frites: t.ui.bld_pf_step1 || 'Vos frites',
+    meat: t.ui.bld_pf_step2 || 'Viande (max 2)',
+    sauce: t.ui.bld_pf_step3 || 'Sauce (max 2)',
+    toppings: t.ui.bld_pf_step4 || 'Garnitures',
+    summary: t.ui.bld_summary || 'R\u00e9capitulatif',
+  };
+
   const totalPrice = () => {
-    let t = BASE_PRICE;
-    meats.forEach((m) => (t += m.price || 0));
-    sauces.forEach((s) => (t += s.price || 0));
-    toppings.forEach((tp) => (t += tp.price || 0));
-    return t;
+    let total = BASE_PRICE;
+    meats.forEach((m) => (total += m.price || 0));
+    sauces.forEach((s) => (total += s.price || 0));
+    toppings.forEach((tp) => (total += tp.price || 0));
+    return total;
   };
 
   const toggleSelection = (item: MenuItem, list: MenuItem[], setList: (v: MenuItem[]) => void, max: number) => {
@@ -63,7 +64,7 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
 
   const handleAddToCart = () => {
     const extras: CartExtra[] = [];
-    const fritesNote = `Frites ${withSalt ? 'avec sel' : 'sans sel'}${withSpice ? ', épicées' : ''}`;
+    const fritesNote = `Frites ${withSalt ? (t.ui.bld_withSalt || 'avec sel') : (t.ui.bld_noSalt || 'sans sel')}${withSpice ? `, ${t.ui.bld_spicy || '\u00e9pic\u00e9es'}` : ''}`;
     extras.push({ name: fritesNote, price: 0 });
     meats.forEach((m) => extras.push({ name: getItemName(m.id, m.name), price: m.price || 0 }));
     sauces.forEach((s) => extras.push({ name: getItemName(s.id, s.name), price: s.price || 0 }));
@@ -79,14 +80,14 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
     onClose();
   };
 
-  const nextStep = () => {
-    const idx = STEPS.indexOf(step);
-    if (idx < STEPS.length - 1) setStep(STEPS[idx + 1]);
-  };
+  const nextStep = () => { const idx = STEPS.indexOf(step); if (idx < STEPS.length - 1) setStep(STEPS[idx + 1]); };
+  const prevStep = () => { const idx = STEPS.indexOf(step); if (idx > 0) setStep(STEPS[idx - 1]); };
 
-  const prevStep = () => {
-    const idx = STEPS.indexOf(step);
-    if (idx > 0) setStep(STEPS[idx - 1]);
+  const nextLabel = () => {
+    if (step === 'frites') return `${t.ui.bld_pf_chooseNext || 'Choisir les viandes'} \u2192`;
+    if (step === 'meat') return `${t.ui.bld_pf_chooseSauces || 'Choisir les sauces'} \u2192`;
+    if (step === 'sauce') return `${t.ui.bld_pf_addToppings || 'Ajouter des garnitures'} \u2192`;
+    return `${t.ui.bld_pf_seeRecap || 'Voir le r\u00e9capitulatif'} \u2192`;
   };
 
   const renderItemGrid = (items: MenuItem[], selected: MenuItem[], onToggle: (item: MenuItem) => void) => (
@@ -104,9 +105,9 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
               {getItemName(item.id, item.name)}
             </p>
             {item.price != null && (
-              <p className="text-xs text-zinc-500 mt-0.5">+{formatPrice(item.price)} €</p>
+              <p className="text-xs text-zinc-500 mt-0.5">+{formatPrice(item.price)} \u20ac</p>
             )}
-            {isSelected && <span className="text-amber-400 text-xs mt-1 block">✓</span>}
+            {isSelected && <span className="text-amber-400 text-xs mt-1 block">\u2713</span>}
           </button>
         );
       })}
@@ -120,140 +121,124 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
           ? 'bg-amber-500/15 border-amber-500/50 text-amber-400 font-bold'
           : 'bg-zinc-900 border-zinc-800/50 text-zinc-400'
       }`}>
-      <span className="text-2xl block mb-1">{active ? '✓' : '✗'}</span>
+      <span className="text-2xl block mb-1">{active ? '\u2713' : '\u2717'}</span>
       <span className="text-sm">{label}</span>
     </button>
   );
 
   return (
     <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col">
-      {/* Header */}
       <header className="sticky top-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-10">
         <div className="flex items-center justify-between max-w-lg mx-auto">
-          <button onClick={onClose} className="text-zinc-400 text-sm">← Retour</button>
-          <h1 className="text-sm font-bold text-white">🥖 Composer mon pain-frites</h1>
-          <span className="text-xs text-amber-400 font-bold">{formatPrice(totalPrice())} €</span>
+          <button onClick={onClose} className="text-zinc-400 text-sm">\u2190 {t.ui.bld_back || 'Retour'}</button>
+          <h1 className="text-sm font-bold text-white">\ud83e\udd56 {t.ui.bld_pf_title || 'Composer mon pain-frites'}</h1>
+          <span className="text-xs text-amber-400 font-bold">{formatPrice(totalPrice())} \u20ac</span>
         </div>
         <div className="flex gap-1 mt-2 max-w-lg mx-auto">
           {STEPS.map((s, i) => (
-            <div key={s} className={`flex-1 h-1 rounded-full transition-colors ${
-              i <= stepIndex ? 'bg-amber-500' : 'bg-zinc-800'
-            }`} />
+            <div key={s} className={`flex-1 h-1 rounded-full transition-colors ${i <= stepIndex ? 'bg-amber-500' : 'bg-zinc-800'}`} />
           ))}
         </div>
       </header>
 
-      {/* Content */}
       <main className="flex-1 overflow-y-auto px-4 py-4 max-w-lg mx-auto w-full">
-        <h2 className="text-lg font-bold text-white mb-1">
-          {stepIndex + 1}. {STEP_LABELS[step]}
-        </h2>
+        <h2 className="text-lg font-bold text-white mb-1">{stepIndex + 1}. {STEP_LABELS[step]}</h2>
 
-        {/* STEP 1: Frites options */}
         {step === 'frites' && (
           <div className="space-y-4 mt-2">
             <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
               <div className="flex items-center gap-3 mb-3">
-                <span className="text-3xl">🥖🍟</span>
+                <span className="text-3xl">\ud83e\udd56\ud83c\udf5f</span>
                 <div>
                   <p className="text-white font-bold">Pain + Frites</p>
-                  <p className="text-amber-400 font-bold text-lg">{formatPrice(BASE_PRICE)} €</p>
+                  <p className="text-amber-400 font-bold text-lg">{formatPrice(BASE_PRICE)} \u20ac</p>
                 </div>
               </div>
-              <p className="text-xs text-zinc-500">Prix de base incluant le pain et les frites. Les viandes, sauces et garnitures sont en supplément.</p>
+              <p className="text-xs text-zinc-500">{t.ui.bld_basePriceIncl}</p>
             </div>
-
-            <p className="text-xs text-zinc-400 uppercase tracking-wider font-bold">Options frites</p>
+            <p className="text-xs text-zinc-400 uppercase tracking-wider font-bold">{t.ui.bld_friesOptions}</p>
             <div className="flex gap-3">
-              <ToggleButton label="Avec sel" active={withSalt} onToggle={() => setWithSalt(!withSalt)} />
-              <ToggleButton label="Épicées" active={withSpice} onToggle={() => setWithSpice(!withSpice)} />
+              <ToggleButton label={t.ui.bld_withSalt || 'Avec sel'} active={withSalt} onToggle={() => setWithSalt(!withSalt)} />
+              <ToggleButton label={t.ui.bld_spicy || '\u00c9pic\u00e9es'} active={withSpice} onToggle={() => setWithSpice(!withSpice)} />
             </div>
           </div>
         )}
 
-        {/* STEP 2: Meats */}
         {step === 'meat' && (
           <>
-            <p className="text-xs text-zinc-500 mb-3">Choisissez jusqu&apos;à 2 viandes (optionnel)</p>
+            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_optional}</p>
             {renderItemGrid(meatItems, meats, (item) => toggleSelection(item, meats, setMeats, 2))}
           </>
         )}
 
-        {/* STEP 3: Sauces */}
         {step === 'sauce' && (
           <>
-            <p className="text-xs text-zinc-500 mb-3">Choisissez jusqu&apos;à 2 sauces (optionnel)</p>
+            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_optional} — 0,90\u20ac {t.ui.bld_perSauce}</p>
             {renderItemGrid(sauceItems, sauces, (item) => toggleSelection(item, sauces, setSauces, 2))}
           </>
         )}
 
-        {/* STEP 4: Toppings */}
         {step === 'toppings' && (
           <>
-            <p className="text-xs text-zinc-500 mb-3">Ajoutez des garnitures (optionnel)</p>
+            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_optional}</p>
             {renderItemGrid(toppingItems, toppings, (item) => toggleSelection(item, toppings, setToppings, 10))}
           </>
         )}
 
-        {/* STEP 5: Summary */}
         {step === 'summary' && (
           <div className="space-y-3 mt-2">
             <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-2">
               <div className="flex justify-between">
-                <span className="text-white font-medium">🥖🍟 Pain + Frites</span>
-                <span className="text-amber-400">{formatPrice(BASE_PRICE)} €</span>
+                <span className="text-white font-medium">\ud83e\udd56\ud83c\udf5f Pain + Frites</span>
+                <span className="text-amber-400">{formatPrice(BASE_PRICE)} \u20ac</span>
               </div>
               <p className="text-xs text-zinc-500 ml-6">
-                {withSalt ? 'Avec sel' : 'Sans sel'}{withSpice ? ', épicées' : ''}
+                {withSalt ? (t.ui.bld_withSalt) : (t.ui.bld_noSalt)}{withSpice ? `, ${t.ui.bld_spicy}` : ''}
               </p>
               {meats.length > 0 && <div className="border-t border-zinc-800/50 pt-1 mt-1" />}
               {meats.map((m) => (
                 <div key={m.id} className="flex justify-between text-sm">
                   <span className="text-zinc-300">+ {getItemName(m.id, m.name)}</span>
-                  <span className="text-zinc-400">+{formatPrice(m.price || 0)} €</span>
+                  <span className="text-zinc-400">+{formatPrice(m.price || 0)} \u20ac</span>
                 </div>
               ))}
               {sauces.length > 0 && <div className="border-t border-zinc-800/50 pt-1 mt-1" />}
               {sauces.map((s) => (
                 <div key={s.id} className="flex justify-between text-sm">
                   <span className="text-zinc-300">+ {getItemName(s.id, s.name)}</span>
-                  <span className="text-zinc-400">+{formatPrice(s.price || 0)} €</span>
+                  <span className="text-zinc-400">+{formatPrice(s.price || 0)} \u20ac</span>
                 </div>
               ))}
               {toppings.length > 0 && <div className="border-t border-zinc-800/50 pt-1 mt-1" />}
               {toppings.map((tp) => (
                 <div key={tp.id} className="flex justify-between text-sm">
                   <span className="text-zinc-300">+ {getItemName(tp.id, tp.name)}</span>
-                  <span className="text-zinc-400">+{formatPrice(tp.price || 0)} €</span>
+                  <span className="text-zinc-400">+{formatPrice(tp.price || 0)} \u20ac</span>
                 </div>
               ))}
               <div className="border-t border-zinc-700 pt-2 mt-2 flex justify-between">
-                <span className="text-white font-bold">Total</span>
-                <span className="text-amber-400 font-bold text-lg">{formatPrice(totalPrice())} €</span>
+                <span className="text-white font-bold">{t.ui.bld_total}</span>
+                <span className="text-amber-400 font-bold text-lg">{formatPrice(totalPrice())} \u20ac</span>
               </div>
             </div>
           </div>
         )}
       </main>
 
-      {/* Footer */}
       <footer className="sticky bottom-0 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/50 px-4 py-3">
         <div className="flex gap-3 max-w-lg mx-auto">
           {stepIndex > 0 && (
-            <button onClick={prevStep}
-              className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">
-              ← Précédent
+            <button onClick={prevStep} className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">
+              \u2190 {t.ui.bld_previous}
             </button>
           )}
           {step === 'summary' ? (
-            <button onClick={handleAddToCart}
-              className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
-              Ajouter au panier — {formatPrice(totalPrice())} €
+            <button onClick={handleAddToCart} className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
+              {t.ui.bld_addToCart} — {formatPrice(totalPrice())} \u20ac
             </button>
           ) : (
-            <button onClick={nextStep}
-              className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
-              {step === 'frites' ? 'Choisir les viandes →' : step === 'meat' ? 'Choisir les sauces →' : step === 'sauce' ? 'Ajouter des garnitures →' : 'Voir le récapitulatif →'}
+            <button onClick={nextStep} className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
+              {nextLabel()}
             </button>
           )}
         </div>

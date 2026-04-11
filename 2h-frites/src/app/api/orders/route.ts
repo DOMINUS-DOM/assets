@@ -96,6 +96,10 @@ export async function POST(req: NextRequest) {
   if (action === 'updateStatus') {
     if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
     const { orderId, status } = body;
+    const VALID_STATUSES = ['received', 'preparing', 'ready', 'delivering', 'delivered', 'picked_up', 'cancelled'];
+    if (!orderId || !status || !VALID_STATUSES.includes(status)) {
+      return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
+    }
     await prisma.order.update({ where: { id: orderId }, data: { status } });
     await prisma.statusEntry.create({ data: { orderId, status } });
     return NextResponse.json({ ok: true });

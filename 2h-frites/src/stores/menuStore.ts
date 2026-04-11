@@ -10,24 +10,34 @@ let loaded = false;
 let listeners: (() => void)[] = [];
 function notify() { listeners.forEach((l) => l()); }
 
+// Location-aware menu loading
+let currentLocationId: string | null = null;
+
 // Persist to API (fire-and-forget, debounced)
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 function persistToApi() {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    fetch('/api/menu', {
+    const locParam = currentLocationId ? `?locationId=${currentLocationId}` : '';
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('2h-auth-token') : null;
+    fetch(`/api/menu${locParam}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify(categories),
     }).catch(() => {});
   }, 300);
 }
 
 // Load from API on first access
-function loadFromApi() {
-  if (loaded) return;
+function loadFromApi(locationId?: string | null) {
+  if (loaded && locationId === currentLocationId) return;
   loaded = true;
-  fetch('/api/menu')
+  currentLocationId = locationId || null;
+  const locParam = locationId ? `?locationId=${locationId}` : '';
+  fetch(`/api/menu${locParam}`)
     .then((r) => r.json())
     .then((data: Category[]) => {
       if (Array.isArray(data) && data.length > 0) {
@@ -43,6 +53,14 @@ export const menuStore = {
     loadFromApi();
     listeners.push(listener);
     return () => { listeners = listeners.filter((l) => l !== listener); };
+  },
+
+  // ─── Location ───
+  setLocationId(locationId: string | null) {
+    if (locationId !== currentLocationId) {
+      loaded = false;
+      loadFromApi(locationId);
+    }
   },
 
   // ─── Categories ───

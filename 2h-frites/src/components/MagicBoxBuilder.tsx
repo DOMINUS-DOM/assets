@@ -33,7 +33,7 @@ interface Props {
 }
 
 export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props) {
-  const { getItemName } = useLanguage();
+  const { t, getItemName } = useLanguage();
 
   const [step, setStep] = useState<MagicStep>('snack');
   const [snack, setSnack] = useState<string | null>(null);
@@ -104,12 +104,12 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
   );
 
   const STEP_LABELS: Record<MagicStep, string> = {
-    snack: isExtra ? 'Choisis ton snack' : 'Choisis ton snack',
-    frites: 'Tes frites',
-    sauce: 'Ta sauce',
-    boisson: 'Ta boisson',
-    jouet: 'Ton jouet',
-    summary: 'Récapitulatif',
+    snack: t.ui.bld_mb_snack || 'Choisis ton snack',
+    frites: t.ui.bld_mb_frites || 'Tes frites',
+    sauce: t.ui.bld_mb_sauce || 'Ta sauce',
+    boisson: t.ui.bld_mb_drink || 'Ta boisson',
+    jouet: t.ui.bld_mb_toy || 'Ton jouet',
+    summary: t.ui.bld_summary || 'R\u00e9capitulatif',
   };
 
   return (
@@ -117,7 +117,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
       {/* Header */}
       <header className="sticky top-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-10">
         <div className="flex items-center justify-between max-w-lg mx-auto">
-          <button onClick={onClose} className="text-zinc-400 text-sm">← Retour</button>
+          <button onClick={onClose} className="text-zinc-400 text-sm">\u2190 {t.ui.bld_back}</button>
           <h1 className="text-sm font-bold text-white">🎁 {getItemName(item.id, item.name)}</h1>
           <span className="text-xs text-amber-400 font-bold">{formatPrice(basePrice)} €</span>
         </div>
@@ -148,7 +148,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
 
         {step === 'snack' && isExtra && (
           <>
-            <p className="text-xs text-zinc-500 mb-3">Choisis ton snack parmi toute la carte</p>
+            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_mb_chooseFromMenu}</p>
             <div className="grid grid-cols-2 gap-2 pb-4">
               {meatItems.map((m) => (
                 <button key={m.id} onClick={() => setSnack(m.id)}
@@ -180,7 +180,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
         {/* STEP 3: Sauce (1 seule) */}
         {step === 'sauce' && (
           <>
-            <p className="text-xs text-zinc-500 mb-3">Choisis une sauce</p>
+            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_mb_chooseSauce}</p>
             <div className="grid grid-cols-2 gap-2 pb-4">
               {sauceItems.map((s) => (
                 <button key={s.id} onClick={() => setSauce(s)}
@@ -244,7 +244,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
               </p>
             </div>
             <div className="border-t border-zinc-700 pt-2 flex justify-between">
-              <span className="text-white font-bold">Total</span>
+              <span className="text-white font-bold">{t.ui.bld_total}</span>
               <span className="text-amber-400 font-bold text-lg">{formatPrice(basePrice)} €</span>
             </div>
           </div>
@@ -257,18 +257,18 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
           {stepIndex > 0 && (
             <button onClick={prevStep}
               className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">
-              ← Précédent
+              \u2190 {t.ui.bld_previous}
             </button>
           )}
           {step === 'summary' ? (
             <button onClick={handleAddToCart}
               className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
-              Ajouter au panier — {formatPrice(basePrice)} €
+              {t.ui.bld_addToCart} — {formatPrice(basePrice)} \u20ac
             </button>
           ) : (
             <button onClick={nextStep} disabled={!canNext()}
               className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97] disabled:opacity-50">
-              Suivant →
+              {t.ui.bld_next} \u2192
             </button>
           )}
         </div>

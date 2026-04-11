@@ -71,15 +71,27 @@ function KioskContent() {
     return menuStore.subscribe(load);
   }, []);
 
-  // Idle timer
+  // Idle timer with warning
+  const [idleWarning, setIdleWarning] = useState(false);
+  const idleWarningTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const resetIdle = useCallback(() => {
     if (idleTimer.current) clearTimeout(idleTimer.current);
+    if (idleWarningTimer.current) clearTimeout(idleWarningTimer.current);
+    setIdleWarning(false);
     if (step !== 'welcome' && step !== 'confirm') {
+      // Show warning 10s before reset
+      idleWarningTimer.current = setTimeout(() => {
+        setIdleWarning(true);
+      }, IDLE_TIMEOUT - 10000);
+      // Actually reset
       idleTimer.current = setTimeout(() => {
         setStep('welcome');
         setCart([]);
         setActiveCatId(null);
         setOrderType('dine_in');
+        setIdleWarning(false);
+        sessionStorage.removeItem('kiosk-cart');
       }, IDLE_TIMEOUT);
     }
   }, [step]);
@@ -482,6 +494,21 @@ function KioskContent() {
           </div>
         </div>
       )}
+      {/* Idle timeout warning */}
+      {idleWarning && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
+          <div className="bg-zinc-900 rounded-3xl border border-amber-500/30 p-8 text-center max-w-sm animate-pulse">
+            <span className="text-6xl block mb-4">⏰</span>
+            <h2 className="text-2xl font-bold text-white mb-2">{t.ui.kiosk_stillThere || '\u00cates-vous encore l\u00e0 ?'}</h2>
+            <p className="text-zinc-400 mb-6">{t.ui.kiosk_idleWarning || 'Votre commande va \u00eatre annul\u00e9e dans quelques secondes.'}</p>
+            <button onClick={() => { resetIdle(); }}
+              className="px-8 py-4 rounded-2xl bg-amber-500 text-zinc-950 font-extrabold text-lg active:scale-95">
+              {t.ui.kiosk_continue || 'Oui, je continue !'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ─── Builder modals ─── */}
       {showPainFrites && (
         <PainFritesBuilder onClose={() => setShowPainFrites(false)} onAdd={handleBuilderAdd} />

@@ -17,7 +17,7 @@ interface Props {
 }
 
 export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
-  const { getItemName } = useLanguage();
+  const { t, getItemName } = useLanguage();
   const [step, setStep] = useState<Step>('sauce');
   const [sauces, setSauces] = useState<MenuItem[]>([]);
   const [toppings, setToppings] = useState<MenuItem[]>([]);
@@ -112,7 +112,7 @@ export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
     <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col">
       <header className="sticky top-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-10">
         <div className="flex items-center justify-between max-w-lg mx-auto">
-          <button onClick={onClose} className="text-zinc-400 text-sm">← Retour</button>
+          <button onClick={onClose} className="text-zinc-400 text-sm">\u2190 {t.ui.bld_back}</button>
           <h1 className="text-sm font-bold text-white">🍔 {getItemName(item.id, item.name)}</h1>
           <span className="text-xs text-amber-400 font-bold">{formatPrice(totalPrice())} €</span>
         </div>
@@ -136,23 +136,23 @@ export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
               </div>
               <span className="text-amber-400 font-bold">{formatPrice(basePrice)} €</span>
             </div>
-            <h2 className="text-lg font-bold text-white mb-1">Sauce (max 2)</h2>
-            <p className="text-xs text-zinc-500 mb-3">Optionnel — 0.90€ par sauce</p>
+            <h2 className="text-lg font-bold text-white mb-1">{t.ui.bld_pr_sauce}</h2>
+            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_optional} — 0,90\u20ac {t.ui.bld_perSauce}</p>
             {renderGrid(sauceItems, sauces, (it) => toggleSelection(it, sauces, setSauces, 2))}
           </>
         )}
 
         {step === 'toppings' && (
           <>
-            <h2 className="text-lg font-bold text-white mb-1">Garnitures</h2>
-            <p className="text-xs text-zinc-500 mb-3">Optionnel</p>
+            <h2 className="text-lg font-bold text-white mb-1">{t.ui.bld_pr_toppings}</h2>
+            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_optional}</p>
             {renderGrid(toppingItems, toppings, (it) => toggleSelection(it, toppings, setToppings, 10))}
           </>
         )}
 
         {step === 'summary' && (
           <div className="space-y-3 mt-2">
-            <h2 className="text-lg font-bold text-white mb-1">Récapitulatif</h2>
+            <h2 className="text-lg font-bold text-white mb-1">{t.ui.bld_summary}</h2>
             <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-2">
               <div className="flex justify-between">
                 <span className="text-white font-medium">🍔 {getItemName(item.id, item.name)}</span>
@@ -171,7 +171,7 @@ export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
                 </div>
               ))}
               <div className="border-t border-zinc-700 pt-2 mt-2 flex justify-between">
-                <span className="text-white font-bold">Total</span>
+                <span className="text-white font-bold">{t.ui.bld_total}</span>
                 <span className="text-amber-400 font-bold text-lg">{formatPrice(totalPrice())} €</span>
               </div>
             </div>
@@ -184,24 +184,24 @@ export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
           {step === 'sauce' && (
             <button onClick={handleAddSimple}
               className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">
-              Sans supplément
+              {t.ui.bld_pr_noExtra}
             </button>
           )}
           {stepIndex > 0 && (
             <button onClick={prevStep}
               className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">
-              ← Précédent
+              \u2190 {t.ui.bld_previous}
             </button>
           )}
           {step === 'summary' ? (
             <button onClick={handleAddToCart}
               className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
-              Ajouter — {formatPrice(totalPrice())} €
+              {t.ui.bld_addToCart} — {formatPrice(totalPrice())} \u20ac
             </button>
           ) : (
             <button onClick={nextStep}
               className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
-              {step === 'sauce' ? 'Garnitures →' : 'Récapitulatif →'}
+              {step === 'sauce' ? `${t.ui.bld_pr_toppingsNext} \u2192` : `${t.ui.bld_pr_recapNext} \u2192`}
             </button>
           )}
         </div>

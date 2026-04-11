@@ -102,7 +102,13 @@ export async function POST(req: NextRequest) {
     }
 
     if (body.action === 'addLeaveRequest') {
-      const lr = await prisma.leaveRequest.create({ data: body.data });
+      const d = body.data || {};
+      const VALID_TYPES = ['vacation', 'sick', 'personal', 'other'];
+      if (!d.employeeId || !d.startDate || !d.endDate) return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
+      if (d.type && !VALID_TYPES.includes(d.type)) return NextResponse.json({ error: 'invalid_type' }, { status: 400 });
+      const lr = await prisma.leaveRequest.create({
+        data: { employeeId: d.employeeId, type: d.type || 'other', startDate: d.startDate, endDate: d.endDate, reason: d.reason || '', status: 'pending' },
+      });
       return NextResponse.json(lr);
     }
   }
@@ -132,7 +138,26 @@ export async function POST(req: NextRequest) {
   }
 
   if (body.action === 'addTask') {
-    const task = await prisma.task.create({ data: body.data });
+    const VALID_CATEGORIES = ['prep', 'cleaning', 'restock', 'other'];
+    const VALID_PRIORITIES = ['low', 'medium', 'high', 'urgent'];
+    const d = body.data || {};
+    if (!d.title?.trim()) return NextResponse.json({ error: 'title_required' }, { status: 400 });
+    if (d.category && !VALID_CATEGORIES.includes(d.category)) return NextResponse.json({ error: 'invalid_category' }, { status: 400 });
+    if (d.priority && !VALID_PRIORITIES.includes(d.priority)) return NextResponse.json({ error: 'invalid_priority' }, { status: 400 });
+    const task = await prisma.task.create({
+      data: {
+        title: d.title.trim(),
+        description: d.description || '',
+        category: d.category || 'other',
+        priority: d.priority || 'medium',
+        date: d.date || new Date().toISOString().slice(0, 10),
+        employeeId: d.employeeId || null,
+        locationId: d.locationId || null,
+        dueTime: d.dueTime || null,
+        photoUrl: d.photoUrl || null,
+        requiresPhoto: d.requiresPhoto || false,
+      },
+    });
     return NextResponse.json(task);
   }
 
