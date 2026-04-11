@@ -11,7 +11,7 @@ import { useLocation } from '@/contexts/LocationContext';
 
 function LocationSelector() {
   const { locationId, locations, setLocationId, canSwitch } = useLocation();
-  if (!canSwitch || locations.length <= 1) return null;
+  if (!canSwitch || locations.length === 0) return null;
 
   return (
     <select
@@ -20,8 +20,8 @@ function LocationSelector() {
       className="px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700 text-xs text-white focus:outline-none focus:border-amber-500/50"
     >
       <option value="all">Tous les sites</option>
-      {locations.filter((l) => l.active).map((l) => (
-        <option key={l.id} value={l.id}>{l.name}</option>
+      {locations.map((l) => (
+        <option key={l.id} value={l.id}>{l.name}{!l.active ? ' (inactif)' : ''}</option>
       ))}
     </select>
   );
