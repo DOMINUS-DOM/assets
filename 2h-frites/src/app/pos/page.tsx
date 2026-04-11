@@ -349,7 +349,7 @@ function POSContent() {
 
 export default function POSPage() {
   return (
-    <ProtectedRoute allowedRoles={['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager']}>
+    <ProtectedRoute allowedRoles={['patron', 'manager', 'employe', 'franchisor_admin', 'franchisee_owner', 'location_manager']}>
       <POSContent />
     </ProtectedRoute>
   );

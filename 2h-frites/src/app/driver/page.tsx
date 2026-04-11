@@ -215,7 +215,7 @@ function DriverContent() {
 
 export default function DriverPage() {
   return (
-    <ProtectedRoute allowedRoles={['livreur', 'patron', 'manager', 'franchisor_admin']}>
+    <ProtectedRoute allowedRoles={['livreur', 'patron', 'manager', 'franchisor_admin', 'franchisee_owner', 'location_manager']}>
       <DriverContent />
     </ProtectedRoute>
   );

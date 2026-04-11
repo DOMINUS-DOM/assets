@@ -25,20 +25,21 @@ export default function StaffPage() {
   const [leaves, setLeaves] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const today = new Date().toISOString().slice(0, 10);
+  const [viewDate, setViewDate] = useState(today);
 
   const refresh = async () => {
     try {
       const locParam = locationId ? `?locationId=${locationId}` : '';
       const data = await api.get<{ employees: any[]; shifts: any[]; timeEntries: any[]; leaveRequests: any[]; tasks: any[] }>(`/staff${locParam}`);
       setEmployees(data.employees);
-      setShifts(data.shifts.filter((s: any) => s.date === today));
-      setEntries(data.timeEntries.filter((e: any) => e.date === today));
+      setShifts(data.shifts.filter((s: any) => s.date === viewDate));
+      setEntries(data.timeEntries.filter((e: any) => e.date === viewDate));
       setLeaves(data.leaveRequests);
-      setTasks(data.tasks.filter((t: any) => t.date === today));
+      setTasks(data.tasks.filter((t: any) => t.date === viewDate));
     } catch {}
   };
 
-  useEffect(() => { refresh(); }, [today]);
+  useEffect(() => { refresh(); }, [viewDate]);
 
   const TABS: { key: Tab; label: string; roles: string[] }[] = [
     { key: 'employees', label: t.ui.staff_employees, roles: ['patron', 'manager'] },
@@ -56,7 +57,20 @@ export default function StaffPage() {
     <div className="space-y-4">
       <h1 className="text-xl font-bold text-white">{t.ui.staff_title}</h1>
 
-      {/* Tab bar */}
+      {/* Date picker + Tab bar */}
+      <div className="flex items-center gap-3 mb-2">
+        <input
+          type="date"
+          value={viewDate}
+          onChange={(e) => setViewDate(e.target.value)}
+          className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-xs focus:outline-none focus:border-amber-500/50"
+        />
+        {viewDate !== today && (
+          <button onClick={() => setViewDate(today)} className="text-xs text-amber-400 hover:text-amber-300">
+            {t.ui.staff_todayShifts ? 'Aujourd\'hui' : 'Today'}
+          </button>
+        )}
+      </div>
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {visibleTabs.map((tb) => (
           <button key={tb.key} onClick={() => setTab(tb.key)}

@@ -7,11 +7,13 @@ let orderCounter = 100;
 
 export async function GET(req: NextRequest) {
   const locationId = req.nextUrl.searchParams.get('locationId');
+  const limit = parseInt(req.nextUrl.searchParams.get('limit') || '200');
   const where = locationId ? { locationId } : {};
   const orders = await prisma.order.findMany({
     where,
     include: { items: true, statusHistory: { orderBy: { at: 'asc' } } },
     orderBy: { createdAt: 'desc' },
+    take: limit,
   });
   return NextResponse.json(orders);
 }

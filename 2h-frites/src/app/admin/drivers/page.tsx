@@ -3,14 +3,17 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useLocation } from '@/contexts/LocationContext';
 
 export default function DriversPage() {
   const [drivers, setDrivers] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', email: '', zone: '', contractType: 'freelance', ratePerDelivery: 3.5, bonusRate: 0, notes: '' });
   const { t } = useLanguage();
+  const { locationId } = useLocation();
+  const locParam = locationId ? '?locationId=' + locationId : '';
 
-  const refresh = async () => { try { const d = await api.get<{ drivers: any[] }>('/drivers'); setDrivers(d.drivers); } catch {} };
+  const refresh = async () => { try { const d = await api.get<{ drivers: any[] }>('/drivers' + locParam); setDrivers(d.drivers); } catch {} };
   useEffect(() => { refresh(); }, []);
 
   const handleAdd = async (e: React.FormEvent) => {
