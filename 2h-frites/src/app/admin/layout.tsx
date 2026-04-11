@@ -96,6 +96,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
       title: 'Outils',
       items: [
         { href: '/admin/signage', label: 'Affichage', icon: 'signage', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'] },
+        { href: '/admin/qrcode', label: 'QR Codes', icon: 'channels', exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
         { href: '/admin/settings', label: t.ui.set_nav, icon: 'settings', exact: false, roles: ['patron', 'franchisor_admin'] },
       ],
     },

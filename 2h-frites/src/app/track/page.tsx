@@ -55,7 +55,11 @@ function TrackContent() {
   }
 
   const isDelivering = order.status === 'delivering' && driver?.lastLat;
-  const deliveryDest: [number, number] | undefined = order.deliveryStreet ? [50.479 + Math.random() * 0.01, 4.186 + Math.random() * 0.01] : undefined;
+  // Use a stable hash of the order ID for a consistent position offset (not random each render)
+  const hash = (order.id || '').split('').reduce((a: number, c: string) => a + c.charCodeAt(0), 0);
+  const deliveryDest: [number, number] | undefined = order.deliveryStreet
+    ? [50.479 + ((hash % 100) / 10000), 4.186 + ((hash % 73) / 10000)]
+    : undefined;
 
   return (
     <div className="min-h-screen max-w-lg mx-auto pb-20 bg-zinc-950">

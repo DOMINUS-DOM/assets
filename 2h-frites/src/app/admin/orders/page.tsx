@@ -15,13 +15,30 @@ export default function OrdersPage() {
   const locParam = locationId ? `?locationId=${locationId}` : '';
   const { data: orders } = useApiData<any[]>(`/orders${locParam}`, []);
   const [filter, setFilter] = useState<OrderStatus | 'all'>('all');
+  const [search, setSearch] = useState('');
   const { t } = useLanguage();
 
-  const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
+  const byStatus = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
+  const filtered = search
+    ? byStatus.filter((o) =>
+        (o.orderNumber || '').toLowerCase().includes(search.toLowerCase()) ||
+        (o.customerName || '').toLowerCase().includes(search.toLowerCase()) ||
+        (o.customerPhone || '').includes(search)
+      )
+    : byStatus;
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-white">{t.ui.admin_orders}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-white shrink-0">{t.ui.admin_orders}</h1>
+        <input
+          type="text"
+          placeholder="Rechercher (n°, nom, tel)..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-xs placeholder-zinc-500 focus:outline-none focus:border-amber-500/50 w-48"
+        />
+      </div>
       <div className="flex gap-1.5 overflow-x-auto pb-2">
         {STATUSES.map((s) => {
           const label = s === 'all' ? t.ui.admin_all : (t.ui[`status_${s}`] || s);
