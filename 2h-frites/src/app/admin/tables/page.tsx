@@ -3,187 +3,200 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useLocation } from '@/contexts/LocationContext';
-import { useApiData } from '@/hooks/useApiData';
-import { formatPrice } from '@/utils/format';
 
-interface Table {
+type TableStatus = 'free' | 'occupied' | 'reserved' | 'cleaning';
+type Zone = 'all' | 'main' | 'terrace' | 'vip';
+
+interface FloorTable {
   id: string;
+  locationId: string;
   number: number;
-  seats: number;
-  status: 'free' | 'occupied' | 'reserved' | 'cleaning';
-  orderId?: string;
-  customerName?: string;
-  total?: number;
-  occupiedSince?: string;
+  capacity: number;
+  zone: string;
+  status: TableStatus;
+  active: boolean;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  free: { label: 'Libre', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/30' },
-  occupied: { label: 'Occupee', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/30' },
-  reserved: { label: 'Reservee', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/30' },
-  cleaning: { label: 'Nettoyage', color: 'text-zinc-400', bg: 'bg-zinc-700/50 border-zinc-600/30' },
+const STATUS_COLORS: Record<TableStatus, string> = {
+  free: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400',
+  occupied: 'bg-amber-500/15 border-amber-500/30 text-amber-400',
+  reserved: 'bg-blue-500/15 border-blue-500/30 text-blue-400',
+  cleaning: 'bg-zinc-500/15 border-zinc-500/30 text-zinc-400',
 };
+
+const STATUS_DOT: Record<TableStatus, string> = {
+  free: 'bg-emerald-400',
+  occupied: 'bg-amber-400',
+  reserved: 'bg-blue-400',
+  cleaning: 'bg-zinc-400',
+};
+
+const STATUS_LABELS: Record<TableStatus, string> = {
+  free: 'Libre',
+  occupied: 'Occup\u00e9e',
+  reserved: 'R\u00e9serv\u00e9e',
+  cleaning: 'Nettoyage',
+};
+
+const ZONE_LABELS: Record<string, string> = {
+  main: 'Principale',
+  terrace: 'Terrasse',
+  vip: 'VIP',
+};
+
+const ZONE_TABS: { key: Zone; label: string }[] = [
+  { key: 'all', label: 'Toutes' },
+  { key: 'main', label: 'Principale' },
+  { key: 'terrace', label: 'Terrasse' },
+  { key: 'vip', label: 'VIP' },
+];
 
 export default function TablesPage() {
   const { locationId } = useLocation();
-  const locParam = locationId ? `?locationId=${locationId}` : '';
-  const { data: orders } = useApiData<any[]>(`/orders${locParam}`, []);
-
-  // Tables state — persisted in localStorage per location
-  const storageKey = `2h-tables-${locationId || 'all'}`;
-  const [tables, setTables] = useState<Table[]>([]);
+  const [tables, setTables] = useState<FloorTable[]>([]);
+  const [zone, setZone] = useState<Zone>('all');
   const [showAdd, setShowAdd] = useState(false);
-  const [newTable, setNewTable] = useState({ number: 1, seats: 4 });
-  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [form, setForm] = useState({ number: '', capacity: '4', zone: 'main' });
 
-  // Load tables from localStorage
-  useEffect(() => {
+  const refresh = async () => {
     try {
-      const stored = localStorage.getItem(storageKey);
-      if (stored) setTables(JSON.parse(stored));
-      else {
-        // Default tables
-        const defaults: Table[] = Array.from({ length: 8 }, (_, i) => ({
-          id: `table-${i + 1}`,
-          number: i + 1,
-          seats: i < 4 ? 2 : i < 6 ? 4 : 6,
-          status: 'free' as const,
-        }));
-        setTables(defaults);
-      }
+      const locParam = locationId ? `?locationId=${locationId}` : '';
+      const data = await api.get<FloorTable[]>(`/tables${locParam}`);
+      setTables(data);
     } catch {}
-  }, [storageKey]);
-
-  // Save to localStorage on change
-  useEffect(() => {
-    if (tables.length > 0) {
-      try { localStorage.setItem(storageKey, JSON.stringify(tables)); } catch {}
-    }
-  }, [tables, storageKey]);
-
-  const updateTable = (id: string, data: Partial<Table>) => {
-    setTables((prev) => prev.map((t) => t.id === id ? { ...t, ...data } : t));
   };
 
-  const addTable = () => {
-    const id = `table-${Date.now()}`;
-    setTables((prev) => [...prev, { id, number: newTable.number, seats: newTable.seats, status: 'free' }]);
-    setNewTable({ number: Math.max(...tables.map((t) => t.number), 0) + 2, seats: 4 });
+  useEffect(() => { refresh(); }, [locationId]);
+
+  const filtered = zone === 'all' ? tables : tables.filter((t) => t.zone === zone);
+
+  const handleStatusChange = async (id: string, status: TableStatus) => {
+    try {
+      await api.post('/tables', { action: 'updateStatus', id, status });
+      refresh();
+    } catch {}
+  };
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.number || !locationId) return;
+    await api.post('/tables', {
+      action: 'create',
+      number: parseInt(form.number),
+      capacity: parseInt(form.capacity) || 4,
+      zone: form.zone,
+      locationId,
+    });
+    setForm({ number: '', capacity: '4', zone: 'main' });
     setShowAdd(false);
+    refresh();
   };
 
-  const removeTable = (id: string) => {
-    setTables((prev) => prev.filter((t) => t.id !== id));
-    if (selectedTable === id) setSelectedTable(null);
+  const handleDelete = async (id: string) => {
+    if (!confirm('Supprimer cette table ?')) return;
+    await api.post('/tables', { action: 'delete', id });
+    refresh();
   };
 
-  const freeCount = tables.filter((t) => t.status === 'free').length;
-  const occupiedCount = tables.filter((t) => t.status === 'occupied').length;
+  const ic = 'w-full px-3 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm focus:outline-none focus:border-amber-500/50';
 
-  const ic = 'px-3 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm focus:outline-none focus:border-amber-500/50';
+  const counts = {
+    free: tables.filter((t) => t.status === 'free').length,
+    occupied: tables.filter((t) => t.status === 'occupied').length,
+    reserved: tables.filter((t) => t.status === 'reserved').length,
+    cleaning: tables.filter((t) => t.status === 'cleaning').length,
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-white">Plan de salle</h1>
-          <p className="text-xs text-zinc-500 mt-1">
-            {freeCount} libre{freeCount > 1 ? 's' : ''} · {occupiedCount} occupee{occupiedCount > 1 ? 's' : ''} · {tables.length} total
-          </p>
-        </div>
-        <button onClick={() => setShowAdd(!showAdd)}
-          className="px-3 py-1.5 rounded-lg bg-amber-500 text-zinc-950 text-sm font-bold hover:bg-amber-400">
-          {showAdd ? 'Annuler' : '+ Table'}
-        </button>
+        <h1 className="text-xl font-bold text-white">Plan de salle</h1>
+        <span className="text-sm text-zinc-500">{tables.length} tables</span>
       </div>
 
+      {/* Status summary */}
+      <div className="grid grid-cols-4 gap-2">
+        {(Object.keys(counts) as TableStatus[]).map((s) => (
+          <div key={s} className={`p-2 rounded-lg border text-center ${STATUS_COLORS[s]}`}>
+            <div className="text-lg font-bold">{counts[s]}</div>
+            <div className="text-[10px] uppercase tracking-wider">{STATUS_LABELS[s]}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Zone tabs */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
+        {ZONE_TABS.map((zt) => (
+          <button key={zt.key} onClick={() => setZone(zt.key)}
+            className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${zone === zt.key ? 'bg-amber-500/15 text-amber-400' : 'bg-zinc-900 text-zinc-500'}`}>
+            {zt.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Add table */}
+      <button onClick={() => setShowAdd(!showAdd)}
+        className="px-4 py-2 rounded-lg bg-amber-500 text-zinc-950 font-bold text-sm">
+        {showAdd ? 'Fermer' : '+ Table'}
+      </button>
+
       {showAdd && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
-          <div>
-            <label className="text-xs text-zinc-500 block mb-1">N°</label>
-            <input type="number" value={newTable.number} onChange={(e) => setNewTable({ ...newTable, number: parseInt(e.target.value) || 1 })}
-              className={`${ic} w-20`} min={1} />
+        <form onSubmit={handleAdd} className="p-4 rounded-xl bg-zinc-900 border border-amber-500/30 space-y-2">
+          <h3 className="text-sm font-bold text-white">Ajouter une table</h3>
+          <div className="grid grid-cols-3 gap-2">
+            <input className={ic} type="number" placeholder="N\u00b0" value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} required />
+            <input className={ic} type="number" placeholder="Places" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} />
+            <select className={ic} value={form.zone} onChange={(e) => setForm({ ...form, zone: e.target.value })}>
+              <option value="main">Principale</option>
+              <option value="terrace">Terrasse</option>
+              <option value="vip">VIP</option>
+            </select>
           </div>
-          <div>
-            <label className="text-xs text-zinc-500 block mb-1">Places</label>
-            <input type="number" value={newTable.seats} onChange={(e) => setNewTable({ ...newTable, seats: parseInt(e.target.value) || 2 })}
-              className={`${ic} w-20`} min={1} max={20} />
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2 rounded-lg bg-zinc-800 text-zinc-300 text-sm">Annuler</button>
+            <button type="submit" className="flex-1 py-2 rounded-lg bg-amber-500 text-zinc-950 font-bold text-sm">Ajouter</button>
           </div>
-          <button onClick={addTable} className="px-4 py-2.5 rounded-lg bg-amber-500 text-zinc-950 text-sm font-bold mt-4">Ajouter</button>
-        </div>
+        </form>
       )}
 
       {/* Table grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        {tables.map((table) => {
-          const cfg = STATUS_CONFIG[table.status];
-          const isSelected = selectedTable === table.id;
-          return (
-            <button
-              key={table.id}
-              onClick={() => setSelectedTable(isSelected ? null : table.id)}
-              className={`relative p-4 rounded-2xl border-2 text-center transition-all active:scale-95 ${
-                isSelected ? 'ring-2 ring-amber-500 ' : ''
-              }${cfg.bg}`}
-            >
-              <p className="text-2xl font-black text-white">{table.number}</p>
-              <p className={`text-xs font-bold mt-1 ${cfg.color}`}>{cfg.label}</p>
-              <p className="text-[10px] text-zinc-500 mt-0.5">{table.seats} places</p>
-              {table.customerName && (
-                <p className="text-[10px] text-zinc-400 mt-1 truncate">{table.customerName}</p>
-              )}
-              {table.total != null && table.total > 0 && (
-                <p className="text-xs text-amber-400 font-bold mt-0.5">{formatPrice(table.total)} €</p>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Selected table actions */}
-      {selectedTable && (() => {
-        const table = tables.find((t) => t.id === selectedTable);
-        if (!table) return null;
-        return (
-          <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white">Table {table.number}</h3>
-              <span className={`text-xs font-bold ${STATUS_CONFIG[table.status].color}`}>
-                {STATUS_CONFIG[table.status].label}
-              </span>
+      <div className="grid grid-cols-2 gap-3">
+        {filtered.map((table) => (
+          <div key={table.id} className={`p-3 rounded-xl border ${STATUS_COLORS[table.status]}`}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${STATUS_DOT[table.status]}`} />
+                <span className="text-sm font-bold">Table {table.number}</span>
+              </div>
+              <button onClick={() => handleDelete(table.id)}
+                className="text-zinc-600 hover:text-red-400 text-xs p-1">&#10005;</button>
             </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button onClick={() => updateTable(table.id, { status: 'free', customerName: undefined, total: undefined, orderId: undefined })}
-                className="py-2.5 rounded-xl bg-emerald-500/15 text-emerald-400 text-xs font-bold active:scale-95">
-                Liberer
+            <div className="flex items-center justify-between mb-2 text-[10px] uppercase tracking-wider opacity-70">
+              <span>{table.capacity} places</span>
+              <span>{ZONE_LABELS[table.zone] || table.zone}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              <button onClick={() => handleStatusChange(table.id, 'free')}
+                className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${table.status === 'free' ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-emerald-400'}`}>
+                Lib\u00e9rer
               </button>
-              <button onClick={() => {
-                const name = prompt('Nom du client :') || 'Client';
-                updateTable(table.id, { status: 'occupied', customerName: name, occupiedSince: new Date().toISOString() });
-              }}
-                className="py-2.5 rounded-xl bg-amber-500/15 text-amber-400 text-xs font-bold active:scale-95">
+              <button onClick={() => handleStatusChange(table.id, 'occupied')}
+                className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${table.status === 'occupied' ? 'bg-amber-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-amber-400'}`}>
                 Occuper
               </button>
-              <button onClick={() => updateTable(table.id, { status: 'reserved' })}
-                className="py-2.5 rounded-xl bg-blue-500/15 text-blue-400 text-xs font-bold active:scale-95">
-                Reserver
+              <button onClick={() => handleStatusChange(table.id, 'reserved')}
+                className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${table.status === 'reserved' ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-blue-400'}`}>
+                R\u00e9server
               </button>
-              <button onClick={() => updateTable(table.id, { status: 'cleaning' })}
-                className="py-2.5 rounded-xl bg-zinc-700/50 text-zinc-400 text-xs font-bold active:scale-95">
+              <button onClick={() => handleStatusChange(table.id, 'cleaning')}
+                className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${table.status === 'cleaning' ? 'bg-zinc-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
                 Nettoyage
               </button>
             </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
-              <button onClick={() => removeTable(table.id)}
-                className="text-xs text-red-400 hover:text-red-300">Supprimer cette table</button>
-              <button onClick={() => setSelectedTable(null)}
-                className="text-xs text-zinc-500">Fermer</button>
-            </div>
           </div>
-        );
-      })()}
+        ))}
+      </div>
+      {filtered.length === 0 && <p className="text-zinc-500 text-sm text-center py-6">Aucune table</p>}
     </div>
   );
 }

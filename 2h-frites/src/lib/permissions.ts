@@ -7,7 +7,7 @@ export const ALL_PERMISSIONS = [
   'dashboard', 'locations', 'orders', 'kitchen', 'menu', 'zones', 'tables',
   'inventory', 'staff', 'drivers', 'recruitment', 'payroll', 'payments',
   'crm', 'analytics', 'forecast', 'channels', 'reviews', 'signage',
-  'qrcode', 'settings', 'users',
+  'qrcode', 'settings', 'users', 'reservations', 'recipes', 'invoices',
 ] as const;
 
 export type PermissionKey = (typeof ALL_PERMISSIONS)[number];
@@ -34,8 +34,11 @@ export const PERMISSION_LABELS: Record<PermissionKey, string> = {
   reviews: 'Avis clients',
   signage: 'Affichage dynamique',
   qrcode: 'QR Codes',
-  settings: 'Paramètres',
+  settings: 'Param\u00e8tres',
   users: 'Gestion utilisateurs',
+  reservations: 'R\u00e9servations',
+  recipes: 'Recettes & Co\u00fbts',
+  invoices: 'Factures achat',
 };
 
 // Permission groups for the UI
@@ -45,6 +48,7 @@ export const PERMISSION_GROUPS: { title: string; keys: PermissionKey[] }[] = [
   { title: 'Catalogue', keys: ['menu', 'zones', 'tables', 'inventory'] },
   { title: 'Équipe', keys: ['staff', 'drivers', 'recruitment', 'payroll', 'users'] },
   { title: 'Business', keys: ['payments', 'crm', 'analytics', 'forecast', 'channels', 'reviews'] },
+  { title: 'Finance', keys: ['invoices', 'recipes'] },
   { title: 'Outils', keys: ['signage', 'qrcode', 'settings'] },
 ];
 
@@ -55,26 +59,28 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, Record<string, boolean>> =
     dashboard: t, locations: t, orders: t, kitchen: t, menu: t, zones: t, tables: t,
     inventory: t, staff: t, drivers: t, recruitment: t, payroll: t, payments: t,
     crm: t, analytics: t, forecast: t, channels: t, reviews: t, signage: t,
-    qrcode: t, settings: t, users: t,
+    qrcode: t, settings: t, users: t, reservations: t, recipes: t, invoices: t,
   },
   patron: {
     dashboard: t, orders: t, kitchen: t, menu: t, zones: t, tables: t,
     inventory: t, staff: t, drivers: t, recruitment: t, payroll: t, payments: t,
     crm: t, analytics: t, forecast: t, channels: t, reviews: t, signage: t,
-    qrcode: t, settings: t, users: t,
+    qrcode: t, settings: t, users: t, reservations: t, recipes: t, invoices: t,
   },
   franchisee_owner: {
     dashboard: t, orders: t, kitchen: t, menu: t, zones: t, tables: t,
     inventory: t, staff: t, drivers: t, recruitment: t, payments: t,
     crm: t, analytics: t, reviews: t, signage: t, settings: t, users: t,
+    reservations: t, recipes: t, invoices: t,
   },
   location_manager: {
-    dashboard: t, zones: t, tables: t, signage: t,
+    dashboard: t, zones: t, tables: t, signage: t, reservations: t,
   },
   manager: {
     dashboard: t, orders: t, kitchen: t, menu: t, zones: t, tables: t,
     inventory: t, staff: t, drivers: t, recruitment: t, payments: t,
     crm: t, analytics: t, forecast: t, reviews: t, signage: t, qrcode: t,
+    reservations: t, recipes: t, invoices: t,
   },
   employe: {
     dashboard: t, orders: t, kitchen: t, tables: t,

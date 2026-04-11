@@ -42,6 +42,11 @@ model Location {
   signageContents  SignageContent[]
   signagePlaylists SignagePlaylist[]
   signageMedia     SignageMedia[]
+
+  // New modules
+  tables            FloorTable[]
+  reservations      Reservation[]
+  purchaseInvoices  PurchaseInvoice[]
 }
 
 // ═══════════════════════════════════════
@@ -186,6 +191,8 @@ model Order {
   channel         String   @default("website") // website, uber_eats, deliveroo, phone
   total          Float
   driverId       String?
+  tableId        String?
+  table          FloorTable? @relation(fields: [tableId], references: [id])
   userId         String?
   user           User?     @relation(fields: [userId], references: [id])
   createdAt      DateTime  @default(now())
@@ -312,7 +319,9 @@ model Ingredient {
   expiryDate   String?
   category     String
 
-  movements StockMovement[]
+  movements    StockMovement[]
+  recipeItems  RecipeItem[]
+  invoiceLines PurchaseInvoiceLine[]
 }
 
 model Supplier {
@@ -321,6 +330,8 @@ model Supplier {
   phone String
   email String
   notes String @default("")
+
+  purchaseInvoices PurchaseInvoice[]
 }
 
 model StockMovement {
@@ -553,4 +564,134 @@ model SignageMedia {
   duration     Float?   // video duration in seconds
   folder       String   @default("") // user folder/tag
   createdAt    DateTime @default(now())
+}
+
+// ═══════════════════════════════════════
+// TABLES — Floor plan (DB-backed)
+// ═══════════════════════════════════════
+
+model FloorTable {
+  id         String    @id @default(cuid())
+  locationId String
+  location   Location  @relation(fields: [locationId], references: [id])
+  number     Int
+  capacity   Int       @default(4)
+  zone       String    @default("main") // main, terrace, vip
+  status     String    @default("free") // free, occupied, reserved, cleaning
+  x          Float?
+  y          Float?
+  active     Boolean   @default(true)
+
+  orders              Order[]
+  reservationTables   ReservationTable[]
+
+  @@index([locationId])
+}
+
+// ═══════════════════════════════════════
+// RESERVATIONS
+// ═══════════════════════════════════════
+
+model Reservation {
+  id            String    @id @default(cuid())
+  locationId    String
+  location      Location  @relation(fields: [locationId], references: [id])
+  date          String    // YYYY-MM-DD
+  timeSlot      String    // HH:mm
+  endTime       String    // HH:mm
+  duration      Int       @default(90) // minutes
+  partySize     Int
+  customerName  String
+  customerPhone String
+  customerEmail String?
+  status        String    @default("pending") // pending, confirmed, seated, completed, cancelled, no_show
+  notes         String    @default("")
+  source        String    @default("admin") // admin, online, phone
+  createdAt     DateTime  @default(now())
+
+  tables ReservationTable[]
+
+  @@index([locationId])
+  @@index([date])
+}
+
+model ReservationTable {
+  id            String      @id @default(cuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  tableId       String
+  table         FloorTable  @relation(fields: [tableId], references: [id])
+
+  @@unique([reservationId, tableId])
+}
+
+// ═══════════════════════════════════════
+// PURCHASE INVOICES — Supplier billing
+// ═══════════════════════════════════════
+
+model PurchaseInvoice {
+  id            String    @id @default(cuid())
+  locationId    String?
+  location      Location? @relation(fields: [locationId], references: [id])
+  supplierId    String?
+  supplier      Supplier? @relation(fields: [supplierId], references: [id])
+  invoiceNumber String?
+  invoiceDate   String    // YYYY-MM-DD
+  dueDate       String?
+  subtotal      Float
+  totalVat      Float
+  grandTotal    Float
+  status        String    @default("draft") // draft, validated, paid
+  imageUrl      String?   // Cloudinary photo of paper invoice
+  aiExtracted   Boolean   @default(false)
+  notes         String    @default("")
+  createdAt     DateTime  @default(now())
+
+  lines PurchaseInvoiceLine[]
+
+  @@index([locationId])
+  @@index([supplierId])
+  @@index([invoiceDate])
+}
+
+model PurchaseInvoiceLine {
+  id           String           @id @default(cuid())
+  invoiceId    String
+  invoice      PurchaseInvoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description  String
+  ingredientId String?
+  ingredient   Ingredient?      @relation(fields: [ingredientId], references: [id])
+  quantity     Float
+  unitPrice    Float
+  vatRate      Float            @default(0.06)
+  total        Float
+
+  @@index([invoiceId])
+}
+
+// ═══════════════════════════════════════
+// RECIPES — Cost tracking per menu item
+// ═══════════════════════════════════════
+
+model Recipe {
+  id         String       @id @default(cuid())
+  menuItemId String       @unique // references menu item ID from JSON menu
+  name       String
+  prepTime   Int?         // minutes
+  notes      String       @default("")
+
+  items RecipeItem[]
+}
+
+model RecipeItem {
+  id           String     @id @default(cuid())
+  recipeId     String
+  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+  quantity     Float
+  unit         String
+
+  @@index([recipeId])
+  @@index([ingredientId])
 }

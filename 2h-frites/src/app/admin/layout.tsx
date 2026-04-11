@@ -63,6 +63,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
       items: [
         { href: '/admin/orders', label: t.ui.admin_orders, icon: 'orders', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin'], permission: 'orders' },
         { href: '/admin/kitchen', label: t.ui.kds_nav, icon: 'kitchen', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin'], permission: 'kitchen' },
+        { href: '/admin/reservations', label: 'R\u00e9servations', icon: 'orders', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'], permission: 'reservations' },
       ],
     },
     {
@@ -71,7 +72,9 @@ function AdminContent({ children }: { children: React.ReactNode }) {
         { href: '/admin/menu', label: t.ui.cms_nav, icon: 'menu', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'menu' },
         { href: '/admin/zones', label: t.ui.zone_nav, icon: 'zones', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'], permission: 'zones' },
         { href: '/admin/tables', label: 'Salle', icon: 'menu', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'], permission: 'tables' },
+        { href: '/admin/reservations', label: 'Reservations', icon: 'orders', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'], permission: 'tables' },
         { href: '/admin/inventory', label: t.ui.inv_nav, icon: 'inventory', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'inventory' },
+        { href: '/admin/recipes', label: 'Recettes', icon: 'menu', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'recipes' },
       ],
     },
     {
@@ -94,6 +97,8 @@ function AdminContent({ children }: { children: React.ReactNode }) {
         { href: '/admin/channels', label: t.ui.ch_nav, icon: 'channels', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'channels' },
         { href: '/admin/reviews', label: t.ui.rev_nav, icon: 'reviews', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'reviews' },
         { href: '/admin/reports', label: 'Rapport P&L', icon: 'payroll', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'analytics' },
+        { href: '/admin/invoices', label: 'Factures achat', icon: 'payments', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'invoices' },
+        { href: '/admin/dashboard-finance', label: 'Finances', icon: 'forecast', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'analytics' },
       ],
     },
     {

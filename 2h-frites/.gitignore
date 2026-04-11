@@ -10,3 +10,4 @@ prisma/dev.db-journal
 
 /src/generated/prisma
 .next/
+.vercel
