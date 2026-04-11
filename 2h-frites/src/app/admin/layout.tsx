@@ -69,6 +69,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
       items: [
         { href: '/admin/menu', label: t.ui.cms_nav, icon: 'menu', exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
         { href: '/admin/zones', label: t.ui.zone_nav, icon: 'zones', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'] },
+        { href: '/admin/tables', label: 'Salle', icon: 'menu', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'] },
         { href: '/admin/inventory', label: t.ui.inv_nav, icon: 'inventory', exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
       ],
     },

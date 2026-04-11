@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { menuStore } from '@/stores/menuStore';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
@@ -19,8 +21,10 @@ interface KioskCartItem {
 type KioskStep = 'welcome' | 'menu' | 'cart' | 'confirm';
 const IDLE_TIMEOUT = 60000; // 60s inactivity → back to welcome
 
-export default function KioskPage() {
+function KioskContent() {
   const { getCategory, getItemName } = useLanguage();
+  const searchParams = useSearchParams();
+  const tableNumber = searchParams.get('table');
 
   const [step, setStep] = useState<KioskStep>('welcome');
   const [categories, setCategories] = useState<Category[]>([]);
@@ -94,10 +98,10 @@ export default function KioskPage() {
         body: JSON.stringify({
           action: 'create',
           type: 'pickup',
-          customerName: 'Borne',
+          customerName: tableNumber ? `Borne Table ${tableNumber}` : 'Borne',
           customerPhone: '',
           customerEmail: null,
-          deliveryStreet: null, deliveryCity: null, deliveryPostal: null, deliveryNotes: 'Commande borne — Sur place',
+          deliveryStreet: null, deliveryCity: null, deliveryPostal: null, deliveryNotes: tableNumber ? `Table ${tableNumber} — Sur place` : 'Commande borne — Sur place',
           pickupTime: null,
           paymentMethod: 'on_pickup',
           paymentStatus: 'pending',
@@ -130,7 +134,10 @@ export default function KioskPage() {
             Commander ici
           </button>
         </div>
-        <p className="text-zinc-600 text-sm mt-8">Touchez l&apos;écran pour commencer</p>
+        {tableNumber && (
+          <p className="text-amber-400 text-lg font-bold mt-6">Table {tableNumber}</p>
+        )}
+        <p className="text-zinc-600 text-sm mt-4">Touchez l&apos;écran pour commencer</p>
       </div>
     );
   }
@@ -292,5 +299,13 @@ export default function KioskPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function KioskPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-950 flex items-center justify-center"><span className="text-6xl animate-pulse">🍟</span></div>}>
+      <KioskContent />
+    </Suspense>
   );
 }
