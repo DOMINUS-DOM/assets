@@ -50,6 +50,69 @@ const emptyForm: ContentForm = {
   menuCategories: [],
 };
 
+// ─── Preview Component ───
+
+function ContentPreview({ form, categories }: { form: ContentForm; categories: any[] }) {
+  if (form.type === 'text' && form.text) {
+    const fontSize = Math.min(parseInt(form.fontSize) || 24, 48);
+    // Scale down the font for preview
+    const previewFontSize = Math.max(Math.round(fontSize * 0.5), 10);
+    return (
+      <div className="rounded-lg border border-zinc-800 overflow-hidden">
+        <p className="text-xs text-zinc-500 font-medium px-3 py-1.5 bg-zinc-800/50">Apercu</p>
+        <div
+          className="flex items-center justify-center p-6 min-h-[100px]"
+          style={{ backgroundColor: form.bgColor }}
+        >
+          <p
+            className="font-extrabold text-center leading-tight whitespace-pre-wrap"
+            style={{ fontSize: `${previewFontSize}px`, color: form.textColor }}
+          >
+            {form.text}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (form.type === 'menu') {
+    const selectedCount = form.menuCategories.length;
+    const selectedNames = categories
+      .filter((c: any) => form.menuCategories.includes(c.id))
+      .map((c: any) => c.name);
+
+    return (
+      <div className="rounded-lg border border-zinc-800 overflow-hidden">
+        <p className="text-xs text-zinc-500 font-medium px-3 py-1.5 bg-zinc-800/50">Apercu</p>
+        <div className="p-4 bg-zinc-950 min-h-[80px] flex flex-col justify-center">
+          <p className="text-sm font-semibold text-amber-400">
+            {selectedCount} categorie{selectedCount > 1 ? 's' : ''} selectionnee{selectedCount > 1 ? 's' : ''}
+          </p>
+          {selectedNames.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {selectedNames.map((name: string) => (
+                <span
+                  key={name}
+                  className="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 font-medium"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+          )}
+          {selectedCount === 0 && (
+            <p className="text-xs text-zinc-600 mt-1">Aucune categorie selectionnee</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// ─── Main Page ───
+
 export default function ContentPage() {
   const { locationId } = useLocation();
   const locParam = locationId ? `?locationId=${locationId}` : '';
@@ -269,6 +332,9 @@ export default function ContentPage() {
               )}
             </div>
           )}
+
+          {/* Live preview */}
+          <ContentPreview form={form} categories={categories} />
 
           <div className="flex items-center gap-2 pt-1">
             <button

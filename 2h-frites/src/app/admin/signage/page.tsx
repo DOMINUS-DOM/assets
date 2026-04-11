@@ -16,6 +16,12 @@ export default function SignageDashboard() {
   const activeScreens = screens.filter((s) => s.status === 'active').length;
   const publishedContents = contents.filter((c) => c.status === 'published').length;
 
+  // Build a map of screen -> playlist from schedules
+  const getScreenPlaylist = (screenId: string) => {
+    const schedule = schedules.find((s: any) => s.screenId === screenId && s.active);
+    return schedule?.playlist || null;
+  };
+
   const cards = [
     {
       emoji: '\uD83D\uDCFA',
@@ -47,6 +53,9 @@ export default function SignageDashboard() {
     },
   ];
 
+  // Recent screens (latest 3) with their assigned playlists
+  const recentScreens = screens.slice(0, 3);
+
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold text-white">Affichage dynamique</h1>
@@ -67,11 +76,85 @@ export default function SignageDashboard() {
         ))}
       </div>
 
-      {screens.length > 0 && (
+      {/* Quick actions */}
+      <div>
+        <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">Actions rapides</h2>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/signage/screens"
+            className="px-4 py-2.5 rounded-lg bg-amber-500 text-black text-sm font-semibold hover:bg-amber-400 transition-colors"
+          >
+            + Creer un ecran
+          </Link>
+          <Link
+            href="/admin/signage/content"
+            className="px-4 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm font-semibold hover:bg-zinc-700 hover:border-zinc-600 transition-colors"
+          >
+            + Creer un contenu
+          </Link>
+        </div>
+      </div>
+
+      {/* Recent activity */}
+      {recentScreens.length > 0 && (
+        <div>
+          <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">Activite recente</h2>
+          <div className="space-y-2">
+            {recentScreens.map((screen: any) => {
+              const playlist = getScreenPlaylist(screen.id);
+              return (
+                <div
+                  key={screen.id}
+                  className="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-white truncate">{screen.name}</p>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
+                          screen.status === 'active'
+                            ? 'bg-green-500/20 text-green-400'
+                            : screen.status === 'offline'
+                              ? 'bg-red-500/20 text-red-400'
+                              : 'bg-zinc-700 text-zinc-400'
+                        }`}
+                      >
+                        {screen.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs text-zinc-500">{screen.resolution} - {screen.orientation === 'landscape' ? 'Paysage' : 'Portrait'}</p>
+                      {playlist ? (
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-medium">
+                          {playlist.name}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-zinc-600 italic">Aucune playlist</span>
+                      )}
+                    </div>
+                  </div>
+                  {screen.code && (
+                    <a
+                      href={`/display/${screen.code}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 font-medium transition-colors shrink-0 ml-3"
+                    >
+                      Apercu
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {screens.length > 3 && (
         <div>
           <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">Statut des ecrans</h2>
           <div className="space-y-2">
-            {screens.slice(0, 5).map((screen: any) => (
+            {screens.slice(3, 8).map((screen: any) => (
               <div
                 key={screen.id}
                 className="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50"
