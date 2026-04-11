@@ -23,7 +23,9 @@ export async function POST(req: NextRequest) {
   const auth = getAuthUser(req);
 
   if (action === 'create') {
-    if (!auth) return unauthorized();
+    // Allow kiosk orders without auth (customerName starts with 'Borne')
+    const isKiosk = body.customerName?.startsWith('Borne');
+    if (!auth && !isKiosk) return unauthorized();
     orderCounter++;
     const order = await prisma.order.create({
       data: {

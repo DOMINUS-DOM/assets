@@ -150,6 +150,10 @@ function AdminContent({ children }: { children: React.ReactNode }) {
 
       {/* Bottom links */}
       <div className="px-3 py-3 border-t border-zinc-800/50 space-y-1">
+        <Link href="/pos" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-colors font-medium">
+          <NavIcon name="payments" />
+          <span>Caisse POS</span>
+        </Link>
         <Link href="/" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-zinc-500 hover:text-white hover:bg-zinc-800/50 transition-colors">
           <NavIcon name="store" />
           <span>{t.ui.admin_clientMenu}</span>
