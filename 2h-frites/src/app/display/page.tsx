@@ -35,10 +35,8 @@ export default function DisplayHomePage() {
       <div className="text-center space-y-8 max-w-xl mx-auto px-8">
         {/* Logo */}
         <div>
-          <span className="text-7xl block mb-4">🍟</span>
-          <h1 className="text-4xl font-extrabold text-white">
-            <span className="text-amber-400">2H</span> Frites Artisanales
-          </h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="2H Frites Artisanales" className="h-24 w-auto mx-auto mb-2" />
           <p className="text-zinc-500 text-sm mt-2">Affichage dynamique</p>
         </div>
 

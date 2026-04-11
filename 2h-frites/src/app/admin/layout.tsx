@@ -60,9 +60,10 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-zinc-950">
       <header className="sticky top-0 z-40 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50">
         <div className="flex items-center justify-between h-14 px-4 max-w-4xl mx-auto">
-          <Link href="/admin" className="flex items-center gap-2">
-            <span className="text-lg">🍟</span>
-            <span className="font-bold text-sm"><span className="text-amber-400">2H</span> Admin</span>
+          <Link href="/admin" className="flex items-center gap-1.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="2H Frites" className="h-7 w-auto" />
+            <span className="font-bold text-xs text-zinc-400">Admin</span>
           </Link>
           <div className="flex items-center gap-2">
             <LocationSelector />
