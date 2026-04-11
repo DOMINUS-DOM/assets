@@ -44,10 +44,10 @@ export default function CategoryView({ category, isFavorite, onToggleFavorite }:
     );
   }
 
-  if (category.slug === 'pains-ronds') {
+  if (category.slug === 'pains-ronds' || category.slug === 'grillades') {
     return (
       <div className="px-4 pb-8">
-        <p className="text-xs text-zinc-500 mb-4">Cliquez sur un pain pour le personnaliser avec sauces et garnitures.</p>
+        <p className="text-xs text-zinc-500 mb-4">Cliquez pour personnaliser avec sauces et garnitures.</p>
         <div className="space-y-2">
           {filteredItems.map((item) => (
             <button key={item.id} onClick={() => setBuilderItem(item)}
