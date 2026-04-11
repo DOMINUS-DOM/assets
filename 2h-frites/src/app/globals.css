@@ -15,6 +15,15 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
+  /* Print styles */
+  @media print {
+    body { background: white !important; color: black !important; }
+    .print\\:hidden, header, nav, aside, footer, button:not(.print-keep) { display: none !important; }
+    .print\\:bg-white { background: white !important; }
+    .print\\:text-black { color: black !important; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+
   ::-webkit-scrollbar {
     width: 4px;
   }
