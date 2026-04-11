@@ -1,8 +1,8 @@
 import { categories } from '@/data/menu';
 
 describe('menu data', () => {
-  it('has 11 categories', () => {
-    expect(categories.length).toBe(11);
+  it('has 12 categories', () => {
+    expect(categories.length).toBe(12);
   });
 
   it('each category has required fields', () => {
