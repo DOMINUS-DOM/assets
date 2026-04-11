@@ -7,6 +7,7 @@ import { useLanguage } from '@/i18n/LanguageContext';
 import { useApiData } from '@/hooks/useApiData';
 import { api } from '@/lib/api';
 import { formatPrice } from '@/utils/format';
+import OrderReceipt from '@/components/OrderReceipt';
 import Link from 'next/link';
 
 const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
@@ -19,6 +20,7 @@ function OrderDetail() {
   const { t } = useLanguage();
   const [order, setOrder] = useState<any>(undefined);
   const [drivers, setDrivers] = useState<any[]>([]);
+  const [showReceipt, setShowReceipt] = useState(false);
 
   const refresh = async () => {
     if (!id) return;
@@ -51,6 +53,12 @@ function OrderDetail() {
           <button onClick={() => api.post('/orders', { action: 'updateStatus', orderId: order.id, status: next }).then(refresh)}
             className="px-4 py-2 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm active:scale-95 transition-transform">
             {t.ui.admin_moveTo} {t.ui[`status_${next}`]}
+          </button>
+        )}
+        {order && (
+          <button onClick={() => setShowReceipt(true)}
+            className="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-300 font-bold text-sm active:scale-95 transition-transform">
+            🖨️ Ticket
           </button>
         )}
         {order.status !== 'cancelled' && !['delivered', 'picked_up'].includes(order.status) && (
@@ -110,6 +118,8 @@ function OrderDetail() {
           </div>
         ))}
       </div>
+
+      {showReceipt && <OrderReceipt order={order} onClose={() => setShowReceipt(false)} />}
     </div>
   );
 }

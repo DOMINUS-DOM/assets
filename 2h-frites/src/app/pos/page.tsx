@@ -8,6 +8,7 @@ import { useLocation } from '@/contexts/LocationContext';
 import { api } from '@/lib/api';
 import { formatPrice } from '@/utils/format';
 import { Category, MenuItem } from '@/types';
+import OrderReceipt from '@/components/OrderReceipt';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 interface POSCartItem {
@@ -34,6 +35,7 @@ function POSContent() {
   const [showSizePopup, setShowSizePopup] = useState<MenuItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [lastOrder, setLastOrder] = useState<string | null>(null);
+  const [lastOrderData, setLastOrderData] = useState<any>(null);
 
   useEffect(() => {
     const cats = menuStore.getCategories().filter((c) => !c.builder);
@@ -121,6 +123,7 @@ function POSContent() {
         })),
       });
       setLastOrder(order.orderNumber);
+      setLastOrderData(order);
       setCart([]);
       setShowCheckout(false);
       setCustomerName('');
@@ -332,6 +335,11 @@ function POSContent() {
             <button onClick={() => setShowCheckout(false)} className="w-full text-center text-zinc-500 text-sm py-1">Annuler</button>
           </div>
         </div>
+      )}
+
+      {/* Receipt modal */}
+      {lastOrderData && (
+        <OrderReceipt order={lastOrderData} onClose={() => setLastOrderData(null)} />
       )}
     </div>
   );
