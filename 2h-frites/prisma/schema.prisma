@@ -36,6 +36,11 @@ model Location {
   notifications Notification[]
   auditLogs     AuditLog[]
   payPeriods    PayPeriod[]
+
+  // Digital Signage
+  signageScreens   SignageScreen[]
+  signageContents  SignageContent[]
+  signagePlaylists SignagePlaylist[]
 }
 
 // ═══════════════════════════════════════
@@ -423,4 +428,80 @@ model OrderChannel {
   apiKey     String?
   webhookUrl String?
   commission Float   @default(0)
+}
+
+// ═══════════════════════════════════════
+// DIGITAL SIGNAGE — Multi-site display system
+// ═══════════════════════════════════════
+
+model SignageScreen {
+  id          String    @id @default(cuid())
+  locationId  String
+  location    Location  @relation(fields: [locationId], references: [id])
+  name        String    // "Écran comptoir 1"
+  orientation String    @default("landscape") // landscape | portrait
+  resolution  String    @default("1920x1080")
+  status      String    @default("draft") // draft | active | offline
+  code        String    @unique // 8-char unique code for player connection
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  schedules SignageSchedule[]
+}
+
+model SignageContent {
+  id          String   @id @default(cuid())
+  locationId  String
+  location    Location @relation(fields: [locationId], references: [id])
+  name        String   // "Menu du midi", "Promo été"
+  type        String   // menu | text | image | video | mixed
+  duration    Int      @default(10) // seconds
+  configJson  String   @default("{}") // type-specific config as JSON
+  status      String   @default("draft") // draft | published
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  playlistItems SignagePlaylistItem[]
+}
+
+model SignagePlaylist {
+  id         String   @id @default(cuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id])
+  name       String   // "Playlist matin", "Soirée"
+  loop       Boolean  @default(true)
+  status     String   @default("draft") // draft | published
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  items     SignagePlaylistItem[]
+  schedules SignageSchedule[]
+}
+
+model SignagePlaylistItem {
+  id               String          @id @default(cuid())
+  playlistId       String
+  playlist         SignagePlaylist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  contentId        String
+  content          SignageContent  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  order            Int
+  durationOverride Int?            // null = use content.duration
+
+  @@unique([playlistId, order])
+}
+
+model SignageSchedule {
+  id         String          @id @default(cuid())
+  screenId   String
+  screen     SignageScreen   @relation(fields: [screenId], references: [id], onDelete: Cascade)
+  playlistId String
+  playlist   SignagePlaylist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  daysOfWeek String          @default("0,1,2,3,4,5,6") // comma-separated day numbers
+  startTime  String          @default("00:00") // HH:mm
+  endTime    String          @default("23:59")
+  startDate  String?         // YYYY-MM-DD, null = no start limit
+  endDate    String?
+  priority   Int             @default(0) // higher = takes precedence
+  active     Boolean         @default(true)
+  createdAt  DateTime        @default(now())
 }

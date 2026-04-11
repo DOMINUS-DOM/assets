@@ -50,6 +50,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     { href: '/admin/channels', label: t.ui.ch_nav, exact: false, roles: ['patron', 'franchisor_admin'] },
     { href: '/admin/reviews', label: t.ui.rev_nav, exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
     { href: '/admin/payroll', label: t.ui.admin_payroll, exact: false, roles: ['patron', 'franchisor_admin'] },
+    { href: '/admin/signage', label: '📺 Affichage', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'] },
     { href: '/admin/settings', label: t.ui.set_nav, exact: false, roles: ['patron', 'franchisor_admin'] },
   ];
 
