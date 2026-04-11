@@ -107,6 +107,9 @@ model Shift {
   endTime    String
   position   String
   notes      String    @default("")
+
+  @@index([employeeId])
+  @@index([locationId])
 }
 
 model TimeEntry {
@@ -117,6 +120,8 @@ model TimeEntry {
   clockIn     DateTime
   clockOut    DateTime?
   hoursWorked Float?
+
+  @@index([employeeId])
 }
 
 model LeaveRequest {
@@ -129,6 +134,8 @@ model LeaveRequest {
   reason     String   @default("")
   status     String   @default("pending")
   createdAt  DateTime @default(now())
+
+  @@index([employeeId])
 }
 
 model Task {
@@ -149,6 +156,9 @@ model Task {
   completionPhotoUrl String?   // proof photo from employee
   requiresPhoto      Boolean   @default(false)
   createdAt          DateTime  @default(now())
+
+  @@index([employeeId])
+  @@index([locationId])
 }
 
 // ═══════════════════════════════════════
@@ -184,6 +194,10 @@ model Order {
   statusHistory StatusEntry[]
   transactions  Transaction[]
   invoice       Invoice?
+
+  @@index([locationId])
+  @@index([createdAt])
+  @@index([status])
 }
 
 model OrderItem {
@@ -196,6 +210,8 @@ model OrderItem {
   quantity   Int
   sizeKey    String?
   categoryId String
+
+  @@index([orderId])
 }
 
 model StatusEntry {
@@ -204,6 +220,8 @@ model StatusEntry {
   order   Order    @relation(fields: [orderId], references: [id])
   status  String
   at      DateTime @default(now())
+
+  @@index([orderId])
 }
 
 // ═══════════════════════════════════════
@@ -313,6 +331,8 @@ model StockMovement {
   quantity     Float
   note         String     @default("")
   date         String
+
+  @@index([ingredientId])
 }
 
 // ═══════════════════════════════════════

@@ -44,5 +44,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(sup);
   }
 
+  if (body.action === 'updateIngredient') {
+    const { id, ...data } = body.data || {};
+    if (!id) return NextResponse.json({ error: 'missing_id' }, { status: 400 });
+    const ing = await prisma.ingredient.update({ where: { id }, data });
+    return NextResponse.json(ing);
+  }
+
+  if (body.action === 'deleteIngredient') {
+    await prisma.stockMovement.deleteMany({ where: { ingredientId: body.id } });
+    await prisma.ingredient.delete({ where: { id: body.id } });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.action === 'updateSupplier') {
+    const { id, ...data } = body.data || {};
+    if (!id) return NextResponse.json({ error: 'missing_id' }, { status: 400 });
+    const sup = await prisma.supplier.update({ where: { id }, data });
+    return NextResponse.json(sup);
+  }
+
+  if (body.action === 'deleteSupplier') {
+    await prisma.supplier.delete({ where: { id: body.id } });
+    return NextResponse.json({ ok: true });
+  }
+
   return NextResponse.json({ error: 'unknown_action' }, { status: 400 });
 }

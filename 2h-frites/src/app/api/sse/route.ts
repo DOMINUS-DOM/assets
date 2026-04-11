@@ -56,22 +56,40 @@ export async function GET(req: NextRequest) {
         send({ type: 'init', drivers });
       }
 
-      // Poll for updates every 3 seconds
+      // Poll for updates — delta mode: only send when data changes
+      let lastOrderHash = '';
+      let lastDriverHash = '';
+
       const interval = setInterval(async () => {
         if (closed) { clearInterval(interval); return; }
         try {
           if (channel === 'orders' || channel === 'kitchen') {
-            const orders = await prisma.order.findMany({
-              where: locFilter,
-              include: { items: true, statusHistory: { orderBy: { at: 'asc' } } },
-              orderBy: { createdAt: 'desc' }, take: 50,
+            // Check for changes: count + latest status change
+            const summary = await prisma.order.aggregate({
+              where: { ...locFilter, status: { in: ['received', 'preparing', 'ready', 'delivering'] } },
+              _count: true,
+              _max: { createdAt: true },
             });
-            send({ type: 'update', orders });
+            const hash = `${summary._count}|${summary._max.createdAt?.toISOString() || ''}`;
+            if (hash !== lastOrderHash) {
+              lastOrderHash = hash;
+              const orders = await prisma.order.findMany({
+                where: locFilter,
+                include: { items: true, statusHistory: { orderBy: { at: 'asc' } } },
+                orderBy: { createdAt: 'desc' }, take: 50,
+              });
+              send({ type: 'update', orders });
+            }
           }
           if (channel === 'drivers') {
             const where = locationId ? { locationId, active: true } : { active: true };
-            const drivers = await prisma.driver.findMany({ where });
-            send({ type: 'update', drivers });
+            const drivers = await prisma.driver.findMany({ where, select: { id: true, lastLat: true, lastLng: true, lastLocationAt: true, name: true } });
+            const hash = JSON.stringify(drivers.map(d => `${d.id}:${d.lastLat}:${d.lastLng}`));
+            if (hash !== lastDriverHash) {
+              lastDriverHash = hash;
+              const fullDrivers = await prisma.driver.findMany({ where });
+              send({ type: 'update', drivers: fullDrivers });
+            }
           }
         } catch { closed = true; clearInterval(interval); }
       }, 3000);

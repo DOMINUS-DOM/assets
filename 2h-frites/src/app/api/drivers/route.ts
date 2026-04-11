@@ -33,6 +33,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
+  if (body.action === 'updateDriver') {
+    const { id, ...data } = body.data || {};
+    if (!id) return NextResponse.json({ error: 'missing_id' }, { status: 400 });
+    const driver = await prisma.driver.update({ where: { id }, data });
+    return NextResponse.json(driver);
+  }
+
+  if (body.action === 'deleteDriver') {
+    await prisma.driver.update({ where: { id: body.id }, data: { active: false } });
+    return NextResponse.json({ ok: true });
+  }
+
   if (body.action === 'addApplication') {
     const app = await prisma.driverApplication.create({ data: body.data });
     return NextResponse.json(app);
