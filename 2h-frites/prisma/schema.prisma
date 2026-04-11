@@ -56,9 +56,10 @@ model User {
   phone        String
   // Roles: franchisor_admin, franchisee_owner, location_manager, employe, livreur, client
   role         String    @default("client")
-  active       Boolean   @default(true)
-  avatarUrl    String?
-  driverId     String?
+  active          Boolean   @default(true)
+  avatarUrl       String?
+  permissionsJson String    @default("{}")
+  driverId        String?
   locationId   String?
   location     Location? @relation(fields: [locationId], references: [id])
   createdAt    DateTime  @default(now())

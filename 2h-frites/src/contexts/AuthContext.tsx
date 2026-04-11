@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, ReactNode } from 'react';
 import { UserRole } from '@/types/auth';
 import { api } from '@/lib/api';
+import { hasPermission as checkPermission } from '@/lib/permissions';
 
 // Safe user type (no passwordHash)
 interface SafeUser {
@@ -13,6 +14,7 @@ interface SafeUser {
   role: UserRole;
   active: boolean;
   avatarUrl?: string | null;
+  permissionsJson?: string | null;
   driverId?: string | null;
   locationId?: string | null;
 }
@@ -28,6 +30,7 @@ interface AuthContextType {
   updateProfile: (data: Partial<Pick<SafeUser, 'name' | 'phone' | 'email'>>) => void;
   changePassword: (oldPassword: string, newPassword: string) => Promise<boolean>;
   hasRole: (...roles: UserRole[]) => boolean;
+  hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -100,10 +103,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return currentRole ? roles.includes(currentRole) : false;
   }, [currentRole]);
 
+  const hasPermissionFn = useCallback((permission: string) => {
+    return checkPermission(user, permission);
+  }, [user]);
+
   return (
     <AuthContext.Provider value={{
       user, role: user?.role || null, isAuthenticated: !!user, loaded,
       login, register, logout, updateProfile, changePassword, hasRole,
+      hasPermission: hasPermissionFn,
     }}>
       {children}
     </AuthContext.Provider>

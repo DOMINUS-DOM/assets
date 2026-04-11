@@ -18,6 +18,7 @@ interface NavItem {
   icon: string;
   exact: boolean;
   roles: string[];
+  permission?: string; // permission key from permissions.ts
 }
 
 interface NavGroup {
@@ -46,66 +47,75 @@ function LocationSelector() {
 function AdminContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { t } = useLanguage();
-  const { hasRole } = useAuth();
+  const { hasRole, hasPermission } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navGroups: NavGroup[] = [
     {
       title: 'Principal',
       items: [
-        { href: '/admin', label: t.ui.admin_dashboard, icon: 'dashboard', exact: true, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'] },
-        { href: '/admin/locations', label: t.ui.loc_nav, icon: 'locations', exact: false, roles: ['franchisor_admin'] },
+        { href: '/admin', label: t.ui.admin_dashboard, icon: 'dashboard', exact: true, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'], permission: 'dashboard' },
+        { href: '/admin/locations', label: t.ui.loc_nav, icon: 'locations', exact: false, roles: ['franchisor_admin'], permission: 'locations' },
       ],
     },
     {
       title: 'Commandes',
       items: [
-        { href: '/admin/orders', label: t.ui.admin_orders, icon: 'orders', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin'] },
-        { href: '/admin/kitchen', label: t.ui.kds_nav, icon: 'kitchen', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin'] },
+        { href: '/admin/orders', label: t.ui.admin_orders, icon: 'orders', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin'], permission: 'orders' },
+        { href: '/admin/kitchen', label: t.ui.kds_nav, icon: 'kitchen', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin'], permission: 'kitchen' },
       ],
     },
     {
       title: 'Catalogue',
       items: [
-        { href: '/admin/menu', label: t.ui.cms_nav, icon: 'menu', exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
-        { href: '/admin/zones', label: t.ui.zone_nav, icon: 'zones', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'] },
-        { href: '/admin/tables', label: 'Salle', icon: 'menu', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'] },
-        { href: '/admin/inventory', label: t.ui.inv_nav, icon: 'inventory', exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
+        { href: '/admin/menu', label: t.ui.cms_nav, icon: 'menu', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'menu' },
+        { href: '/admin/zones', label: t.ui.zone_nav, icon: 'zones', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'], permission: 'zones' },
+        { href: '/admin/tables', label: 'Salle', icon: 'menu', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'], permission: 'tables' },
+        { href: '/admin/inventory', label: t.ui.inv_nav, icon: 'inventory', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'inventory' },
       ],
     },
     {
       title: 'Equipe',
       items: [
-        { href: '/admin/staff', label: t.ui.staff_title, icon: 'staff', exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
-        { href: '/admin/drivers', label: t.ui.admin_drivers, icon: 'drivers', exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
-        { href: '/admin/recruitment', label: t.ui.admin_recruitment, icon: 'recruitment', exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
-        { href: '/admin/payroll', label: t.ui.admin_payroll, icon: 'payroll', exact: false, roles: ['patron', 'franchisor_admin'] },
+        { href: '/admin/staff', label: t.ui.staff_title, icon: 'staff', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'staff' },
+        { href: '/admin/drivers', label: t.ui.admin_drivers, icon: 'drivers', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'drivers' },
+        { href: '/admin/recruitment', label: t.ui.admin_recruitment, icon: 'recruitment', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'recruitment' },
+        { href: '/admin/payroll', label: t.ui.admin_payroll, icon: 'payroll', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'payroll' },
+        { href: '/admin/users', label: 'Utilisateurs', icon: 'users', exact: false, roles: ['patron', 'franchisor_admin', 'franchisee_owner'], permission: 'users' },
       ],
     },
     {
       title: 'Business',
       items: [
-        { href: '/admin/payments', label: t.ui.pmt_nav, icon: 'payments', exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
-        { href: '/admin/crm', label: t.ui.crm_nav, icon: 'crm', exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
-        { href: '/admin/analytics', label: t.ui.ana_nav, icon: 'analytics', exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
-        { href: '/admin/forecast', label: t.ui.fc_nav, icon: 'forecast', exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
-        { href: '/admin/channels', label: t.ui.ch_nav, icon: 'channels', exact: false, roles: ['patron', 'franchisor_admin'] },
-        { href: '/admin/reviews', label: t.ui.rev_nav, icon: 'reviews', exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
+        { href: '/admin/payments', label: t.ui.pmt_nav, icon: 'payments', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'payments' },
+        { href: '/admin/crm', label: t.ui.crm_nav, icon: 'crm', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'crm' },
+        { href: '/admin/analytics', label: t.ui.ana_nav, icon: 'analytics', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'analytics' },
+        { href: '/admin/forecast', label: t.ui.fc_nav, icon: 'forecast', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'forecast' },
+        { href: '/admin/channels', label: t.ui.ch_nav, icon: 'channels', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'channels' },
+        { href: '/admin/reviews', label: t.ui.rev_nav, icon: 'reviews', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'reviews' },
       ],
     },
     {
       title: 'Outils',
       items: [
-        { href: '/admin/signage', label: 'Affichage', icon: 'signage', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'] },
-        { href: '/admin/qrcode', label: 'QR Codes', icon: 'channels', exact: false, roles: ['patron', 'manager', 'franchisor_admin'] },
-        { href: '/admin/settings', label: t.ui.set_nav, icon: 'settings', exact: false, roles: ['patron', 'franchisor_admin'] },
+        { href: '/admin/signage', label: 'Affichage', icon: 'signage', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'], permission: 'signage' },
+        { href: '/admin/qrcode', label: 'QR Codes', icon: 'channels', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'qrcode' },
+        { href: '/admin/settings', label: t.ui.set_nav, icon: 'settings', exact: false, roles: ['patron', 'franchisor_admin'], permission: 'settings' },
       ],
     },
   ];
 
-  // Filter by role
+  // Filter by permission (with role fallback)
   const filteredGroups = navGroups
-    .map((g) => ({ ...g, items: g.items.filter((n) => hasRole(...(n.roles as any))) }))
+    .map((g) => ({
+      ...g,
+      items: g.items.filter((n) => {
+        // If user has custom permissions, use permission-based check
+        if (n.permission && hasPermission(n.permission)) return true;
+        // Fallback: legacy role check (ensures backward compat)
+        return hasRole(...(n.roles as any));
+      }),
+    }))
     .filter((g) => g.items.length > 0);
 
   const sidebar = (
