@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Order } from '@/types/order';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { formatPrice } from '@/utils/format';
 
 const METHOD_LABEL: Record<string, string> = { cash: '💶', card: '💳', online: '💳', bancontact: '🏦' };
@@ -16,6 +17,8 @@ type Tab = 'transactions' | 'report' | 'invoices';
 
 export default function PaymentsPage() {
   const { t } = useLanguage();
+  const { locationId } = useLocation();
+  const locParam = locationId ? `?locationId=${locationId}` : '';
   const [tab, setTab] = useState<Tab>('report');
   const [transactions, setTransactions] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -24,7 +27,7 @@ export default function PaymentsPage() {
   const [report, setReport] = useState<any>(null);
 
   const refresh = async () => {
-    try { const o = await api.get<any[]>('/orders'); setOrders(o); } catch {}
+    try { const o = await api.get<any[]>(`/orders${locParam}`); setOrders(o); } catch {}
   };
 
   useEffect(() => {

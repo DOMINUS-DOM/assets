@@ -3,13 +3,16 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useLocation } from '@/contexts/LocationContext';
 
 export default function ReviewsPage() {
   const { t } = useLanguage();
+  const { locationId } = useLocation();
+  const locParam = locationId ? `?locationId=${locationId}` : '';
   const [reviews, setReviews] = useState<any[]>([]);
   const [replyText, setReplyText] = useState<Record<string, string>>({});
 
-  const refresh = async () => { try { setReviews(await api.get<any[]>('/reviews')); } catch {} };
+  const refresh = async () => { try { setReviews(await api.get<any[]>(`/reviews${locParam}`)); } catch {} };
   useEffect(() => { refresh(); }, []);
 
   const avgRating = reviews.length > 0 ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : '—';

@@ -3,15 +3,18 @@
 import { useState, useEffect, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { formatPrice } from '@/utils/format';
 
 const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
 export default function ForecastPage() {
   const { t } = useLanguage();
+  const { locationId } = useLocation();
+  const locParam = locationId ? `?locationId=${locationId}` : '';
   const [orders, setOrders] = useState<any[]>([]);
 
-  useEffect(() => { api.get<any[]>('/orders').then(setOrders).catch(() => {}); }, []);
+  useEffect(() => { api.get<any[]>(`/orders${locParam}`).then(setOrders).catch(() => {}); }, [locParam]);
 
   // Build daily patterns from order history
   const patterns = useMemo(() => {

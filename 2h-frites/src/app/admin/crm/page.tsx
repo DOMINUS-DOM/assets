@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { CustomerProfile, LoyaltyReward } from '@/types/crm';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { formatPrice } from '@/utils/format';
 
 const SEG_COLORS: Record<string, string> = { new: 'bg-blue-500/15 text-blue-400', regular: 'bg-amber-500/15 text-amber-400', vip: 'bg-purple-500/15 text-purple-400', inactive: 'bg-zinc-700/50 text-zinc-400' };
@@ -12,6 +13,8 @@ type Tab = 'customers' | 'loyalty' | 'segments';
 
 export default function CRMPage() {
   const { t } = useLanguage();
+  const { locationId } = useLocation();
+  const locParam = locationId ? `?locationId=${locationId}` : '';
   const [tab, setTab] = useState<Tab>('customers');
   const [customers, setCustomers] = useState<any[]>([]);
   const [rewards] = useState([
@@ -22,7 +25,7 @@ export default function CRMPage() {
   const [filter, setFilter] = useState<string>('all');
 
   useEffect(() => {
-    const fetchCRM = async () => { try { const d = await api.get<{ customers: any[] }>('/crm'); setCustomers(d.customers); } catch {} };
+    const fetchCRM = async () => { try { const d = await api.get<{ customers: any[] }>(`/crm${locParam}`); setCustomers(d.customers); } catch {} };
     fetchCRM();
   }, []);
 

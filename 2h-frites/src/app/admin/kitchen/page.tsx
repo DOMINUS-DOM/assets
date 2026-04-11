@@ -128,7 +128,7 @@ function KDSContent() {
 
 export default function KitchenPage() {
   return (
-    <ProtectedRoute allowedRoles={['patron', 'manager', 'employe']}>
+    <ProtectedRoute allowedRoles={['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager']}>
       <KDSContent />
     </ProtectedRoute>
   );

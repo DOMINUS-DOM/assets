@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ApplicationStatus } from '@/types/order';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useLocation } from '@/contexts/LocationContext';
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
   new: 'bg-blue-500/15 text-blue-400', contacted: 'bg-amber-500/15 text-amber-400',
@@ -17,8 +18,10 @@ const STATUS_KEYS: Record<ApplicationStatus, string> = {
 export default function RecruitmentPage() {
   const [apps, setApps] = useState<any[]>([]);
   const { t } = useLanguage();
+  const { locationId } = useLocation();
+  const locParam = locationId ? `?locationId=${locationId}` : '';
 
-  const refresh = async () => { try { const d = await api.get<{ applications: any[] }>('/drivers'); setApps(d.applications); } catch {} };
+  const refresh = async () => { try { const d = await api.get<{ applications: any[] }>(`/drivers${locParam}`); setApps(d.applications); } catch {} };
   useEffect(() => { refresh(); }, []);
 
   return (

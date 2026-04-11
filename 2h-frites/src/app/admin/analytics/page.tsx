@@ -5,13 +5,16 @@ import { api } from '@/lib/api';
 import { menuStore } from '@/stores/menuStore';
 import { Order } from '@/types/order';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { formatPrice } from '@/utils/format';
 
 export default function AnalyticsPage() {
   const { t } = useLanguage();
+  const { locationId } = useLocation();
+  const locParam = locationId ? `?locationId=${locationId}` : '';
   const [orders, setOrders] = useState<any[]>([]);
 
-  useEffect(() => { api.get<any[]>('/orders').then(setOrders).catch(() => {}); }, []);
+  useEffect(() => { api.get<any[]>(`/orders${locParam}`).then(setOrders).catch(() => {}); }, [locParam]);
 
   const completed = orders.filter((o) => ['delivered', 'picked_up'].includes(o.status));
   const totalRevenue = completed.reduce((sum, o) => sum + o.total, 0);
@@ -58,8 +61,8 @@ export default function AnalyticsPage() {
 
   // Payment method split
   const paymentSplit = useMemo(() => {
-    const cash = completed.filter((o) => ['on_delivery', 'on_pickup'].includes(o.payment.method)).reduce((s, o) => s + o.total, 0);
-    const online = completed.filter((o) => o.payment.method === 'online').reduce((s, o) => s + o.total, 0);
+    const cash = completed.filter((o) => ['on_delivery', 'on_pickup'].includes(o.paymentMethod)).reduce((s, o) => s + o.total, 0);
+    const online = completed.filter((o) => o.paymentMethod === 'online').reduce((s, o) => s + o.total, 0);
     return { cash, online };
   }, [completed]);
 

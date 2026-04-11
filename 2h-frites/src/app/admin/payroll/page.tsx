@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { formatPrice } from '@/utils/format';
 
 type Tab = 'periods' | 'timesheets' | 'payslips';
@@ -15,6 +16,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function PayrollPage() {
   const { t } = useLanguage();
+  const { locationId } = useLocation();
+  const locParam = locationId ? `?locationId=${locationId}` : '';
   const [tab, setTab] = useState<Tab>('periods');
   const [periods, setPeriods] = useState<any[]>([]);
   const [payslips, setPayslips] = useState<any[]>([]);
@@ -25,8 +28,8 @@ export default function PayrollPage() {
   const refresh = async () => {
     try {
       const [payData, staffData] = await Promise.all([
-        api.get<{ periods: any[]; payslips: any[] }>('/payroll'),
-        api.get<{ employees: any[] }>('/staff'),
+        api.get<{ periods: any[]; payslips: any[] }>(`/payroll${locParam}`),
+        api.get<{ employees: any[] }>(`/staff${locParam}`),
       ]);
       setPeriods(payData.periods);
       setPayslips(payData.payslips);

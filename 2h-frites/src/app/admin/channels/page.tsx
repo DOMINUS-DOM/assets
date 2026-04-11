@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useLocation } from '@/contexts/LocationContext';
 
 const PLATFORMS = [
   { name: 'uber_eats', label: 'Uber Eats', icon: '🟢', commission: 30 },
@@ -14,9 +15,11 @@ const PLATFORMS = [
 
 export default function ChannelsPage() {
   const { t } = useLanguage();
+  const { locationId } = useLocation();
+  const locParam = locationId ? `?locationId=${locationId}` : '';
   const [channels, setChannels] = useState<any[]>([]);
 
-  const refresh = async () => { try { setChannels(await api.get<any[]>('/channels')); } catch {} };
+  const refresh = async () => { try { setChannels(await api.get<any[]>(`/channels${locParam}`)); } catch {} };
   useEffect(() => { refresh(); }, []);
 
   const addChannel = async (name: string, commission: number) => {
