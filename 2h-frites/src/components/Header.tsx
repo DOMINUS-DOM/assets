@@ -35,10 +35,9 @@ export default function Header({ view, categoryName, onBack, onFavorites, onRepl
               <span className="hidden min-[360px]:inline">{t.ui.back}</span>
             </button>
           ) : (
-            <button onClick={onBack} className="flex items-center gap-2 active:scale-95 transition-transform">
+            <button onClick={onBack} className="active:scale-95 transition-transform">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/favicon.png" alt="2H" className="h-7 w-7 object-contain" />
-              <span className="font-bold text-sm text-amber-400">2H</span>
+              <img src="/favicon.png" alt="2H" className="h-8 w-8 object-contain" />
             </button>
           )}
           {view === 'category' && categoryName && (

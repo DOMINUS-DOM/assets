@@ -62,8 +62,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
         <div className="flex items-center justify-between h-14 px-4 max-w-4xl mx-auto">
           <Link href="/admin" className="flex items-center gap-1.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/favicon.png" alt="2H" className="h-6 w-6 object-contain" />
-            <span className="font-bold text-sm text-amber-400">2H</span>
+            <img src="/favicon.png" alt="2H" className="h-7 w-7 object-contain" />
             <span className="font-bold text-xs text-zinc-400">Admin</span>
           </Link>
           <div className="flex items-center gap-2">
