@@ -68,29 +68,49 @@ export async function POST(req: NextRequest) {
     if (!auth && !isKiosk && !isClientOrder) return unauthorized();
 
     const orderNumber = await nextOrderNumber();
-    const order = await prisma.order.create({
-      data: {
-        orderNumber,
-        type: body.type,
-        customerName: body.customerName,
-        customerPhone: body.customerPhone,
-        customerEmail: body.customerEmail,
-        deliveryStreet: body.deliveryStreet,
-        deliveryCity: body.deliveryCity,
-        deliveryPostal: body.deliveryPostal,
-        deliveryNotes: body.deliveryNotes,
-        pickupTime: body.pickupTime,
-        paymentMethod: body.paymentMethod,
-        paymentStatus: body.paymentStatus || 'pending',
-        channel: isKiosk ? 'kiosk' : (body.channel || 'website'),
-        total: body.total,
-        userId: body.userId,
-        locationId: body.locationId || null,
-        items: { create: body.items },
-        statusHistory: { create: { status: 'received' } },
-      },
-      include: { items: true, statusHistory: true },
-    });
+    // Validate userId exists before linking (prevents FK crash)
+    let validUserId = null;
+    if (body.userId) {
+      const userExists = await prisma.user.findUnique({ where: { id: body.userId }, select: { id: true } });
+      if (userExists) validUserId = body.userId;
+    }
+
+    let order;
+    try {
+      order = await prisma.order.create({
+        data: {
+          orderNumber,
+          type: body.type,
+          customerName: body.customerName || 'Client',
+          customerPhone: body.customerPhone || '',
+          customerEmail: body.customerEmail || null,
+          deliveryStreet: body.deliveryStreet || null,
+          deliveryCity: body.deliveryCity || null,
+          deliveryPostal: body.deliveryPostal || null,
+          deliveryNotes: body.deliveryNotes || null,
+          pickupTime: body.pickupTime || null,
+          paymentMethod: body.paymentMethod || 'on_pickup',
+          paymentStatus: body.paymentStatus || 'pending',
+          channel: isKiosk ? 'kiosk' : (body.channel || 'website'),
+          total: body.total || 0,
+          userId: validUserId,
+          locationId: body.locationId || null,
+          items: { create: (body.items || []).map((item: any) => ({
+            menuItemId: item.menuItemId || 'unknown',
+            name: item.name || 'Article',
+            price: item.price || 0,
+            quantity: item.quantity || 1,
+            sizeKey: item.sizeKey || null,
+            categoryId: item.categoryId || 'unknown',
+          })) },
+          statusHistory: { create: { status: 'received' } },
+        },
+        include: { items: true, statusHistory: true },
+      });
+    } catch (e: any) {
+      console.error('Order creation error:', e.message);
+      return NextResponse.json({ error: 'order_creation_failed', details: e.message?.slice(0, 200) }, { status: 500 });
+    }
     logAudit({ userId: auth?.userId, locationId: order.locationId, action: 'create', entity: 'Order', entityId: order.id, changes: { orderNumber, total: body.total, channel: isKiosk ? 'kiosk' : 'website' } });
     return NextResponse.json(order);
   }
