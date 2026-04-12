@@ -15,7 +15,11 @@ export async function POST(req: NextRequest) {
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: 'gemini_api_key_not_configured' }, { status: 500 });
+    const geminiKeys = Object.keys(process.env).filter(k => k.toLowerCase().includes('gemini'));
+    return NextResponse.json({
+      error: 'gemini_api_key_not_configured',
+      debug: { foundKeys: geminiKeys, totalEnvVars: Object.keys(process.env).length }
+    }, { status: 500 });
   }
 
   try {
