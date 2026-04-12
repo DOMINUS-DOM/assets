@@ -221,9 +221,19 @@ export default function ReservePage() {
             </div>
 
             <button
-              onClick={() => {
+              onClick={async () => {
+                // If locationId not yet loaded, try to fetch it now
                 if (!locationId) {
-                  setError('Aucun restaurant selectionne. Ajoutez ?locationId=xxx dans l\'URL.');
+                  try {
+                    const res = await fetch('/api/locations');
+                    const locs = await res.json();
+                    if (Array.isArray(locs) && locs.length > 0) {
+                      setLocationId(locs[0].id);
+                      setStep('time');
+                      return;
+                    }
+                  } catch {}
+                  setError('Aucun restaurant disponible.');
                   return;
                 }
                 setStep('time');
@@ -232,7 +242,7 @@ export default function ReservePage() {
             >
               Continuer
             </button>
-            {error && <p className="text-xs text-red-400 text-center">{error}</p>}
+            {error && <p className="text-xs text-red-400 text-center mt-2">{error}</p>}
           </div>
         )}
 
