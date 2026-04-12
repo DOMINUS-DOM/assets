@@ -12,3 +12,4 @@ prisma/dev.db-journal
 .next/
 .vercel
 .env.production
+.env*.local
