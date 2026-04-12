@@ -460,6 +460,58 @@ model Referral {
 }
 
 // ═══════════════════════════════════════
+// CRM & LOYALTY
+// ═══════════════════════════════════════
+
+model Customer {
+  id             String    @id @default(cuid())
+  phone          String    @unique
+  name           String
+  email          String?
+  address        String?
+  notes          String    @default("")
+  segment        String    @default("new") // new, regular, vip, inactive
+  loyaltyPoints  Int       @default(0)
+  lifetimePoints Int       @default(0)
+  totalOrders    Int       @default(0)
+  totalSpent     Float     @default(0)
+  lastOrderDate  DateTime?
+  createdAt      DateTime  @default(now())
+
+  loyaltyTransactions LoyaltyTransaction[]
+
+  @@index([phone])
+  @@index([segment])
+}
+
+model LoyaltyTransaction {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  type       String   // earn, redeem, bonus, expire
+  points     Int      // positive for earn, negative for redeem
+  reason     String   // order_ORD-123, reward_free_frites, referral_bonus, etc.
+  orderId    String?
+  createdAt  DateTime @default(now())
+
+  @@index([customerId])
+}
+
+model LoyaltyReward {
+  id          String  @id @default(cuid())
+  name        String  // "Frites gratuites", "Sauce offerte"
+  description String  @default("")
+  pointsCost  Int     // how many points to redeem
+  discountType String @default("item") // item, amount, percentage
+  discountValue Float @default(0)     // €5, 10%, etc.
+  active      Boolean @default(true)
+  imageUrl    String?
+  timesRedeemed Int   @default(0)
+
+  @@index([active])
+}
+
+// ═══════════════════════════════════════
 // ORDER CHANNELS (3rd-party platforms)
 // ═══════════════════════════════════════
 

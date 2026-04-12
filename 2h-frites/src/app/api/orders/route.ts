@@ -105,6 +105,62 @@ export async function POST(req: NextRequest) {
     await prisma.order.update({ where: { id: orderId }, data: { status } });
     await prisma.statusEntry.create({ data: { orderId, status } });
     logAudit({ userId: auth.userId, action: 'status_change', entity: 'Order', entityId: orderId, changes: { status } });
+
+    // ─── Loyalty: award points on delivery/pickup ───
+    if (status === 'delivered' || status === 'picked_up') {
+      try {
+        const order = await prisma.order.findUnique({
+          where: { id: orderId },
+          select: { customerPhone: true, customerName: true, customerEmail: true, total: true, orderNumber: true },
+        });
+        if (order?.customerPhone && order.total > 0) {
+          const points = Math.floor(order.total);
+          if (points > 0) {
+            const customer = await prisma.customer.upsert({
+              where: { phone: order.customerPhone },
+              create: {
+                phone: order.customerPhone,
+                name: order.customerName || order.customerPhone,
+                email: order.customerEmail || null,
+                loyaltyPoints: points,
+                lifetimePoints: points,
+                totalOrders: 1,
+                totalSpent: order.total,
+                lastOrderDate: new Date(),
+                segment: 'new',
+              },
+              update: {
+                ...(order.customerName ? { name: order.customerName } : {}),
+                ...(order.customerEmail ? { email: order.customerEmail } : {}),
+                loyaltyPoints: { increment: points },
+                lifetimePoints: { increment: points },
+                totalOrders: { increment: 1 },
+                totalSpent: { increment: order.total },
+                lastOrderDate: new Date(),
+              },
+            });
+            // Auto-recalc segment
+            const segment = customer.totalOrders >= 5 ? 'vip' : customer.totalOrders >= 2 ? 'regular' : 'new';
+            if (segment !== customer.segment) {
+              await prisma.customer.update({ where: { id: customer.id }, data: { segment } });
+            }
+            await prisma.loyaltyTransaction.create({
+              data: {
+                customerId: customer.id,
+                type: 'earn',
+                points,
+                reason: `order_${order.orderNumber}`,
+                orderId,
+              },
+            });
+          }
+        }
+      } catch (e) {
+        // Loyalty errors should not block the status update response
+        console.error('Loyalty earn error:', e);
+      }
+    }
+
     return NextResponse.json({ ok: true });
   }
 
