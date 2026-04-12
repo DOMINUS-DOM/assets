@@ -13,13 +13,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'imageUrl_required' }, { status: 400 });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  // Try env var first, then fall back to DB settings
+  let apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    const geminiKeys = Object.keys(process.env).filter(k => k.toLowerCase().includes('gemini'));
-    return NextResponse.json({
-      error: 'gemini_api_key_not_configured',
-      debug: { foundKeys: geminiKeys, totalEnvVars: Object.keys(process.env).length }
-    }, { status: 500 });
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      const setting = await prisma.setting.findUnique({ where: { key: 'business' } });
+      if (setting) {
+        const config = JSON.parse(setting.value);
+        apiKey = config.gemini_api_key;
+      }
+    } catch {}
+  }
+  if (!apiKey) {
+    return NextResponse.json({ error: 'gemini_api_key_not_configured' }, { status: 500 });
   }
 
   try {
