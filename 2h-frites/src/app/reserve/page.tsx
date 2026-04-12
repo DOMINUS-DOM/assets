@@ -71,12 +71,13 @@ export default function ReservePage() {
     if (id) {
       setLocationId(id);
     } else {
-      // Auto-fetch first active location
-      fetch('/api/locations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getStats' }) })
+      // Auto-fetch first active location (public endpoint)
+      fetch('/api/locations')
         .then((r) => r.json())
         .then((locs: any[]) => {
-          const active = locs.find((l: any) => l.active);
-          if (active) setLocationId(active.id);
+          if (Array.isArray(locs) && locs.length > 0) {
+            setLocationId(locs[0].id);
+          }
         })
         .catch(() => {});
     }

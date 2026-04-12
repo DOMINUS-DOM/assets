@@ -5,7 +5,18 @@ import { getAuthUser, ADMIN_ROLES, forbidden } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   const auth = getAuthUser(req);
-  if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
+
+  // Public access: return only active locations with minimal fields (for reserve page, etc.)
+  if (!auth || !ADMIN_ROLES.includes(auth.role)) {
+    const locations = await prisma.location.findMany({
+      where: { active: true },
+      select: { id: true, name: true, slug: true, address: true, city: true, phone: true },
+      orderBy: { name: 'asc' },
+    });
+    return NextResponse.json(locations);
+  }
+
+  // Admin: return full location data
   const locations = await prisma.location.findMany({ orderBy: { name: 'asc' } });
   return NextResponse.json(locations);
 }
