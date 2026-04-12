@@ -42,7 +42,7 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
     meat: t.ui.bld_pf_step2 || 'Viande (max 2)',
     sauce: t.ui.bld_pf_step3 || 'Sauce (max 2)',
     toppings: t.ui.bld_pf_step4 || 'Garnitures',
-    summary: t.ui.bld_summary || 'R\u00e9capitulatif',
+    summary: t.ui.bld_summary || 'Récapitulatif',
   };
 
   const totalPrice = () => {
@@ -64,7 +64,7 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
 
   const handleAddToCart = () => {
     const extras: CartExtra[] = [];
-    const fritesNote = `Frites ${withSalt ? (t.ui.bld_withSalt || 'avec sel') : (t.ui.bld_noSalt || 'sans sel')}${withSpice ? `, ${t.ui.bld_spicy || '\u00e9pic\u00e9es'}` : ''}`;
+    const fritesNote = `Frites ${withSalt ? (t.ui.bld_withSalt || 'avec sel') : (t.ui.bld_noSalt || 'sans sel')}${withSpice ? `, ${t.ui.bld_spicy || 'épicées'}` : ''}`;
     extras.push({ name: fritesNote, price: 0 });
     meats.forEach((m) => extras.push({ name: getItemName(m.id, m.name), price: m.price || 0 }));
     sauces.forEach((s) => extras.push({ name: getItemName(s.id, s.name), price: s.price || 0 }));
@@ -84,10 +84,10 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
   const prevStep = () => { const idx = STEPS.indexOf(step); if (idx > 0) setStep(STEPS[idx - 1]); };
 
   const nextLabel = () => {
-    if (step === 'frites') return `${t.ui.bld_pf_chooseNext || 'Choisir les viandes'} \u2192`;
-    if (step === 'meat') return `${t.ui.bld_pf_chooseSauces || 'Choisir les sauces'} \u2192`;
-    if (step === 'sauce') return `${t.ui.bld_pf_addToppings || 'Ajouter des garnitures'} \u2192`;
-    return `${t.ui.bld_pf_seeRecap || 'Voir le r\u00e9capitulatif'} \u2192`;
+    if (step === 'frites') return `${t.ui.bld_pf_chooseNext || 'Choisir les viandes'} →`;
+    if (step === 'meat') return `${t.ui.bld_pf_chooseSauces || 'Choisir les sauces'} →`;
+    if (step === 'sauce') return `${t.ui.bld_pf_addToppings || 'Ajouter des garnitures'} →`;
+    return `${t.ui.bld_pf_seeRecap || 'Voir le récapitulatif'} →`;
   };
 
   const renderItemGrid = (items: MenuItem[], selected: MenuItem[], onToggle: (item: MenuItem) => void) => (
@@ -105,9 +105,9 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
               {getItemName(item.id, item.name)}
             </p>
             {item.price != null && (
-              <p className="text-xs text-zinc-500 mt-0.5">+{formatPrice(item.price)} \u20ac</p>
+              <p className="text-xs text-zinc-500 mt-0.5">+{formatPrice(item.price)} €</p>
             )}
-            {isSelected && <span className="text-amber-400 text-xs mt-1 block">\u2713</span>}
+            {isSelected && <span className="text-amber-400 text-xs mt-1 block">✓</span>}
           </button>
         );
       })}
@@ -121,7 +121,7 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
           ? 'bg-amber-500/15 border-amber-500/50 text-amber-400 font-bold'
           : 'bg-zinc-900 border-zinc-800/50 text-zinc-400'
       }`}>
-      <span className="text-2xl block mb-1">{active ? '\u2713' : '\u2717'}</span>
+      <span className="text-2xl block mb-1">{active ? '✓' : '✗'}</span>
       <span className="text-sm">{label}</span>
     </button>
   );
@@ -130,9 +130,9 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
     <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col">
       <header className="sticky top-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-10">
         <div className="flex items-center justify-between max-w-lg lg:max-w-2xl mx-auto">
-          <button onClick={onClose} className="text-zinc-400 text-sm">\u2190 {t.ui.bld_back || 'Retour'}</button>
+          <button onClick={onClose} className="text-zinc-400 text-sm">← {t.ui.bld_back || 'Retour'}</button>
           <h1 className="text-sm font-bold text-white">\ud83e\udd56 {t.ui.bld_pf_title || 'Composer mon pain-frites'}</h1>
-          <span className="text-xs text-amber-400 font-bold">{formatPrice(totalPrice())} \u20ac</span>
+          <span className="text-xs text-amber-400 font-bold">{formatPrice(totalPrice())} €</span>
         </div>
         <div className="flex gap-1 mt-2 max-w-lg lg:max-w-2xl mx-auto">
           {STEPS.map((s, i) => (
@@ -151,7 +151,7 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
                 <span className="text-3xl">\ud83e\udd56\ud83c\udf5f</span>
                 <div>
                   <p className="text-white font-bold">Pain + Frites</p>
-                  <p className="text-amber-400 font-bold text-lg">{formatPrice(BASE_PRICE)} \u20ac</p>
+                  <p className="text-amber-400 font-bold text-lg">{formatPrice(BASE_PRICE)} €</p>
                 </div>
               </div>
               <p className="text-xs text-zinc-500">{t.ui.bld_basePriceIncl}</p>
@@ -159,7 +159,7 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
             <p className="text-xs text-zinc-400 uppercase tracking-wider font-bold">{t.ui.bld_friesOptions}</p>
             <div className="flex gap-3">
               <ToggleButton label={t.ui.bld_withSalt || 'Avec sel'} active={withSalt} onToggle={() => setWithSalt(!withSalt)} />
-              <ToggleButton label={t.ui.bld_spicy || '\u00c9pic\u00e9es'} active={withSpice} onToggle={() => setWithSpice(!withSpice)} />
+              <ToggleButton label={t.ui.bld_spicy || 'Épicées'} active={withSpice} onToggle={() => setWithSpice(!withSpice)} />
             </div>
           </div>
         )}
@@ -173,7 +173,7 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
 
         {step === 'sauce' && (
           <>
-            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_optional}{sauceItems[0]?.price ? ` — ${formatPrice(sauceItems[0].price)}\u20ac ${t.ui.bld_perSauce}` : ''}</p>
+            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_optional}{sauceItems[0]?.price ? ` — ${formatPrice(sauceItems[0].price)}€ ${t.ui.bld_perSauce}` : ''}</p>
             {renderItemGrid(sauceItems, sauces, (item) => toggleSelection(item, sauces, setSauces, 2))}
           </>
         )}
@@ -190,7 +190,7 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
             <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-2">
               <div className="flex justify-between">
                 <span className="text-white font-medium">\ud83e\udd56\ud83c\udf5f Pain + Frites</span>
-                <span className="text-amber-400">{formatPrice(BASE_PRICE)} \u20ac</span>
+                <span className="text-amber-400">{formatPrice(BASE_PRICE)} €</span>
               </div>
               <p className="text-xs text-zinc-500 ml-6">
                 {withSalt ? (t.ui.bld_withSalt) : (t.ui.bld_noSalt)}{withSpice ? `, ${t.ui.bld_spicy}` : ''}
@@ -199,26 +199,26 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
               {meats.map((m) => (
                 <div key={m.id} className="flex justify-between text-sm">
                   <span className="text-zinc-300">+ {getItemName(m.id, m.name)}</span>
-                  <span className="text-zinc-400">+{formatPrice(m.price || 0)} \u20ac</span>
+                  <span className="text-zinc-400">+{formatPrice(m.price || 0)} €</span>
                 </div>
               ))}
               {sauces.length > 0 && <div className="border-t border-zinc-800/50 pt-1 mt-1" />}
               {sauces.map((s) => (
                 <div key={s.id} className="flex justify-between text-sm">
                   <span className="text-zinc-300">+ {getItemName(s.id, s.name)}</span>
-                  <span className="text-zinc-400">+{formatPrice(s.price || 0)} \u20ac</span>
+                  <span className="text-zinc-400">+{formatPrice(s.price || 0)} €</span>
                 </div>
               ))}
               {toppings.length > 0 && <div className="border-t border-zinc-800/50 pt-1 mt-1" />}
               {toppings.map((tp) => (
                 <div key={tp.id} className="flex justify-between text-sm">
                   <span className="text-zinc-300">+ {getItemName(tp.id, tp.name)}</span>
-                  <span className="text-zinc-400">+{formatPrice(tp.price || 0)} \u20ac</span>
+                  <span className="text-zinc-400">+{formatPrice(tp.price || 0)} €</span>
                 </div>
               ))}
               <div className="border-t border-zinc-700 pt-2 mt-2 flex justify-between">
                 <span className="text-white font-bold">{t.ui.bld_total}</span>
-                <span className="text-amber-400 font-bold text-lg">{formatPrice(totalPrice())} \u20ac</span>
+                <span className="text-amber-400 font-bold text-lg">{formatPrice(totalPrice())} €</span>
               </div>
             </div>
           </div>
@@ -229,12 +229,12 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
         <div className="flex gap-3 max-w-lg lg:max-w-2xl mx-auto">
           {stepIndex > 0 && (
             <button onClick={prevStep} className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">
-              \u2190 {t.ui.bld_previous}
+              ← {t.ui.bld_previous}
             </button>
           )}
           {step === 'summary' ? (
             <button onClick={handleAddToCart} className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
-              {t.ui.bld_addToCart} — {formatPrice(totalPrice())} \u20ac
+              {t.ui.bld_addToCart} — {formatPrice(totalPrice())} €
             </button>
           ) : (
             <button onClick={nextStep} className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">

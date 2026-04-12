@@ -36,11 +36,11 @@ function formatDateDisplay(dateStr: string, loc?: string): string {
   return d.toLocaleDateString(l, { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
-// Hard-coded locationId — in production this would come from URL param or context
+// Get locationId from URL param, localStorage, or auto-fetch first active location
 function getLocationId(): string | null {
   if (typeof window !== 'undefined') {
     const params = new URLSearchParams(window.location.search);
-    return params.get('locationId') || localStorage.getItem('2h-locationId') || null;
+    return params.get('locationId') || localStorage.getItem('2h-location') || null;
   }
   return null;
 }
@@ -67,7 +67,19 @@ export default function ReservePage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    setLocationId(getLocationId());
+    const id = getLocationId();
+    if (id) {
+      setLocationId(id);
+    } else {
+      // Auto-fetch first active location
+      fetch('/api/locations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getStats' }) })
+        .then((r) => r.json())
+        .then((locs: any[]) => {
+          const active = locs.find((l: any) => l.active);
+          if (active) setLocationId(active.id);
+        })
+        .catch(() => {});
+    }
   }, []);
 
   // Fetch available slots when date or party size changes (step 2)
@@ -366,6 +378,10 @@ export default function ReservePage() {
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 text-left space-y-3">
+              <div className="flex justify-between">
+                <span className="text-xs text-zinc-500">N° de r&eacute;servation</span>
+                <span className="text-sm text-amber-400 font-bold font-mono">{booking.id?.slice(0, 8).toUpperCase()}</span>
+              </div>
               <div className="flex justify-between">
                 <span className="text-xs text-zinc-500">Date</span>
                 <span className="text-sm text-white">{formatDateDisplay(booking.date)}</span>

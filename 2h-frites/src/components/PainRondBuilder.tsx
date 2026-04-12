@@ -112,7 +112,7 @@ export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
     <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col">
       <header className="sticky top-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-10">
         <div className="flex items-center justify-between max-w-lg lg:max-w-2xl mx-auto">
-          <button onClick={onClose} className="text-zinc-400 text-sm">\u2190 {t.ui.bld_back}</button>
+          <button onClick={onClose} className="text-zinc-400 text-sm">← {t.ui.bld_back}</button>
           <h1 className="text-sm font-bold text-white">🍔 {getItemName(item.id, item.name)}</h1>
           <span className="text-xs text-amber-400 font-bold">{formatPrice(totalPrice())} €</span>
         </div>
@@ -137,7 +137,7 @@ export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
               <span className="text-amber-400 font-bold">{formatPrice(basePrice)} €</span>
             </div>
             <h2 className="text-lg font-bold text-white mb-1">{t.ui.bld_pr_sauce}</h2>
-            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_optional}{sauceItems[0]?.price ? ` — ${formatPrice(sauceItems[0].price)}\u20ac ${t.ui.bld_perSauce}` : ''}</p>
+            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_optional}{sauceItems[0]?.price ? ` — ${formatPrice(sauceItems[0].price)}€ ${t.ui.bld_perSauce}` : ''}</p>
             {renderGrid(sauceItems, sauces, (it) => toggleSelection(it, sauces, setSauces, 2))}
           </>
         )}
@@ -190,18 +190,18 @@ export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
           {stepIndex > 0 && (
             <button onClick={prevStep}
               className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">
-              \u2190 {t.ui.bld_previous}
+              ← {t.ui.bld_previous}
             </button>
           )}
           {step === 'summary' ? (
             <button onClick={handleAddToCart}
               className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
-              {t.ui.bld_addToCart} — {formatPrice(totalPrice())} \u20ac
+              {t.ui.bld_addToCart} — {formatPrice(totalPrice())} €
             </button>
           ) : (
             <button onClick={nextStep}
               className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
-              {step === 'sauce' ? `${t.ui.bld_pr_toppingsNext} \u2192` : `${t.ui.bld_pr_recapNext} \u2192`}
+              {step === 'sauce' ? `${t.ui.bld_pr_toppingsNext} →` : `${t.ui.bld_pr_recapNext} →`}
             </button>
           )}
         </div>

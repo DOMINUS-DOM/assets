@@ -205,7 +205,7 @@ function KioskContent() {
       setTimeout(() => { setStep('welcome'); setOrderNumber(null); setOrderType('dine_in'); }, 10000);
     } catch (e) {
       console.error('Kiosk order error:', e);
-      setOrderError(t.ui.res_error || 'Erreur. R\u00e9essayez.');
+      setOrderError(t.ui.res_error || 'Erreur. Réessayez.');
       // Auto-recover: go back to menu after 5s if error persists
       setTimeout(() => { if (step === 'cart') setOrderError(null); }, 5000);
     }
@@ -501,8 +501,8 @@ function KioskContent() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
           <div className="bg-zinc-900 rounded-3xl border border-amber-500/30 p-8 text-center max-w-sm animate-pulse">
             <span className="text-6xl block mb-4">⏰</span>
-            <h2 className="text-2xl font-bold text-white mb-2">{t.ui.kiosk_stillThere || '\u00cates-vous encore l\u00e0 ?'}</h2>
-            <p className="text-zinc-400 mb-6">{t.ui.kiosk_idleWarning || 'Votre commande va \u00eatre annul\u00e9e dans quelques secondes.'}</p>
+            <h2 className="text-2xl font-bold text-white mb-2">{t.ui.kiosk_stillThere || 'Êtes-vous encore là ?'}</h2>
+            <p className="text-zinc-400 mb-6">{t.ui.kiosk_idleWarning || 'Votre commande va être annulée dans quelques secondes.'}</p>
             <button onClick={() => { resetIdle(); }}
               className="px-8 py-4 rounded-2xl bg-amber-500 text-zinc-950 font-extrabold text-lg active:scale-95">
               {t.ui.kiosk_continue || 'Oui, je continue !'}

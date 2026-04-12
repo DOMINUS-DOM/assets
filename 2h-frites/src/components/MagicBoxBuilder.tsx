@@ -23,7 +23,7 @@ function getMagicBoxOptions(t: any) {
     ],
     jouets: [
       { id: 'fille', name: t?.ui?.mb_toyGirl || 'Jouet fille', emoji: '👧' },
-      { id: 'garcon', name: t?.ui?.mb_toyBoy || 'Jouet gar\u00e7on', emoji: '👦' },
+      { id: 'garcon', name: t?.ui?.mb_toyBoy || 'Jouet garçon', emoji: '👦' },
     ],
   };
 }
@@ -79,7 +79,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
       ? (meatItems.find((m) => m.id === snack)?.name || snack || '')
       : (MAGIC_BOX_SNACKS.find((s) => s.id === snack)?.name || '');
     extras.push({ name: snackName, price: 0 });
-    extras.push({ name: `Frites ${withSalt ? (t.ui.bld_withSalt || 'avec sel') : (t.ui.bld_noSalt || 'sans sel')}${withSpice ? `, ${t.ui.bld_spicy || '\u00e9pic\u00e9es'}` : ''}`, price: 0 });
+    extras.push({ name: `Frites ${withSalt ? (t.ui.bld_withSalt || 'avec sel') : (t.ui.bld_noSalt || 'sans sel')}${withSpice ? `, ${t.ui.bld_spicy || 'épicées'}` : ''}`, price: 0 });
     if (sauce) extras.push({ name: getItemName(sauce.id, sauce.name), price: 0 });
     const boissonName = BOISSONS.find((b) => b.id === boisson)?.name || '';
     extras.push({ name: boissonName, price: 0 });
@@ -113,7 +113,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
     sauce: t.ui.bld_mb_sauce || 'Ta sauce',
     boisson: t.ui.bld_mb_drink || 'Ta boisson',
     jouet: t.ui.bld_mb_toy || 'Ton jouet',
-    summary: t.ui.bld_summary || 'R\u00e9capitulatif',
+    summary: t.ui.bld_summary || 'Récapitulatif',
   };
 
   return (
@@ -121,7 +121,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
       {/* Header */}
       <header className="sticky top-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-10">
         <div className="flex items-center justify-between max-w-lg lg:max-w-2xl mx-auto">
-          <button onClick={onClose} className="text-zinc-400 text-sm">\u2190 {t.ui.bld_back}</button>
+          <button onClick={onClose} className="text-zinc-400 text-sm">← {t.ui.bld_back}</button>
           <h1 className="text-sm font-bold text-white">🎁 {getItemName(item.id, item.name)}</h1>
           <span className="text-xs text-amber-400 font-bold">{formatPrice(basePrice)} €</span>
         </div>
@@ -261,18 +261,18 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
           {stepIndex > 0 && (
             <button onClick={prevStep}
               className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">
-              \u2190 {t.ui.bld_previous}
+              ← {t.ui.bld_previous}
             </button>
           )}
           {step === 'summary' ? (
             <button onClick={handleAddToCart}
               className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
-              {t.ui.bld_addToCart} — {formatPrice(basePrice)} \u20ac
+              {t.ui.bld_addToCart} — {formatPrice(basePrice)} €
             </button>
           ) : (
             <button onClick={nextStep} disabled={!canNext()}
               className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97] disabled:opacity-50">
-              {t.ui.bld_next} \u2192
+              {t.ui.bld_next} →
             </button>
           )}
         </div>
