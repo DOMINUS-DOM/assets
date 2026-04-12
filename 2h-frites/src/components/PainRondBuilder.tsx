@@ -85,7 +85,7 @@ export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
   };
 
   const renderGrid = (items: MenuItem[], selected: MenuItem[], onToggle: (i: MenuItem) => void) => (
-    <div className="grid grid-cols-2 gap-2 pb-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 pb-4">
       {items.map((it) => {
         const isSelected = selected.some((s) => s.id === it.id);
         return (
@@ -111,12 +111,12 @@ export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
   return (
     <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col">
       <header className="sticky top-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-10">
-        <div className="flex items-center justify-between max-w-lg lg:max-w-2xl mx-auto">
+        <div className="flex items-center justify-between max-w-lg lg:max-w-5xl mx-auto">
           <button onClick={onClose} className="text-zinc-400 text-sm">← {t.ui.bld_back}</button>
           <h1 className="text-sm font-bold text-white">🍔 {getItemName(item.id, item.name)}</h1>
           <span className="text-xs text-amber-400 font-bold">{formatPrice(totalPrice())} €</span>
         </div>
-        <div className="flex gap-1 mt-2 max-w-lg lg:max-w-2xl mx-auto">
+        <div className="flex gap-1 mt-2 max-w-lg lg:max-w-5xl mx-auto">
           {STEPS.map((s, i) => (
             <div key={s} className={`flex-1 h-1 rounded-full transition-colors ${
               i <= stepIndex ? 'bg-amber-500' : 'bg-zinc-800'
@@ -125,7 +125,7 @@ export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-4 py-4 max-w-lg lg:max-w-2xl mx-auto w-full">
+      <main className="flex-1 overflow-y-auto px-4 py-4 max-w-lg lg:max-w-5xl mx-auto w-full">
         {/* Base info */}
         {step === 'sauce' && (
           <>
@@ -180,7 +180,7 @@ export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
       </main>
 
       <footer className="sticky bottom-0 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/50 px-4 py-3">
-        <div className="flex gap-3 max-w-lg lg:max-w-2xl mx-auto">
+        <div className="flex gap-3 max-w-lg lg:max-w-5xl mx-auto">
           {step === 'sauce' && (
             <button onClick={handleAddSimple}
               className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">

@@ -163,9 +163,9 @@ function POSContent() {
   const handleCategoryTap = (catId: string) => {
     setActiveCatId(catId);
     const cat = categories.find((c) => c.id === catId);
-    // Auto-open pain-frites builder (no items to click)
-    if (cat?.builder && cat?.slug === 'pain-frites') {
-      setShowPainFrites(true);
+    // Always open builder for builder categories (even if already selected)
+    if (cat?.builder || cat?.slug === 'pain-frites') {
+      setTimeout(() => setShowPainFrites(true), 0);
     }
   };
 

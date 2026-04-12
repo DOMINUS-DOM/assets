@@ -120,12 +120,12 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
     <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col">
       {/* Header */}
       <header className="sticky top-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-10">
-        <div className="flex items-center justify-between max-w-lg lg:max-w-2xl mx-auto">
+        <div className="flex items-center justify-between max-w-lg lg:max-w-5xl mx-auto">
           <button onClick={onClose} className="text-zinc-400 text-sm">← {t.ui.bld_back}</button>
           <h1 className="text-sm font-bold text-white">🎁 {getItemName(item.id, item.name)}</h1>
           <span className="text-xs text-amber-400 font-bold">{formatPrice(basePrice)} €</span>
         </div>
-        <div className="flex gap-1 mt-2 max-w-lg lg:max-w-2xl mx-auto">
+        <div className="flex gap-1 mt-2 max-w-lg lg:max-w-5xl mx-auto">
           {MAGIC_BOX_STEPS.map((s, i) => (
             <div key={s} className={`flex-1 h-1 rounded-full transition-colors ${
               i <= stepIndex ? 'bg-amber-500' : 'bg-zinc-800'
@@ -135,7 +135,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto px-4 py-4 max-w-lg lg:max-w-2xl mx-auto w-full">
+      <main className="flex-1 overflow-y-auto px-4 py-4 max-w-lg lg:max-w-5xl mx-auto w-full">
         <h2 className="text-lg font-bold text-white mb-1">
           {stepIndex + 1}. {STEP_LABELS[step]}
         </h2>
@@ -153,7 +153,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
         {step === 'snack' && isExtra && (
           <>
             <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_mb_chooseFromMenu}</p>
-            <div className="grid grid-cols-2 gap-2 pb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 pb-4">
               {meatItems.map((m) => (
                 <button key={m.id} onClick={() => setSnack(m.id)}
                   className={`p-3 rounded-xl border text-left transition-all active:scale-[0.97] ${
@@ -185,7 +185,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
         {step === 'sauce' && (
           <>
             <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_mb_chooseSauce}</p>
-            <div className="grid grid-cols-2 gap-2 pb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 pb-4">
               {sauceItems.map((s) => (
                 <button key={s.id} onClick={() => setSauce(s)}
                   className={`p-3 rounded-xl border text-left transition-all active:scale-[0.97] ${
@@ -257,7 +257,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
 
       {/* Footer */}
       <footer className="sticky bottom-0 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/50 px-4 py-3">
-        <div className="flex gap-3 max-w-lg lg:max-w-2xl mx-auto">
+        <div className="flex gap-3 max-w-lg lg:max-w-5xl mx-auto">
           {stepIndex > 0 && (
             <button onClick={prevStep}
               className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">

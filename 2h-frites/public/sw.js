@@ -1,5 +1,5 @@
-const CACHE_NAME = '2h-frites-v3';
-const API_CACHE = '2h-api-v1';
+const CACHE_NAME = '2h-frites-v4';
+const API_CACHE = '2h-api-v2';
 const OFFLINE_QUEUE_KEY = '2h-offline-queue';
 
 // Static assets to pre-cache
