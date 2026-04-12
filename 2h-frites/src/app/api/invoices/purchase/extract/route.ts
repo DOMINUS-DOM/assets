@@ -141,3 +141,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'extraction_failed', message: error.message }, { status: 500 });
   }
 }
+// gemini-ready
