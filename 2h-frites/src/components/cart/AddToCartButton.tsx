@@ -25,7 +25,7 @@ export default function AddToCartButton({ menuItemId, name, price, categoryId, s
   return (
     <button
       onClick={handleAdd}
-      className={`w-9 h-9 flex items-center justify-center rounded-full text-sm font-bold
+      className={`w-11 h-11 flex items-center justify-center rounded-full text-base font-bold
         transition-all active:scale-90 shrink-0
         ${added ? 'bg-emerald-500 text-white scale-110' : 'bg-amber-500 text-zinc-950 hover:bg-amber-400'}`}
       aria-label="Add to cart"

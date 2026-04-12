@@ -449,7 +449,7 @@ function POSContent() {
             {/* Customer name */}
             <input
               type="text"
-              placeholder="{t.ui.pos_customerName}"
+              placeholder={t.ui.pos_customerName}
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               className="w-full px-4 py-4 rounded-xl bg-zinc-800 border border-zinc-700 text-white text-base placeholder-zinc-500 focus:outline-none focus:border-amber-500/50"
@@ -475,7 +475,7 @@ function POSContent() {
             {/* Submit */}
             <button onClick={handleSubmitOrder} disabled={submitting}
               className="w-full py-5 rounded-xl bg-amber-500 text-zinc-950 font-extrabold text-xl active:scale-[0.97] transition-transform disabled:opacity-50">
-              {submitting ? '{t.ui.pos_submitting}' : `Valider — ${formatPrice(total)} €`}
+              {submitting ? t.ui.pos_submitting : `${t.ui.pos_validate} — ${formatPrice(total)} €`}
             </button>
 
             <button onClick={() => { setShowCheckout(false); setOrderError(null); }}

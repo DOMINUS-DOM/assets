@@ -41,7 +41,7 @@ export default memo(function MenuItemCard({ item, categoryId, isFavorite, onTogg
           <AllergenBadges allergenIds={item.allergens} />
         )}
       </div>
-      <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center gap-2.5 shrink-0">
         {item.price != null && (
           <span className="text-sm font-bold text-amber-400">{formatPrice(item.price)} €</span>
         )}

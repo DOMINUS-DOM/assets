@@ -12,12 +12,12 @@ import NavIcon from '@/components/admin/NavIcon';
 
 function StatCard({ label, value, icon, trend }: { label: string; value: string | number; icon: string; trend?: string }) {
   return (
-    <div className="p-4 rounded-xl bg-zinc-900 dark:bg-zinc-900 bg-white border border-zinc-800/50 dark:border-zinc-800/50 border-gray-200">
+    <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800/50">
       <div className="flex items-center justify-between mb-2">
         <NavIcon name={icon} className="text-zinc-500 w-4 h-4" />
         {trend && <span className="text-[10px] text-emerald-400 font-medium">{trend}</span>}
       </div>
-      <p className="text-2xl font-extrabold text-white dark:text-white text-gray-900">{value}</p>
+      <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{value}</p>
       <p className="text-xs text-zinc-500 mt-1">{label}</p>
     </div>
   );
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Welcome */}
       <div>
-        <h1 className="text-xl font-bold text-white dark:text-white text-gray-900">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white">
           {t.ui.dash_hello}{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋
         </h1>
         <p className="text-xs text-zinc-500 mt-1">

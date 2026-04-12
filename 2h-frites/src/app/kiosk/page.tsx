@@ -205,7 +205,9 @@ function KioskContent() {
       setTimeout(() => { setStep('welcome'); setOrderNumber(null); setOrderType('dine_in'); }, 10000);
     } catch (e) {
       console.error('Kiosk order error:', e);
-      setOrderError('Une erreur est survenue. Veuillez réessayer.');
+      setOrderError(t.ui.res_error || 'Erreur. R\u00e9essayez.');
+      // Auto-recover: go back to menu after 5s if error persists
+      setTimeout(() => { if (step === 'cart') setOrderError(null); }, 5000);
     }
     setSubmitting(false);
   };

@@ -184,7 +184,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex">
       {/* Sidebar — desktop (fixed) */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-56 xl:w-60 dark:bg-zinc-900/50 bg-white border-r dark:border-zinc-800/50 border-gray-200 fixed inset-y-0 left-0 z-30">
+      <aside className="hidden lg:flex lg:flex-col lg:w-56 xl:w-60 bg-white dark:bg-zinc-900/50 border-r border-gray-200 dark:border-zinc-800/50 fixed inset-y-0 left-0 z-30">
         {sidebar}
       </aside>
 
@@ -201,7 +201,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <div className="flex-1 lg:ml-56 xl:ml-60 flex flex-col min-h-screen">
         {/* Top bar */}
-        <header className="sticky top-0 z-20 dark:bg-zinc-950/95 bg-white/95 backdrop-blur-md border-b dark:border-zinc-800/50 border-gray-200">
+        <header className="sticky top-0 z-20 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-gray-200 dark:border-zinc-800/50">
           <div className="flex items-center justify-between h-14 px-4">
             <div className="flex items-center gap-3">
               {/* Mobile hamburger */}
