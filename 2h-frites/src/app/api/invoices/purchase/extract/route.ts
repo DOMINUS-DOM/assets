@@ -13,18 +13,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'imageUrl_required' }, { status: 400 });
   }
 
-  // Try env var first, then fall back to DB settings
-  let apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    try {
-      const { prisma } = await import('@/lib/prisma');
-      const setting = await prisma.setting.findUnique({ where: { key: 'business' } });
-      if (setting) {
-        const config = JSON.parse(setting.value);
-        apiKey = config.gemini_api_key;
-      }
-    } catch {}
-  }
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: 'gemini_api_key_not_configured' }, { status: 500 });
   }
@@ -152,7 +141,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'extraction_failed', message: error.message }, { status: 500 });
   }
 }
-// gemini-ready
 
-// vercel-git-deploy 1775993507
-// gemini-key-fixed 1775994603
