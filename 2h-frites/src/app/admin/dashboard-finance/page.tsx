@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { useLocation } from '@/contexts/LocationContext';
+import { useLanguage } from '@/i18n/LanguageContext';
 import { formatPrice } from '@/utils/format';
 
 type Period = 'today' | 'week' | 'month' | 'custom';
@@ -27,6 +28,7 @@ interface Alert {
 
 export default function DashboardFinancePage() {
   const { locationId } = useLocation();
+  const { t } = useLanguage();
   const [period, setPeriod] = useState<Period>('week');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -101,7 +103,7 @@ export default function DashboardFinancePage() {
     // When recipe data is available, this will compute real costs
     const estimatedCOGS = revenue * 0.30;
     const cogs = hasRecipeData ? realCOGS : estimatedCOGS;
-    const cogsLabel = hasRecipeData ? 'Cout reel' : 'Cout estime (30%)';
+    const cogsLabel = hasRecipeData ? t.ui.fin_costReal : t.ui.fin_costEstimated;
 
     // ─── PURCHASE INVOICE TOTALS ───
     const validatedInvoices = invoices.filter((inv: any) => {
@@ -163,12 +165,12 @@ export default function DashboardFinancePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-white">Tableau de bord financier</h1>
+      <h1 className="text-xl font-bold text-white">{t.ui.fin_title}</h1>
 
       {/* Period selector */}
       <div className="flex items-center gap-2 flex-wrap">
         {(['today', 'week', 'month', 'custom'] as Period[]).map((p) => {
-          const labels: Record<string, string> = { today: "Aujourd'hui", week: '7 jours', month: '30 jours', custom: 'Personnalise' };
+          const labels: Record<string, string> = { today: t.ui.fin_today, week: t.ui.fin_week, month: t.ui.fin_month, custom: t.ui.fin_custom };
           return (
             <button key={p} onClick={() => setPeriod(p)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium ${period === p ? 'bg-amber-500/15 text-amber-400' : 'bg-zinc-900 text-zinc-500'}`}>
@@ -191,7 +193,7 @@ export default function DashboardFinancePage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 text-center">
           <p className="text-2xl font-extrabold text-emerald-400">{formatPrice(report.revenue)} &euro;</p>
-          <p className="text-xs text-zinc-500">Chiffre d&apos;affaires</p>
+          <p className="text-xs text-zinc-500">{t.ui.fin_revenue}</p>
         </div>
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 text-center">
           <p className="text-2xl font-extrabold text-red-400">{formatPrice(report.cogs)} &euro;</p>
@@ -199,22 +201,22 @@ export default function DashboardFinancePage() {
         </div>
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 text-center">
           <p className="text-2xl font-extrabold text-amber-400">{formatPrice(report.purchaseTotal)} &euro;</p>
-          <p className="text-xs text-zinc-500">Achats ({report.validatedInvoiceCount} factures)</p>
+          <p className="text-xs text-zinc-500">{t.ui.fin_purchases} ({report.validatedInvoiceCount} {t.ui.fin_invoices})</p>
         </div>
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 text-center">
           <p className={`text-2xl font-extrabold ${report.marginPct >= 60 ? 'text-emerald-400' : report.marginPct >= 40 ? 'text-amber-400' : 'text-red-400'}`}>
             {report.marginPct.toFixed(1)}%
           </p>
-          <p className="text-xs text-zinc-500">Marge ({formatPrice(report.margin)} &euro;)</p>
+          <p className="text-xs text-zinc-500">{t.ui.fin_marginLabel} ({formatPrice(report.margin)} &euro;)</p>
         </div>
       </div>
 
       {/* Revenue vs COGS summary */}
       <div className="p-5 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-3">
-        <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">Synthese financiere</h2>
+        <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">{t.ui.fin_summary}</h2>
         <div className="space-y-1.5">
           <div className="flex justify-between text-sm">
-            <span className="text-white">CA TTC</span>
+            <span className="text-white">{t.ui.fin_caTTC}</span>
             <span className="text-white font-bold">{formatPrice(report.revenue)} &euro;</span>
           </div>
           <div className="flex justify-between text-sm">
@@ -222,13 +224,13 @@ export default function DashboardFinancePage() {
             <span className="text-red-400">-{formatPrice(report.cogs)} &euro;</span>
           </div>
           <div className="flex justify-between text-sm border-t border-zinc-800 pt-1">
-            <span className="text-white font-medium">Marge brute</span>
+            <span className="text-white font-medium">{t.ui.fin_grossMargin}</span>
             <span className={`font-bold ${report.margin >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {formatPrice(report.margin)} &euro; ({report.marginPct.toFixed(1)}%)
             </span>
           </div>
           <div className="flex justify-between text-sm mt-3 pt-2 border-t border-zinc-800">
-            <span className="text-zinc-400">Total achats fournisseurs (periode)</span>
+            <span className="text-zinc-400">{t.ui.fin_supplierPurchases}</span>
             <span className="text-amber-400 font-bold">{formatPrice(report.purchaseTotal)} &euro;</span>
           </div>
           <div className="flex justify-between text-xs">
@@ -239,16 +241,16 @@ export default function DashboardFinancePage() {
 
       {/* Per-product margin table */}
       <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
-        <h3 className="text-xs font-bold text-zinc-400 uppercase mb-3">Marge par produit</h3>
+        <h3 className="text-xs font-bold text-zinc-400 uppercase mb-3">{t.ui.fin_productMargin}</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-zinc-500 text-xs border-b border-zinc-800">
-                <th className="text-left py-2 font-medium">Produit</th>
-                <th className="text-right py-2 font-medium">Prix vente</th>
-                <th className="text-right py-2 font-medium">Cout</th>
-                <th className="text-right py-2 font-medium">Marge</th>
-                <th className="text-right py-2 font-medium">Status</th>
+                <th className="text-left py-2 font-medium">{t.ui.fin_product}</th>
+                <th className="text-right py-2 font-medium">{t.ui.fin_sellingPrice}</th>
+                <th className="text-right py-2 font-medium">{t.ui.fin_costCol}</th>
+                <th className="text-right py-2 font-medium">{t.ui.fin_marginCol}</th>
+                <th className="text-right py-2 font-medium">{t.ui.fin_statusCol}</th>
               </tr>
             </thead>
             <tbody>
@@ -268,7 +270,7 @@ export default function DashboardFinancePage() {
                       p.marginPct >= 40 ? 'bg-amber-500/20 text-amber-400' :
                       'bg-red-500/20 text-red-400'
                     }`}>
-                      {p.marginPct >= 60 ? 'OK' : p.marginPct >= 40 ? 'Attention' : 'Critique'}
+                      {p.marginPct >= 60 ? t.ui.fin_ok : p.marginPct >= 40 ? t.ui.fin_warning : t.ui.fin_critical}
                     </span>
                   </td>
                 </tr>
@@ -277,14 +279,14 @@ export default function DashboardFinancePage() {
           </table>
         </div>
         {report.productMargins.length === 0 && (
-          <p className="text-zinc-500 text-sm text-center py-4">Aucune donnee de vente sur cette periode</p>
+          <p className="text-zinc-500 text-sm text-center py-4">{t.ui.fin_noSalesData}</p>
         )}
       </div>
 
       {/* Top / Bottom performers */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
-          <h3 className="text-xs font-bold text-emerald-400 uppercase mb-3">Top performers (marge)</h3>
+          <h3 className="text-xs font-bold text-emerald-400 uppercase mb-3">{t.ui.fin_topPerformers}</h3>
           {report.topPerformers.map((p, i) => (
             <div key={i} className="flex justify-between text-sm py-1.5 border-b border-zinc-800/30 last:border-0">
               <div className="flex items-center gap-2">
@@ -297,7 +299,7 @@ export default function DashboardFinancePage() {
           {report.topPerformers.length === 0 && <p className="text-zinc-500 text-sm">--</p>}
         </div>
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
-          <h3 className="text-xs font-bold text-red-400 uppercase mb-3">Marges les plus faibles</h3>
+          <h3 className="text-xs font-bold text-red-400 uppercase mb-3">{t.ui.fin_bottomPerformers}</h3>
           {report.bottomPerformers.map((p, i) => (
             <div key={i} className="flex justify-between text-sm py-1.5 border-b border-zinc-800/30 last:border-0">
               <div className="flex items-center gap-2">
@@ -315,10 +317,10 @@ export default function DashboardFinancePage() {
 
       {/* Alerts section */}
       <div className="space-y-3">
-        <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">Alertes ({alerts.length})</h2>
+        <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">{t.ui.fin_alerts} ({alerts.length})</h2>
         {alerts.length === 0 ? (
           <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-center">
-            <p className="text-emerald-400 text-sm">Aucune alerte active</p>
+            <p className="text-emerald-400 text-sm">{t.ui.fin_noAlerts}</p>
           </div>
         ) : (
           alerts.map((alert, i) => (
@@ -327,9 +329,9 @@ export default function DashboardFinancePage() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${SEVERITY_BADGE[alert.severity] || SEVERITY_BADGE.info}`}>
-                      {alert.severity === 'critical' ? 'Critique' : alert.severity === 'warning' ? 'Attention' : 'Info'}
+                      {alert.severity === 'critical' ? t.ui.fin_alertCritical : alert.severity === 'warning' ? t.ui.fin_alertWarning : t.ui.fin_alertInfo}
                     </span>
-                    <span className="text-xs text-zinc-500 uppercase">{alert.type === 'margin' ? 'Marge' : alert.type === 'cost_spike' ? 'Prix' : 'Stock'}</span>
+                    <span className="text-xs text-zinc-500 uppercase">{alert.type === 'margin' ? t.ui.fin_alertMargin : alert.type === 'cost_spike' ? t.ui.fin_alertPrice : t.ui.fin_alertStock}</span>
                   </div>
                   <p className="text-sm font-medium text-white">{alert.title}</p>
                   <p className="text-xs text-zinc-400 mt-0.5">{alert.message}</p>

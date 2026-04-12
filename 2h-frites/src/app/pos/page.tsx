@@ -129,6 +129,23 @@ function POSContent() {
   const [showPainRond, setShowPainRond] = useState<MenuItem | null>(null);
   const [showMagicBox, setShowMagicBox] = useState<{ item: MenuItem; isExtra: boolean } | null>(null);
 
+  // Keyboard shortcuts for POS efficiency
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showCheckout) { setShowCheckout(false); setOrderError(null); }
+        if (showSizePopup) setShowSizePopup(null);
+        if (showPainFrites) setShowPainFrites(false);
+        if (showPainRond) setShowPainRond(null);
+        if (showMagicBox) setShowMagicBox(null);
+      }
+      if (e.key === 'F2' && cart.length > 0 && !showCheckout) { e.preventDefault(); setShowCheckout(true); }
+      if (e.key === 'Delete' && !showCheckout) { clearCart(); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showCheckout, showSizePopup, showPainFrites, showPainRond, showMagicBox, cart.length]);
+
   const handleBuilderAdd = useCallback((builderItem: { menuItemId: string; name: string; price: number; categoryId: string; extras?: CartExtra[] }) => {
     const extrasLabel = builderItem.extras?.length ? ` (${builderItem.extras.map((e) => e.name).join(', ')})` : '';
     setCart((prev) => [...prev, {

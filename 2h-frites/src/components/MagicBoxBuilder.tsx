@@ -10,20 +10,23 @@ import { menuStore } from '@/stores/menuStore';
 type MagicStep = 'snack' | 'frites' | 'sauce' | 'boisson' | 'jouet' | 'summary';
 
 const MAGIC_BOX_STEPS: MagicStep[] = ['snack', 'frites', 'sauce', 'boisson', 'jouet', 'summary'];
-const MAGIC_BOX_SNACKS = [
-  { id: 'fricadelle', name: 'Fricadelle', emoji: '🌭' },
-  { id: 'hamburger', name: 'Hamburger', emoji: '🍔' },
-];
-
-const BOISSONS = [
-  { id: 'capri_sun', name: 'Capri-Sun', emoji: '🧃' },
-  { id: 'eau_plate', name: 'Eau plate', emoji: '💧' },
-];
-
-const JOUETS = [
-  { id: 'fille', name: 'Jouet fille', emoji: '👧' },
-  { id: 'garcon', name: 'Jouet garçon', emoji: '👦' },
-];
+// Options loaded inside component to access i18n
+function getMagicBoxOptions(t: any) {
+  return {
+    snacks: [
+      { id: 'fricadelle', name: t?.ui?.mb_fricadelle || 'Fricadelle', emoji: '🌭' },
+      { id: 'hamburger', name: t?.ui?.mb_hamburger || 'Hamburger', emoji: '🍔' },
+    ],
+    boissons: [
+      { id: 'capri_sun', name: t?.ui?.mb_capriSun || 'Capri-Sun', emoji: '🧃' },
+      { id: 'eau_plate', name: t?.ui?.mb_eauPlate || 'Eau plate', emoji: '💧' },
+    ],
+    jouets: [
+      { id: 'fille', name: t?.ui?.mb_toyGirl || 'Jouet fille', emoji: '👧' },
+      { id: 'garcon', name: t?.ui?.mb_toyBoy || 'Jouet gar\u00e7on', emoji: '👦' },
+    ],
+  };
+}
 
 interface Props {
   item: MenuItem;
@@ -34,6 +37,7 @@ interface Props {
 
 export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props) {
   const { t, getItemName } = useLanguage();
+  const { snacks: MAGIC_BOX_SNACKS, boissons: BOISSONS, jouets: JOUETS } = getMagicBoxOptions(t);
 
   const [step, setStep] = useState<MagicStep>('snack');
   const [snack, setSnack] = useState<string | null>(null);
@@ -75,7 +79,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
       ? (meatItems.find((m) => m.id === snack)?.name || snack || '')
       : (MAGIC_BOX_SNACKS.find((s) => s.id === snack)?.name || '');
     extras.push({ name: snackName, price: 0 });
-    extras.push({ name: `Frites ${withSalt ? 'avec sel' : 'sans sel'}${withSpice ? ', épicées' : ''}`, price: 0 });
+    extras.push({ name: `Frites ${withSalt ? (t.ui.bld_withSalt || 'avec sel') : (t.ui.bld_noSalt || 'sans sel')}${withSpice ? `, ${t.ui.bld_spicy || '\u00e9pic\u00e9es'}` : ''}`, price: 0 });
     if (sauce) extras.push({ name: getItemName(sauce.id, sauce.name), price: 0 });
     const boissonName = BOISSONS.find((b) => b.id === boisson)?.name || '';
     extras.push({ name: boissonName, price: 0 });
@@ -116,12 +120,12 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
     <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col">
       {/* Header */}
       <header className="sticky top-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-10">
-        <div className="flex items-center justify-between max-w-lg mx-auto">
+        <div className="flex items-center justify-between max-w-lg lg:max-w-2xl mx-auto">
           <button onClick={onClose} className="text-zinc-400 text-sm">\u2190 {t.ui.bld_back}</button>
           <h1 className="text-sm font-bold text-white">🎁 {getItemName(item.id, item.name)}</h1>
           <span className="text-xs text-amber-400 font-bold">{formatPrice(basePrice)} €</span>
         </div>
-        <div className="flex gap-1 mt-2 max-w-lg mx-auto">
+        <div className="flex gap-1 mt-2 max-w-lg lg:max-w-2xl mx-auto">
           {MAGIC_BOX_STEPS.map((s, i) => (
             <div key={s} className={`flex-1 h-1 rounded-full transition-colors ${
               i <= stepIndex ? 'bg-amber-500' : 'bg-zinc-800'
@@ -131,7 +135,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto px-4 py-4 max-w-lg mx-auto w-full">
+      <main className="flex-1 overflow-y-auto px-4 py-4 max-w-lg lg:max-w-2xl mx-auto w-full">
         <h2 className="text-lg font-bold text-white mb-1">
           {stepIndex + 1}. {STEP_LABELS[step]}
         </h2>
@@ -253,7 +257,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
 
       {/* Footer */}
       <footer className="sticky bottom-0 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/50 px-4 py-3">
-        <div className="flex gap-3 max-w-lg mx-auto">
+        <div className="flex gap-3 max-w-lg lg:max-w-2xl mx-auto">
           {stepIndex > 0 && (
             <button onClick={prevStep}
               className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">

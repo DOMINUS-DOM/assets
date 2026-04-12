@@ -252,15 +252,15 @@ export default function RecipesPage() {
                   return (
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div className="p-2 rounded-lg bg-zinc-800">
-                        <div className="text-[10px] text-zinc-500 uppercase">Co\u00fbt</div>
+                        <div className="text-[10px] text-zinc-500 uppercase">{t.ui.rec_cost}</div>
                         <div className="text-sm font-bold text-white">{formatPrice(cost)} \u20ac</div>
                       </div>
                       <div className="p-2 rounded-lg bg-zinc-800">
-                        <div className="text-[10px] text-zinc-500 uppercase">Prix vente</div>
+                        <div className="text-[10px] text-zinc-500 uppercase">{t.ui.rec_sellingPrice}</div>
                         <div className="text-sm font-bold text-white">{formatPrice(price)} \u20ac</div>
                       </div>
                       <div className="p-2 rounded-lg bg-zinc-800">
-                        <div className="text-[10px] text-zinc-500 uppercase">Marge</div>
+                        <div className="text-[10px] text-zinc-500 uppercase">{t.ui.rec_margin}</div>
                         <div className={`text-sm font-bold ${getMarginColor(margin)}`}>{margin.toFixed(1)}%</div>
                       </div>
                     </div>
@@ -268,7 +268,7 @@ export default function RecipesPage() {
                 })()}
 
                 {selectedRecipe.prepTime && (
-                  <p className="text-xs text-zinc-500 mt-2">Temps de pr\u00e9p: {selectedRecipe.prepTime} min</p>
+                  <p className="text-xs text-zinc-500 mt-2">{t.ui.rec_prepTime}: {selectedRecipe.prepTime} min</p>
                 )}
                 {selectedRecipe.notes && (
                   <p className="text-xs text-zinc-400 mt-1 italic">{selectedRecipe.notes}</p>
@@ -278,20 +278,20 @@ export default function RecipesPage() {
               {/* Edit recipe form */}
               {editingRecipe && (
                 <form onSubmit={handleUpdateRecipe} className="p-4 rounded-xl bg-zinc-900 border border-amber-500/30 space-y-2">
-                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider">Modifier la recette</h4>
-                  <input className={ic} placeholder="Nom" value={recipeForm.name} onChange={(e) => setRecipeForm({ ...recipeForm, name: e.target.value })} />
-                  <input className={ic} type="number" placeholder="Temps de pr\u00e9p (min)" value={recipeForm.prepTime} onChange={(e) => setRecipeForm({ ...recipeForm, prepTime: e.target.value })} />
-                  <textarea className={`${ic} min-h-[60px]`} placeholder="Notes" value={recipeForm.notes} onChange={(e) => setRecipeForm({ ...recipeForm, notes: e.target.value })} />
+                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider">{t.ui.rec_editRecipe}</h4>
+                  <input className={ic} placeholder={t.ui.rec_recipeName} value={recipeForm.name} onChange={(e) => setRecipeForm({ ...recipeForm, name: e.target.value })} />
+                  <input className={ic} type="number" placeholder={t.ui.rec_prepTimePlaceholder} value={recipeForm.prepTime} onChange={(e) => setRecipeForm({ ...recipeForm, prepTime: e.target.value })} />
+                  <textarea className={`${ic} min-h-[60px]`} placeholder={t.ui.rec_notesPlaceholder} value={recipeForm.notes} onChange={(e) => setRecipeForm({ ...recipeForm, notes: e.target.value })} />
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => setEditingRecipe(false)} className="flex-1 py-2 rounded-lg bg-zinc-800 text-zinc-300 text-sm">Annuler</button>
-                    <button type="submit" className="flex-1 py-2 rounded-lg bg-amber-500 text-zinc-950 font-bold text-sm">Enregistrer</button>
+                    <button type="button" onClick={() => setEditingRecipe(false)} className="flex-1 py-2 rounded-lg bg-zinc-800 text-zinc-300 text-sm">{t.ui.rec_cancel}</button>
+                    <button type="submit" className="flex-1 py-2 rounded-lg bg-amber-500 text-zinc-950 font-bold text-sm">{t.ui.rec_save}</button>
                   </div>
                 </form>
               )}
 
               {/* Ingredients list */}
               <div className="space-y-2">
-                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Ingr\u00e9dients ({selectedRecipe.items.length})</h4>
+                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t.ui.rec_ingredients} ({selectedRecipe.items.length})</h4>
                 {selectedRecipe.items.map((ri) => {
                   const lineCost = ri.quantity * ri.ingredient.costPerUnit;
                   return (
@@ -309,27 +309,27 @@ export default function RecipesPage() {
                   );
                 })}
                 {selectedRecipe.items.length === 0 && (
-                  <p className="text-zinc-500 text-xs text-center py-3">Aucun ingr\u00e9dient</p>
+                  <p className="text-zinc-500 text-xs text-center py-3">{t.ui.rec_noIngredients}</p>
                 )}
               </div>
 
               {/* Add ingredient form */}
               <form onSubmit={handleAddItem} className="p-3 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-2">
-                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Ajouter un ingr\u00e9dient</h4>
+                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t.ui.rec_addIngredient}</h4>
                 <div className="grid grid-cols-3 gap-2">
                   <select className={ic} value={addItemForm.ingredientId} onChange={(e) => {
                     const ing = ingredients.find((i) => i.id === e.target.value);
                     setAddItemForm({ ...addItemForm, ingredientId: e.target.value, unit: ing?.unit || addItemForm.unit });
                   }} required>
-                    <option value="">Ingr\u00e9dient</option>
+                    <option value="">{t.ui.rec_ingredientLabel}</option>
                     {ingredients.map((ing) => (
                       <option key={ing.id} value={ing.id}>{ing.name}</option>
                     ))}
                   </select>
-                  <input className={ic} type="number" step="0.001" placeholder="Qt\u00e9" value={addItemForm.quantity} onChange={(e) => setAddItemForm({ ...addItemForm, quantity: e.target.value })} required />
-                  <input className={ic} placeholder="Unit\u00e9" value={addItemForm.unit} onChange={(e) => setAddItemForm({ ...addItemForm, unit: e.target.value })} />
+                  <input className={ic} type="number" step="0.001" placeholder={t.ui.rec_qtyLabel} value={addItemForm.quantity} onChange={(e) => setAddItemForm({ ...addItemForm, quantity: e.target.value })} required />
+                  <input className={ic} placeholder={t.ui.rec_unitLabel} value={addItemForm.unit} onChange={(e) => setAddItemForm({ ...addItemForm, unit: e.target.value })} />
                 </div>
-                <button type="submit" className="w-full py-2 rounded-lg bg-amber-500 text-zinc-950 font-bold text-sm">Ajouter</button>
+                <button type="submit" className="w-full py-2 rounded-lg bg-amber-500 text-zinc-950 font-bold text-sm">{t.ui.rec_addBtn}</button>
               </form>
             </div>
           )}

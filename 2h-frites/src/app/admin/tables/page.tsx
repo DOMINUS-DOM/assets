@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useLocation } from '@/contexts/LocationContext';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 type TableStatus = 'free' | 'occupied' | 'reserved' | 'cleaning';
 type Zone = 'all' | 'main' | 'terrace' | 'vip';
@@ -31,28 +32,22 @@ const STATUS_DOT: Record<TableStatus, string> = {
   cleaning: 'bg-zinc-400',
 };
 
-const STATUS_LABELS: Record<TableStatus, string> = {
-  free: 'Libre',
-  occupied: 'Occup\u00e9e',
-  reserved: 'R\u00e9serv\u00e9e',
-  cleaning: 'Nettoyage',
+const STATUS_LABEL_KEYS: Record<TableStatus, string> = {
+  free: 'tbl_free',
+  occupied: 'tbl_occupied',
+  reserved: 'tbl_reserved',
+  cleaning: 'tbl_cleaning',
 };
 
-const ZONE_LABELS: Record<string, string> = {
-  main: 'Principale',
-  terrace: 'Terrasse',
-  vip: 'VIP',
+const ZONE_LABEL_KEYS: Record<string, string> = {
+  main: 'tbl_zoneMain',
+  terrace: 'tbl_zoneTerrace',
+  vip: 'tbl_zoneVip',
 };
-
-const ZONE_TABS: { key: Zone; label: string }[] = [
-  { key: 'all', label: 'Toutes' },
-  { key: 'main', label: 'Principale' },
-  { key: 'terrace', label: 'Terrasse' },
-  { key: 'vip', label: 'VIP' },
-];
 
 export default function TablesPage() {
   const { locationId } = useLocation();
+  const { t } = useLanguage();
   const [tables, setTables] = useState<FloorTable[]>([]);
   const [zone, setZone] = useState<Zone>('all');
   const [showAdd, setShowAdd] = useState(false);
@@ -93,7 +88,7 @@ export default function TablesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Supprimer cette table ?')) return;
+    if (!confirm(t.ui.tbl_deleteConfirm)) return;
     await api.post('/tables', { action: 'delete', id });
     refresh();
   };
@@ -107,11 +102,18 @@ export default function TablesPage() {
     cleaning: tables.filter((t) => t.status === 'cleaning').length,
   };
 
+  const ZONE_TABS: { key: Zone; label: string }[] = [
+    { key: 'all', label: t.ui.tbl_zoneAll },
+    { key: 'main', label: t.ui.tbl_zoneMain },
+    { key: 'terrace', label: t.ui.tbl_zoneTerrace },
+    { key: 'vip', label: t.ui.tbl_zoneVip },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white">Plan de salle</h1>
-        <span className="text-sm text-zinc-500">{tables.length} tables</span>
+        <h1 className="text-xl font-bold text-white">{t.ui.tbl_title}</h1>
+        <span className="text-sm text-zinc-500">{tables.length} {t.ui.tbl_tables}</span>
       </div>
 
       {/* Status summary */}
@@ -119,7 +121,7 @@ export default function TablesPage() {
         {(Object.keys(counts) as TableStatus[]).map((s) => (
           <div key={s} className={`p-2 rounded-lg border text-center ${STATUS_COLORS[s]}`}>
             <div className="text-lg font-bold">{counts[s]}</div>
-            <div className="text-[10px] uppercase tracking-wider">{STATUS_LABELS[s]}</div>
+            <div className="text-[10px] uppercase tracking-wider">{t.ui[STATUS_LABEL_KEYS[s]]}</div>
           </div>
         ))}
       </div>
@@ -137,24 +139,24 @@ export default function TablesPage() {
       {/* Add table */}
       <button onClick={() => setShowAdd(!showAdd)}
         className="px-4 py-2 rounded-lg bg-amber-500 text-zinc-950 font-bold text-sm">
-        {showAdd ? 'Fermer' : '+ Table'}
+        {showAdd ? t.ui.tbl_close : t.ui.tbl_addBtn}
       </button>
 
       {showAdd && (
         <form onSubmit={handleAdd} className="p-4 rounded-xl bg-zinc-900 border border-amber-500/30 space-y-2">
-          <h3 className="text-sm font-bold text-white">Ajouter une table</h3>
+          <h3 className="text-sm font-bold text-white">{t.ui.tbl_addTable}</h3>
           <div className="grid grid-cols-3 gap-2">
-            <input className={ic} type="number" placeholder="N\u00b0" value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} required />
-            <input className={ic} type="number" placeholder="Places" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} />
+            <input className={ic} type="number" placeholder={t.ui.tbl_numberPlaceholder} value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} required />
+            <input className={ic} type="number" placeholder={t.ui.tbl_seatsPlaceholder} value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} />
             <select className={ic} value={form.zone} onChange={(e) => setForm({ ...form, zone: e.target.value })}>
-              <option value="main">Principale</option>
-              <option value="terrace">Terrasse</option>
-              <option value="vip">VIP</option>
+              <option value="main">{t.ui.tbl_zoneMain}</option>
+              <option value="terrace">{t.ui.tbl_zoneTerrace}</option>
+              <option value="vip">{t.ui.tbl_zoneVip}</option>
             </select>
           </div>
           <div className="flex gap-2">
-            <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2 rounded-lg bg-zinc-800 text-zinc-300 text-sm">Annuler</button>
-            <button type="submit" className="flex-1 py-2 rounded-lg bg-amber-500 text-zinc-950 font-bold text-sm">Ajouter</button>
+            <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2 rounded-lg bg-zinc-800 text-zinc-300 text-sm">{t.ui.tbl_cancel}</button>
+            <button type="submit" className="flex-1 py-2 rounded-lg bg-amber-500 text-zinc-950 font-bold text-sm">{t.ui.tbl_add}</button>
           </div>
         </form>
       )}
@@ -166,37 +168,37 @@ export default function TablesPage() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${STATUS_DOT[table.status]}`} />
-                <span className="text-sm font-bold">Table {table.number}</span>
+                <span className="text-sm font-bold">{t.ui.tbl_tableLabel} {table.number}</span>
               </div>
               <button onClick={() => handleDelete(table.id)}
                 className="text-zinc-600 hover:text-red-400 text-xs p-1">&#10005;</button>
             </div>
             <div className="flex items-center justify-between mb-2 text-[10px] uppercase tracking-wider opacity-70">
-              <span>{table.capacity} places</span>
-              <span>{ZONE_LABELS[table.zone] || table.zone}</span>
+              <span>{table.capacity} {t.ui.tbl_seats}</span>
+              <span>{t.ui[ZONE_LABEL_KEYS[table.zone]] || table.zone}</span>
             </div>
             <div className="grid grid-cols-2 gap-1">
               <button onClick={() => handleStatusChange(table.id, 'free')}
                 className={`px-2 py-1 rounded text-xs font-medium transition-colors ${table.status === 'free' ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-emerald-400'}`}>
-                Lib\u00e9rer
+                {t.ui.tbl_setFree}
               </button>
               <button onClick={() => handleStatusChange(table.id, 'occupied')}
                 className={`px-2 py-1 rounded text-xs font-medium transition-colors ${table.status === 'occupied' ? 'bg-amber-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-amber-400'}`}>
-                Occuper
+                {t.ui.tbl_setOccupied}
               </button>
               <button onClick={() => handleStatusChange(table.id, 'reserved')}
                 className={`px-2 py-1 rounded text-xs font-medium transition-colors ${table.status === 'reserved' ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-blue-400'}`}>
-                R\u00e9server
+                {t.ui.tbl_setReserved}
               </button>
               <button onClick={() => handleStatusChange(table.id, 'cleaning')}
                 className={`px-2 py-1 rounded text-xs font-medium transition-colors ${table.status === 'cleaning' ? 'bg-zinc-500 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
-                Nettoyage
+                {t.ui.tbl_setCleaning}
               </button>
             </div>
           </div>
         ))}
       </div>
-      {filtered.length === 0 && <p className="text-zinc-500 text-sm text-center py-6">Aucune table</p>}
+      {filtered.length === 0 && <p className="text-zinc-500 text-sm text-center py-6">{t.ui.tbl_noTables}</p>}
     </div>
   );
 }

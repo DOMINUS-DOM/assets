@@ -73,7 +73,6 @@ function AdminContent({ children }: { children: React.ReactNode }) {
         { href: '/admin/menu', label: t.ui.cms_nav, icon: 'menu', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'menu' },
         { href: '/admin/zones', label: t.ui.zone_nav, icon: 'zones', exact: false, roles: ['patron', 'manager', 'franchisor_admin', 'location_manager'], permission: 'zones' },
         { href: '/admin/tables', label: t.ui.nav_salle, icon: 'menu', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'], permission: 'tables' },
-        { href: '/admin/reservations', label: t.ui.nav_reservations, icon: 'orders', exact: false, roles: ['patron', 'manager', 'employe', 'franchisor_admin', 'location_manager'], permission: 'tables' },
         { href: '/admin/inventory', label: t.ui.inv_nav, icon: 'inventory', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'inventory' },
         { href: '/admin/recipes', label: t.ui.nav_recettes, icon: 'menu', exact: false, roles: ['patron', 'manager', 'franchisor_admin'], permission: 'recipes' },
       ],
@@ -183,7 +182,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen bg-zinc-950 dark:bg-zinc-950 bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex">
       {/* Sidebar — desktop (fixed) */}
       <aside className="hidden lg:flex lg:flex-col lg:w-56 xl:w-60 dark:bg-zinc-900/50 bg-white border-r dark:border-zinc-800/50 border-gray-200 fixed inset-y-0 left-0 z-30">
         {sidebar}
