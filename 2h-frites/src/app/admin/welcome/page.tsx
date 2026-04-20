@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTenant } from '@/contexts/TenantContext';
 import { useLocation } from '@/contexts/LocationContext';
-import { menuApi } from '@/lib/menuApi';
 import { api } from '@/lib/api';
 import ImageUpload from '@/components/admin/ImageUpload';
 import { getCloudinaryUrl } from '@/lib/cloudinaryUrl';
+import MenuExistsModal from '@/components/MenuExistsModal';
 
 // ─── Restaurant type templates ───
 
@@ -293,6 +293,11 @@ export default function WelcomePage() {
   const [error, setError] = useState<string | null>(null);
   const [skippedMenu, setSkippedMenu] = useState(false);
   const [skippedHours, setSkippedHours] = useState(false);
+  const [existingMenuInfo, setExistingMenuInfo] = useState<{
+    categoryCount: number;
+    productCount: number;
+    modifierGroupCount: number;
+  } | null>(null);
 
   const template = selectedType ? TEMPLATES[selectedType] : null;
 
@@ -308,14 +313,71 @@ export default function WelcomePage() {
     await api.post('/organizations', { action: 'update', id: tenant.id, brandingJson });
   };
 
-  const createMenu = async () => {
-    if (!template) return;
-    for (const cat of template.categories) {
-      const result = await menuApi.createCategory({ slug: cat.slug, nameKey: cat.name, icon: cat.icon, locationId: locationId || undefined });
-      for (const p of cat.products) {
-        await menuApi.createProduct({ categoryId: result.id, name: p.name, price: p.price });
+  // Menu seeding — see /api/onboarding/menu. The wizard checks status first
+  // so it can surface an explicit "menu already exists" modal rather than
+  // silently duplicating or erroring at P2002 on the unique (locationId, slug).
+  const fetchMenuStatus = async () => {
+    if (!locationId) throw new Error('no_location');
+    const res = await fetch(`/api/onboarding/menu?locationId=${encodeURIComponent(locationId)}`);
+    if (!res.ok) throw new Error('status_check_failed');
+    return res.json() as Promise<{
+      hasMenu: boolean;
+      categoryCount: number;
+      productCount: number;
+      modifierGroupCount: number;
+    }>;
+  };
+
+  const submitMenu = async (mode: 'create' | 'replace' | 'skip') => {
+    const res = await fetch('/api/onboarding/menu', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locationId, template, mode }),
+    });
+    if (res.status === 409) {
+      // Race: menu appeared between status check and create. Re-open the modal.
+      const status = await fetchMenuStatus();
+      setExistingMenuInfo({
+        categoryCount: status.categoryCount,
+        productCount: status.productCount,
+        modifierGroupCount: status.modifierGroupCount,
+      });
+      throw new Error('menu_already_exists');
+    }
+    if (!res.ok) throw new Error('submit_failed');
+    return res.json();
+  };
+
+  const handleReplace = async () => {
+    setBusy(true); setError(null);
+    try {
+      await submitMenu('replace');
+      setExistingMenuInfo(null);
+      setStep(3);
+    } catch (e: any) {
+      if (e?.message !== 'menu_already_exists') {
+        setError('Impossible de remplacer le menu. Réessayez.');
       }
     }
+    setBusy(false);
+  };
+
+  const handleKeep = async () => {
+    setBusy(true); setError(null);
+    try {
+      await submitMenu('skip');
+      setSkippedMenu(true);
+      setExistingMenuInfo(null);
+      setStep(3);
+    } catch (e: any) {
+      setError('Erreur. Réessayez.');
+    }
+    setBusy(false);
+  };
+
+  const handleCancelModal = () => {
+    if (busy) return; // don't allow dismissal mid-request
+    setExistingMenuInfo(null);
   };
 
   const saveHoursAndModes = async () => {
@@ -349,10 +411,39 @@ export default function WelcomePage() {
   const goToStep3 = async (skip = false) => {
     setError(null); setBusy(true);
     try {
-      if (!skip && template) await createMenu();
-      if (skip) setSkippedMenu(true);
+      if (skip) {
+        // Pre-fix behaviour preserved: "Plus tard" is a pure client-side skip.
+        // No server call — the wizard just advances with skippedMenu=true.
+        setSkippedMenu(true);
+        setStep(3);
+        setBusy(false);
+        return;
+      }
+      if (!template) {
+        // Should not happen (button is disabled) but be defensive.
+        setStep(3);
+        setBusy(false);
+        return;
+      }
+      const status = await fetchMenuStatus();
+      if (status.hasMenu) {
+        // Branch into the modal — do NOT advance. handleReplace / handleKeep
+        // will bump setStep(3) after user decides.
+        setExistingMenuInfo({
+          categoryCount: status.categoryCount,
+          productCount: status.productCount,
+          modifierGroupCount: status.modifierGroupCount,
+        });
+        setBusy(false);
+        return;
+      }
+      await submitMenu('create');
       setStep(3);
-    } catch (e: any) { setError('Impossible de créer le menu. Réessayez.'); }
+    } catch (e: any) {
+      if (e?.message !== 'menu_already_exists') {
+        setError('Impossible de créer le menu. Réessayez.');
+      }
+    }
     setBusy(false);
   };
 
@@ -590,6 +681,16 @@ export default function WelcomePage() {
             </button>
           </div>
         </div>
+      )}
+
+      {existingMenuInfo && (
+        <MenuExistsModal
+          existingInfo={existingMenuInfo}
+          onReplace={handleReplace}
+          onKeep={handleKeep}
+          onCancel={handleCancelModal}
+          busy={busy}
+        />
       )}
     </div>
   );
