@@ -109,3 +109,80 @@ Un tenant sans Cloudinary peut utiliser tout le produit sauf images. Acceptable 
 ## `npm_package_version` dans `/api/health`
 
 `process.env.npm_package_version` est injecté par npm au runtime, pas une variable d'env au sens config. Pas dans le schéma zod volontairement. Laissé en `process.env.X` direct.
+
+---
+
+## Post-deploy 2026-04-20 — points à traiter
+
+### 1. Commit monolithique `6ca53ca` — dette d'historique
+
+Le commit `6ca53ca chore: snapshot current production state before deploy` couvre **167 fichiers, +14193/-1574 lignes**. Il mélange :
+- Blockers sécurité #1 (AUTH_SECRET fail-hard)
+- Blocker #3 (env validator zod)
+- Blocker #2 (OrderChannel cross-tenant fix)
+- Tout le backlog pré-session jamais commité (onboarding wizard, signup, Stripe, landing, trial gate, emails, middleware tenant, etc.)
+
+Conséquences :
+- `git revert` d'un blocker isolé = impossible sans cherry-picking manuel.
+- `git bisect` peu utile pour cerner un bug introduit avant ce commit.
+- Code review rétroactive ingérable.
+
+**À décomposer rétroactivement** à la prochaine séance de code calme, avant d'accumuler d'autres commits par-dessus :
+```bash
+git reset --soft pre-beta-deploy-2026-04-20^
+git add -p   # découper en commits logiques (auth, env, channels, backlog, etc.)
+```
+Pas urgent, mais à faire avant que ce commit soit enterré sous 10 autres.
+
+### 2. Backup JSON prod à supprimer J+1
+
+Fichier `2h-frites/backup_orderchannel_prod_1776706180342.json` (gitignored, local uniquement) contient la row `uber_eats` pré-migration. Conservé 24h comme filet de sécurité. **À supprimer le 2026-04-21** si la migration OrderChannel reste stable. Ce rappel doit vivre dans un agenda externe — ce fichier ne sera pas relu ce jour-là.
+
+### 3. Cron `trial-reminders` à vérifier J+1
+
+Nouveau `CRON_SECRET` (64 hex chars) déployé sur brizo + h2frites. Prochaine exécution programmée à 08:00 UTC (config dans `2h-frites/vercel.json`).
+
+**Check le 2026-04-21** sur Vercel Functions logs :
+- Invocation présente ✓
+- Status 200 ✓
+- Durée raisonnable (< 10s attendus pour un scan des orgs en trial)
+
+Si 401 → `CRON_SECRET` côté Vercel Functions ne matche pas celui envoyé par Vercel Cron. Vérifier que la var est bien **en Production** (pas seulement Preview/Dev) sur le projet qui héberge le cron (brizo).
+
+### 4. Git push 403 sur `DOMINUS-DOM/assets`
+
+Les creds machine sont `daoia-conceptus` (via `gh auth` credential helper, scopes `repo`). Push refusé alors que `ls-remote` fonctionne — donc read OK, write refusé. Diagnostic complet fait, **aucune modif remote/creds sans GO explicite**.
+
+Conséquence : le commit `6ca53ca` + le tag `pre-beta-deploy-2026-04-20` n'existent **que localement** tant que pas de résolution. Perte disque = perte de l'historique des 3 fixes sécurité.
+
+Options envisagées (pour décision ultérieure) :
+- Switch `gh auth` vers un compte avec push rights sur `DOMINUS-DOM/assets`.
+- Ajouter un remote mirror (`backup`) sur un repo dont `daoia-conceptus` a le write.
+- Demander invite collaborator à l'admin `DOMINUS-DOM`.
+
+### 5. Procédure de rollback — référence d'urgence
+
+**Rollback code** (chaque projet Vercel séparément) :
+```bash
+cd /Users/conceptus/Desktop/2H/assets/2h-frites && npx vercel rollback   # brizo
+cd /Users/conceptus/Desktop/2H/assets && npx vercel rollback              # h2frites
+```
+
+**Rollback DB** — reverser la migration `OrderChannel.organizationId`, dans cet ordre exact :
+```sql
+ALTER TABLE "OrderChannel" DROP CONSTRAINT "OrderChannel_organizationId_fkey";
+DROP INDEX "OrderChannel_organizationId_idx";
+ALTER TABLE "OrderChannel" ALTER COLUMN "organizationId" DROP NOT NULL;
+ALTER TABLE "OrderChannel" DROP COLUMN "organizationId";
+```
+À exécuter via `prisma db execute --url $PROD_DB --stdin`. Restaurer la row depuis `backup_orderchannel_prod_*.json` si elle a été modifiée entre deploy et rollback (cf. point 2 pour le fichier).
+
+**Ordre en cas d'incident** : code rollback d'abord (Vercel), puis DB seulement si nécessaire (le code revenu ne fera plus de queries sur `organizationId` donc la colonne peut rester sans casse immédiate).
+
+### 6. `vercel env pull` — vars fraîchement ajoutées pullent `empty`
+
+**Hypothèse initiale infirmée** : le flag `--environment=production` n'est pas en cause. Diag Tâche 2 du 2026-04-20 confirme : même avec le flag explicite, les 3 vars ajoutées via CLI pendant ce deploy (`CRON_SECRET`, `KIOSK_API_KEY` sur brizo, `BRIZO_SUPPORT_EMAIL`) pullent `empty`, tandis que les vars plus anciennes (`KIOSK_API_KEY` sur h2frites, 8 jours d'âge) pullent leur vraie valeur.
+
+**Comportement réel** : les vars ajoutées via `vercel env add` retournent vide dans `vercel env pull` pendant une fenêtre de propagation non documentée (probablement plusieurs heures). **Builds Vercel et runtime Functions les consomment correctement pendant cette fenêtre** — le build brizo de cette session a bien lu `CRON_SECRET` via le validator zod sans échec, preuve que la valeur est bien servie au buildtime malgré l'`env pull` empty.
+
+**Implication pratique** : ne pas se fier à `vercel env pull` juste après un `env add` pour valider qu'une var est bien en place. Utiliser `vercel env ls` (qui retourne `Encrypted` immédiatement) + un build test si doute. À re-vérifier dans 24h : les 3 vars devraient alors pull `present`.
