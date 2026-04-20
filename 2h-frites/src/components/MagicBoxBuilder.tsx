@@ -99,7 +99,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
   const ToggleBtn = ({ label, active, onToggle, emoji }: { label: string; active: boolean; onToggle: () => void; emoji?: string }) => (
     <button onClick={onToggle}
       className={`flex-1 p-4 rounded-xl border text-center transition-all active:scale-[0.97] ${
-        active ? 'bg-amber-500/15 border-amber-500/50 text-amber-400 font-bold' : 'bg-zinc-900 border-zinc-800/50 text-zinc-400'
+        active ? 'bg-amber-500/15 border-amber-500/50 text-[#B45309] font-bold' : 'bg-white border-[#EDEBE7]/50 text-[#6B6B6B]'
       }`}>
       {emoji && <span className="text-2xl block mb-1">{emoji}</span>}
       <span className="text-sm">{label}</span>
@@ -117,18 +117,18 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col">
+    <div className="fixed inset-0 z-50 bg-[#FAFAF8] flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-10">
+      <header className="sticky top-0 bg-[#FAFAF8]/95 backdrop-blur-md border-b border-[#EDEBE7]/50 px-4 py-3 z-10">
         <div className="flex items-center justify-between max-w-lg lg:max-w-5xl mx-auto">
-          <button onClick={onClose} className="text-zinc-400 text-sm">← {t.ui.bld_back}</button>
-          <h1 className="text-sm font-bold text-white">🎁 {getItemName(item.id, item.name)}</h1>
-          <span className="text-xs text-amber-400 font-bold">{formatPrice(basePrice)} €</span>
+          <button onClick={onClose} className="text-[#6B6B6B] text-sm">← {t.ui.bld_back}</button>
+          <h1 className="text-sm font-bold text-[#1A1A1A]">🎁 {getItemName(item.id, item.name)}</h1>
+          <span className="text-xs text-[#B45309] font-bold">{formatPrice(basePrice)} €</span>
         </div>
         <div className="flex gap-1 mt-2 max-w-lg lg:max-w-5xl mx-auto">
           {MAGIC_BOX_STEPS.map((s, i) => (
             <div key={s} className={`flex-1 h-1 rounded-full transition-colors ${
-              i <= stepIndex ? 'bg-amber-500' : 'bg-zinc-800'
+              i <= stepIndex ? 'bg-amber-500' : 'bg-[#F5F3EF]'
             }`} />
           ))}
         </div>
@@ -136,7 +136,7 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto px-4 py-4 max-w-lg lg:max-w-5xl mx-auto w-full">
-        <h2 className="text-lg font-bold text-white mb-1">
+        <h2 className="text-lg font-bold text-[#1A1A1A] mb-1">
           {stepIndex + 1}. {STEP_LABELS[step]}
         </h2>
 
@@ -152,19 +152,19 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
 
         {step === 'snack' && isExtra && (
           <>
-            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_mb_chooseFromMenu}</p>
+            <p className="text-xs text-[#8A8A8A] mb-3">{t.ui.bld_mb_chooseFromMenu}</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 pb-4">
               {meatItems.map((m) => (
                 <button key={m.id} onClick={() => setSnack(m.id)}
                   className={`p-3 rounded-xl border text-left transition-all active:scale-[0.97] ${
                     snack === m.id
                       ? 'bg-amber-500/15 border-amber-500/50 ring-1 ring-amber-500/30'
-                      : 'bg-zinc-900 border-zinc-800/50 hover:border-zinc-700'
+                      : 'bg-white border-[#EDEBE7]/50 hover:border-[#EDEBE7]'
                   }`}>
-                  <p className={`text-sm font-medium ${snack === m.id ? 'text-amber-400' : 'text-white'}`}>
+                  <p className={`text-sm font-medium ${snack === m.id ? 'text-[#B45309]' : 'text-[#1A1A1A]'}`}>
                     {getItemName(m.id, m.name)}
                   </p>
-                  {snack === m.id && <span className="text-amber-400 text-xs">✓</span>}
+                  {snack === m.id && <span className="text-[#B45309] text-xs">✓</span>}
                 </button>
               ))}
             </div>
@@ -184,19 +184,19 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
         {/* STEP 3: Sauce (1 seule) */}
         {step === 'sauce' && (
           <>
-            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_mb_chooseSauce}</p>
+            <p className="text-xs text-[#8A8A8A] mb-3">{t.ui.bld_mb_chooseSauce}</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 pb-4">
               {sauceItems.map((s) => (
                 <button key={s.id} onClick={() => setSauce(s)}
                   className={`p-3 rounded-xl border text-left transition-all active:scale-[0.97] ${
                     sauce?.id === s.id
                       ? 'bg-amber-500/15 border-amber-500/50 ring-1 ring-amber-500/30'
-                      : 'bg-zinc-900 border-zinc-800/50 hover:border-zinc-700'
+                      : 'bg-white border-[#EDEBE7]/50 hover:border-[#EDEBE7]'
                   }`}>
-                  <p className={`text-sm font-medium ${sauce?.id === s.id ? 'text-amber-400' : 'text-white'}`}>
+                  <p className={`text-sm font-medium ${sauce?.id === s.id ? 'text-[#B45309]' : 'text-[#1A1A1A]'}`}>
                     {getItemName(s.id, s.name)}
                   </p>
-                  {sauce?.id === s.id && <span className="text-amber-400 text-xs">✓</span>}
+                  {sauce?.id === s.id && <span className="text-[#B45309] text-xs">✓</span>}
                 </button>
               ))}
             </div>
@@ -225,53 +225,53 @@ export default function MagicBoxBuilder({ item, isExtra, onClose, onAdd }: Props
 
         {/* STEP 6: Summary */}
         {step === 'summary' && (
-          <div className="mt-3 p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-2">
+          <div className="mt-3 p-4 rounded-xl bg-white border border-[#EDEBE7]/50 space-y-2">
             <div className="flex justify-between">
-              <span className="text-white font-medium">🎁 {getItemName(item.id, item.name)}</span>
-              <span className="text-amber-400 font-bold">{formatPrice(basePrice)} €</span>
+              <span className="text-[#1A1A1A] font-medium">🎁 {getItemName(item.id, item.name)}</span>
+              <span className="text-[#B45309] font-bold">{formatPrice(basePrice)} €</span>
             </div>
-            <div className="border-t border-zinc-800 pt-2 space-y-1 text-sm">
-              <p className="text-zinc-400">
+            <div className="border-t border-[#EDEBE7] pt-2 space-y-1 text-sm">
+              <p className="text-[#6B6B6B]">
                 🍖 {isExtra ? (meatItems.find((m) => m.id === snack)?.name || snack) : (MAGIC_BOX_SNACKS.find((s) => s.id === snack)?.name)}
               </p>
-              <p className="text-zinc-400">
+              <p className="text-[#6B6B6B]">
                 🍟 Frites {withSalt ? 'avec sel' : 'sans sel'}{withSpice ? ', épicées' : ''}
               </p>
-              <p className="text-zinc-400">
+              <p className="text-[#6B6B6B]">
                 🫙 {sauce ? getItemName(sauce.id, sauce.name) : '—'}
               </p>
-              <p className="text-zinc-400">
+              <p className="text-[#6B6B6B]">
                 {BOISSONS.find((b) => b.id === boisson)?.emoji} {BOISSONS.find((b) => b.id === boisson)?.name}
               </p>
-              <p className="text-zinc-400">
+              <p className="text-[#6B6B6B]">
                 {JOUETS.find((j) => j.id === jouet)?.emoji} {JOUETS.find((j) => j.id === jouet)?.name}
               </p>
             </div>
-            <div className="border-t border-zinc-700 pt-2 flex justify-between">
-              <span className="text-white font-bold">{t.ui.bld_total}</span>
-              <span className="text-amber-400 font-bold text-lg">{formatPrice(basePrice)} €</span>
+            <div className="border-t border-[#EDEBE7] pt-2 flex justify-between">
+              <span className="text-[#1A1A1A] font-bold">{t.ui.bld_total}</span>
+              <span className="text-[#B45309] font-bold text-lg">{formatPrice(basePrice)} €</span>
             </div>
           </div>
         )}
       </main>
 
       {/* Footer */}
-      <footer className="sticky bottom-0 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/50 px-4 py-3">
+      <footer className="sticky bottom-0 bg-[#FAFAF8]/95 backdrop-blur-md border-t border-[#EDEBE7]/50 px-4 py-3">
         <div className="flex gap-3 max-w-lg lg:max-w-5xl mx-auto">
           {stepIndex > 0 && (
             <button onClick={prevStep}
-              className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">
+              className="px-4 py-3 rounded-xl bg-[#F5F3EF] text-[#1A1A1A] font-medium text-sm flex-1">
               ← {t.ui.bld_previous}
             </button>
           )}
           {step === 'summary' ? (
             <button onClick={handleAddToCart}
-              className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
+              className="px-4 py-3 rounded-xl bg-[#1A1A1A] text-white font-bold text-sm flex-1 active:scale-[0.97]">
               {t.ui.bld_addToCart} — {formatPrice(basePrice)} €
             </button>
           ) : (
             <button onClick={nextStep} disabled={!canNext()}
-              className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97] disabled:opacity-50">
+              className="px-4 py-3 rounded-xl bg-[#1A1A1A] text-white font-bold text-sm flex-1 active:scale-[0.97] disabled:opacity-50">
               {t.ui.bld_next} →
             </button>
           )}

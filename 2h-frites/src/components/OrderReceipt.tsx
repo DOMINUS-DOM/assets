@@ -1,6 +1,7 @@
 'use client';
 
 import { formatPrice } from '@/utils/format';
+import { useTenant } from '@/contexts/TenantContext';
 
 interface ReceiptProps {
   order: any;
@@ -8,6 +9,9 @@ interface ReceiptProps {
 }
 
 export default function OrderReceipt({ order, onClose }: ReceiptProps) {
+  const { tenant } = useTenant();
+  const businessName = tenant?.branding?.brandName || tenant?.name || 'Restaurant';
+  const businessTagline = tenant?.branding?.tagline || '';
   const handlePrint = () => {
     window.print();
   };
@@ -24,8 +28,8 @@ export default function OrderReceipt({ order, onClose }: ReceiptProps) {
 
         {/* Receipt content */}
         <div className="text-center mb-4 print:mb-2">
-          <h1 className="text-lg font-extrabold">2H Frites Artisanales</h1>
-          <p className="text-xs text-gray-500">Les Deux Haine</p>
+          <h1 className="text-lg font-extrabold">{businessName}</h1>
+          {businessTagline && <p className="text-xs text-gray-500">{businessTagline}</p>}
         </div>
 
         <div className="border-t border-dashed border-gray-300 pt-3 mb-3 print:pt-1 print:mb-1">
@@ -70,14 +74,14 @@ export default function OrderReceipt({ order, onClose }: ReceiptProps) {
           </div>
           <div className="flex justify-between text-xs text-gray-500">
             <span>Paiement</span>
-            <span>{order.paymentMethod === 'on_pickup' ? 'Especes' : order.paymentMethod === 'online' ? 'En ligne' : 'Carte'}</span>
+            <span>{order.paymentMethod === 'cash' || order.paymentMethod === 'on_pickup' ? 'Espèces' : order.paymentMethod === 'online' ? 'En ligne' : 'Carte'}</span>
           </div>
         </div>
 
         {/* Footer */}
         <div className="text-center mt-4 pt-3 border-t border-dashed border-gray-300 print:mt-2 print:pt-1">
           <p className="text-xs text-gray-500">Merci de votre visite !</p>
-          <p className="text-xs text-gray-400">2hfrites.be</p>
+          <p className="text-xs text-gray-400"></p>
         </div>
 
         {/* Print button (hidden in print) */}

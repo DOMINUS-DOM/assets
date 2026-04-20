@@ -70,7 +70,7 @@ export default function ReferralPage() {
         <div>
           <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">{t.ui.ref_redeem}</h3>
           <form onSubmit={handleRedeem} className="flex gap-2">
-            <input className={ic} placeholder="2H-XXXXXX" value={redeemCode} onChange={(e) => setRedeemCode(e.target.value.toUpperCase())} />
+            <input className={ic} placeholder="XXXXXXXX" value={redeemCode} onChange={(e) => setRedeemCode(e.target.value.toUpperCase())} />
             <button type="submit" className="px-5 py-3.5 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm shrink-0">✓</button>
           </form>
           {redeemResult === 'success' && <p className="text-emerald-400 text-sm mt-2 text-center">🎉 {t.ui.ref_redeemSuccess}</p>}

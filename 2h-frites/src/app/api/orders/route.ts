@@ -1,8 +1,9 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden, enforceLocation } from '@/lib/auth';
+import { getAuthUser, getRequiredOrgId, getLocationIdsForOrg, resolveOrgFromRequest, ADMIN_ROLES, unauthorized, forbidden } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
+import { env } from '@/lib/env';
 
 // Generate unique order number from DB (no in-memory counter)
 async function nextOrderNumber(): Promise<string> {
@@ -24,7 +25,13 @@ export async function GET(req: NextRequest) {
 
   // Public path: single order lookup for tracking (no PII)
   if (orderNumber || orderId) {
-    const where = orderId ? { id: orderId } : { orderNumber: orderNumber! };
+    // Scope by tenant to prevent cross-tenant order enumeration
+    const orgId = await resolveOrgFromRequest(req);
+    const tenantLocationIds = orgId ? await getLocationIdsForOrg(orgId) : [];
+    const baseWhere = orderId ? { id: orderId } : { orderNumber: orderNumber! };
+    const where = tenantLocationIds.length > 0
+      ? { ...baseWhere, locationId: { in: tenantLocationIds } }
+      : baseWhere;
     const order = await prisma.order.findFirst({
       where,
       include: { items: true, statusHistory: { orderBy: { at: 'asc' } } },
@@ -36,14 +43,25 @@ export async function GET(req: NextRequest) {
   }
 
   // Authenticated path: list all orders (admin only)
-  const auth = getAuthUser(req);
-  if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
+  const orgResult = getRequiredOrgId(req);
+  if (!orgResult) return unauthorized();
+  const { auth, orgId } = orgResult;
+  if (!ADMIN_ROLES.includes(auth.role)) return forbidden();
 
-  const locationId = req.nextUrl.searchParams.get('locationId');
-  const effectiveLocation = enforceLocation(auth, locationId);
+  const orgLocationIds = await getLocationIdsForOrg(orgId);
+  if (orgLocationIds.length === 0) return NextResponse.json([]);
+
+  const requestedLocationId = req.nextUrl.searchParams.get('locationId');
+  let where: any;
+  if (requestedLocationId) {
+    // Verify the requested locationId belongs to the user's org
+    if (!orgLocationIds.includes(requestedLocationId)) return forbidden();
+    where = { locationId: requestedLocationId };
+  } else {
+    where = { locationId: { in: orgLocationIds } };
+  }
+
   const limit = parseInt(req.nextUrl.searchParams.get('limit') || '200');
-  const where = effectiveLocation ? { locationId: effectiveLocation } : {};
-
   const orders = await prisma.order.findMany({
     where,
     include: { items: true, statusHistory: { orderBy: { at: 'asc' } } },
@@ -62,12 +80,25 @@ export async function POST(req: NextRequest) {
   if (action === 'create') {
     // Kiosk: authenticate via X-Kiosk-Key header
     const kioskKey = req.headers.get('x-kiosk-key');
-    const isKiosk = !!(kioskKey && process.env.KIOSK_API_KEY && kioskKey === process.env.KIOSK_API_KEY);
+    const isKiosk = !!(kioskKey && kioskKey === env.KIOSK_API_KEY);
     // Client orders (from website) are allowed without auth
     const isClientOrder = body.customerPhone || body.customerEmail;
     if (!auth && !isKiosk && !isClientOrder) return unauthorized();
 
-    const orderNumber = await nextOrderNumber();
+    // Resolve org and validate locationId
+    let resolvedLocationId: string | null = body.locationId || null;
+    const orgId = auth?.organizationId || await resolveOrgFromRequest(req);
+    if (orgId) {
+      const orgLocationIds = await getLocationIdsForOrg(orgId);
+      if (resolvedLocationId) {
+        if (!orgLocationIds.includes(resolvedLocationId)) {
+          return NextResponse.json({ error: 'location_not_in_org' }, { status: 403 });
+        }
+      } else if (orgLocationIds.length > 0) {
+        resolvedLocationId = orgLocationIds[0];
+      }
+    }
+
     // Validate userId exists before linking (prevents FK crash)
     let validUserId = null;
     if (body.userId) {
@@ -75,43 +106,63 @@ export async function POST(req: NextRequest) {
       if (userExists) validUserId = body.userId;
     }
 
+    // Retry on unique-constraint collisions: nextOrderNumber() is a read-then-increment
+    // without locking, so concurrent creates (rush hour!) race on the same number.
+    // We regenerate and retry up to 20 times with exponential jitter — enough to let
+    // a burst of ~15 simultaneous tills serialize cleanly without losing an order.
     let order;
-    try {
-      order = await prisma.order.create({
-        data: {
-          orderNumber,
-          type: body.type,
-          customerName: body.customerName || 'Client',
-          customerPhone: body.customerPhone || '',
-          customerEmail: body.customerEmail || null,
-          deliveryStreet: body.deliveryStreet || null,
-          deliveryCity: body.deliveryCity || null,
-          deliveryPostal: body.deliveryPostal || null,
-          deliveryNotes: body.deliveryNotes || null,
-          pickupTime: body.pickupTime || null,
-          paymentMethod: body.paymentMethod || 'on_pickup',
-          paymentStatus: body.paymentStatus || 'pending',
-          channel: isKiosk ? 'kiosk' : (body.channel || 'website'),
-          total: body.total || 0,
-          userId: validUserId,
-          locationId: body.locationId || null,
-          items: { create: (body.items || []).map((item: any) => ({
-            menuItemId: item.menuItemId || 'unknown',
-            name: item.name || 'Article',
-            price: item.price || 0,
-            quantity: item.quantity || 1,
-            sizeKey: item.sizeKey || null,
-            categoryId: item.categoryId || 'unknown',
-          })) },
-          statusHistory: { create: { status: 'received' } },
-        },
-        include: { items: true, statusHistory: true },
-      });
-    } catch (e: any) {
-      console.error('Order creation error:', e.message);
-      return NextResponse.json({ error: 'order_creation_failed', details: e.message?.slice(0, 200) }, { status: 500 });
+    let lastErr: any = null;
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const orderNumber = await nextOrderNumber();
+      try {
+        order = await prisma.order.create({
+          data: {
+            orderNumber,
+            type: body.type,
+            customerName: body.customerName || 'Client',
+            customerPhone: body.customerPhone || '',
+            customerEmail: body.customerEmail || null,
+            deliveryStreet: body.deliveryStreet || null,
+            deliveryCity: body.deliveryCity || null,
+            deliveryPostal: body.deliveryPostal || null,
+            deliveryNotes: body.deliveryNotes || null,
+            pickupTime: body.pickupTime || null,
+            paymentMethod: body.paymentMethod || 'on_pickup',
+            paymentStatus: body.paymentStatus || 'pending',
+            channel: isKiosk ? 'kiosk' : (body.channel || 'website'),
+            total: body.total || 0,
+            userId: validUserId,
+            locationId: resolvedLocationId,
+            items: { create: (body.items || []).map((item: any) => ({
+              menuItemId: item.menuItemId || 'unknown',
+              name: item.name || 'Article',
+              price: item.price || 0,
+              quantity: item.quantity || 1,
+              sizeKey: item.sizeKey || null,
+              categoryId: item.categoryId || 'unknown',
+              extras: item.extras || '[]',
+            })) },
+            statusHistory: { create: { status: 'received' } },
+          },
+          include: { items: true, statusHistory: true },
+        });
+        break;
+      } catch (e: any) {
+        lastErr = e;
+        // Prisma P2002 = unique constraint violation. Other errors = bail.
+        const isUniqueViolation = e?.code === 'P2002' || /Unique constraint/i.test(e?.message || '');
+        if (!isUniqueViolation) break;
+        // Exponential backoff with jitter — widens the window as collisions persist,
+        // so competing writers eventually pick distinct numbers.
+        const base = 20 * Math.min(attempt + 1, 8);
+        await new Promise((r) => setTimeout(r, base + Math.floor(Math.random() * base)));
+      }
     }
-    logAudit({ userId: auth?.userId, locationId: order.locationId, action: 'create', entity: 'Order', entityId: order.id, changes: { orderNumber, total: body.total, channel: isKiosk ? 'kiosk' : 'website' } });
+    if (!order) {
+      console.error('Order creation error:', lastErr?.message);
+      return NextResponse.json({ error: 'order_creation_failed', details: (lastErr?.message || '').slice(0, 200) }, { status: 500 });
+    }
+    logAudit({ userId: auth?.userId, locationId: order.locationId, action: 'create', entity: 'Order', entityId: order.id, changes: { orderNumber: order.orderNumber, total: body.total, channel: isKiosk ? 'kiosk' : 'website' } });
     return NextResponse.json(order);
   }
 
@@ -121,6 +172,13 @@ export async function POST(req: NextRequest) {
     const VALID_STATUSES = ['received', 'preparing', 'ready', 'delivering', 'delivered', 'picked_up', 'cancelled'];
     if (!orderId || !status || !VALID_STATUSES.includes(status)) {
       return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
+    }
+    // Verify order belongs to user's org
+    if (auth.organizationId) {
+      const orgLocationIds = await getLocationIdsForOrg(auth.organizationId);
+      const existingOrder = await prisma.order.findUnique({ where: { id: orderId }, select: { locationId: true } });
+      if (!existingOrder) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      if (!existingOrder.locationId || !orgLocationIds.includes(existingOrder.locationId)) return forbidden();
     }
     await prisma.order.update({ where: { id: orderId }, data: { status } });
     await prisma.statusEntry.create({ data: { orderId, status } });
@@ -187,6 +245,13 @@ export async function POST(req: NextRequest) {
   if (action === 'assignDriver') {
     if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
     const { orderId, driverId } = body;
+    // Verify order belongs to user's org
+    if (auth.organizationId) {
+      const orgLocationIds = await getLocationIdsForOrg(auth.organizationId);
+      const existingOrder = await prisma.order.findUnique({ where: { id: orderId }, select: { locationId: true } });
+      if (!existingOrder) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      if (!existingOrder.locationId || !orgLocationIds.includes(existingOrder.locationId)) return forbidden();
+    }
     await prisma.order.update({ where: { id: orderId }, data: { driverId } });
     return NextResponse.json({ ok: true });
   }
@@ -194,6 +259,13 @@ export async function POST(req: NextRequest) {
   if (action === 'updatePayment') {
     if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
     const { orderId, paymentStatus } = body;
+    // Verify order belongs to user's org
+    if (auth.organizationId) {
+      const orgLocationIds = await getLocationIdsForOrg(auth.organizationId);
+      const existingOrder = await prisma.order.findUnique({ where: { id: orderId }, select: { locationId: true } });
+      if (!existingOrder) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+      if (!existingOrder.locationId || !orgLocationIds.includes(existingOrder.locationId)) return forbidden();
+    }
     await prisma.order.update({ where: { id: orderId }, data: { paymentStatus } });
     return NextResponse.json({ ok: true });
   }

@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Locale } from '@/types';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useTenant } from '@/contexts/TenantContext';
 
 /* ───── Language data ───── */
 const LOCALES: { code: Locale; label: string; flag: string }[] = [
@@ -14,6 +15,19 @@ const LOCALES: { code: Locale; label: string; flag: string }[] = [
 
 const WELCOME_WORDS = ['Bienvenue', 'Welcome', 'Bienvenido', 'Welkom'];
 
+// Generic brand mark: tenant logo if set, else tenant name in text, else nothing.
+// Avoids a 2H-branded fallback image for tenants with no logo.
+function TenantBrandMark({ className = '' }: { className?: string }) {
+  const { tenant } = useTenant();
+  const name = tenant?.branding?.brandName || tenant?.name || '';
+  if (tenant?.branding?.logoUrl) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={tenant.branding.logoUrl} alt={name || 'Restaurant'} className={`object-contain ${className}`} />;
+  }
+  if (name) return <p className={`text-2xl font-extrabold text-white tracking-tight ${className}`}>{name}</p>;
+  return null;
+}
+
 /* ═══════════════════════════════════════════
    ANIMATED DEMOS — one per slide
    ═══════════════════════════════════════════ */
@@ -22,8 +36,7 @@ const WELCOME_WORDS = ['Bienvenue', 'Welcome', 'Bienvenido', 'Welkom'];
 function DemoWelcome() {
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/logo.png" alt="2H Frites" className="h-16 w-auto animate-fade-in" />
+      <TenantBrandMark className="h-16 w-auto animate-fade-in" />
       <div className="flex gap-2 mt-1">
         {['🍔', '🥤', '🥩', '🫙', '🥗'].map((e, i) => (
           <span
@@ -245,8 +258,7 @@ function DemoTrack() {
 function DemoReady() {
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/logo.png" alt="2H Frites" className="h-14 w-auto" />
+      <TenantBrandMark className="h-14 w-auto" />
       <div className="flex flex-wrap justify-center gap-3 w-56 mx-auto">
         {['🎉', '😋', '🔥', '❤️'].map((e, i) => (
           <span
@@ -342,8 +354,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     return (
       <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col items-center justify-center px-6 animate-fade-in">
         <div className="text-center mb-10">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="2H Frites Artisanales" className="h-16 w-auto mx-auto mb-4" />
+          <div className="mb-4 flex justify-center"><TenantBrandMark className="h-16 w-auto" /></div>
           <div className="mt-4 h-8 flex items-center justify-center">
             <p className={`text-zinc-400 text-lg font-medium transition-opacity duration-300 ${fadeWelcome ? 'opacity-100' : 'opacity-0'}`}>
               {WELCOME_WORDS[welcomeIndex]} 👋

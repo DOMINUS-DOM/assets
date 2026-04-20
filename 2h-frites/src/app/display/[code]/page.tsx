@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { menuStore } from '@/stores/menuStore';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { formatPrice } from '@/utils/format';
 
 interface ContentItem {
@@ -101,12 +102,17 @@ function StandbyScreen({ screenName }: { screenName?: string }) {
     return () => clearInterval(interval);
   }, []);
 
+  const { tenant } = useTenant();
+  const displayName = tenant?.branding?.brandName || tenant?.name || 'Restaurant';
   return (
     <div className="h-full flex flex-col items-center justify-center bg-zinc-950">
-      <span className="text-8xl mb-6">&#127839;</span>
-      <h1 className="text-4xl font-extrabold text-white mb-2">
-        <span className="text-amber-400">2H</span> Frites Artisanales
-      </h1>
+      {tenant?.branding?.logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={tenant.branding.logoUrl} alt={displayName} className="h-28 w-auto mb-6 object-contain" />
+      ) : (
+        <span className="text-8xl mb-6">&#127869;</span>
+      )}
+      <h1 className="text-4xl font-extrabold text-white mb-2">{displayName}</h1>
       {screenName && <p className="text-zinc-500 text-sm mb-8">{screenName}</p>}
       <p className="text-6xl font-bold text-amber-400 tabular-nums">
         {time.toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -122,6 +128,8 @@ function StandbyScreen({ screenName }: { screenName?: string }) {
 
 function HeaderBar() {
   const [time, setTime] = useState(new Date());
+  const { tenant } = useTenant();
+  const displayName = tenant?.branding?.brandName || tenant?.name || 'Restaurant';
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(interval);
@@ -130,10 +138,13 @@ function HeaderBar() {
   return (
     <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-2 bg-zinc-900/90 border-b border-zinc-800 backdrop-blur-sm">
       <div className="flex items-center gap-3">
-        <span className="text-2xl">&#127839;</span>
-        <h1 className="text-lg font-extrabold">
-          <span className="text-amber-400">2H</span> <span className="text-white">Frites</span>
-        </h1>
+        {tenant?.branding?.faviconUrl || tenant?.branding?.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={tenant.branding.faviconUrl || tenant.branding.logoUrl} alt={displayName} className="h-6 w-6 object-contain" />
+        ) : (
+          <span className="text-2xl">&#127869;</span>
+        )}
+        <h1 className="text-lg font-extrabold text-white truncate max-w-[14rem]">{displayName}</h1>
       </div>
       <p className="text-xl font-bold text-amber-400 tabular-nums">
         {time.toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' })}
@@ -148,7 +159,7 @@ function PromoBar() {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center px-6 py-2 bg-amber-500 text-black">
       <p className="text-sm font-bold tracking-wide">
-        Commandez sur 2hfrites.be
+        Commandez en ligne
       </p>
     </div>
   );

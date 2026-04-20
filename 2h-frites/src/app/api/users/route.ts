@@ -1,9 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthUser, unauthorized, forbidden } from '@/lib/auth';
+import { getAuthUser, getRequiredOrgId, getLocationIdsForOrg, unauthorized, forbidden } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { hasPermission, canManageRole, ROLE_HIERARCHY } from '@/lib/permissions';
 import { logAudit } from '@/lib/audit';
+import { sendEmployeeInviteEmail } from '@/lib/email';
+
+// Generate a readable temporary password. Avoids ambiguous chars (0/O, 1/l/I).
+function generateTempPassword(length = 10): string {
+  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  const bytes = crypto.randomBytes(length);
+  let out = '';
+  for (let i = 0; i < length; i++) out += alphabet[bytes[i] % alphabet.length];
+  return out;
+}
+
+function buildPublicUrl(req: NextRequest, path: string): string {
+  const host = req.headers.get('host') || 'brizoapp.com';
+  const forwardedProto = req.headers.get('x-forwarded-proto');
+  const isLocalhost = host.startsWith('localhost') || host.startsWith('127.0.0.1');
+  const protocol = forwardedProto || (isLocalhost ? 'http' : 'https');
+  return `${protocol}://${host}${path}`;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -12,13 +31,18 @@ export async function GET(req: NextRequest) {
   const auth = getAuthUser(req);
   if (!auth) return unauthorized();
 
+  // Tenant isolation
+  const orgResult = getRequiredOrgId(req);
+  if (!orgResult) return forbidden();
+  const { orgId } = orgResult;
+
   // Check 'users' permission
   const caller = await prisma.user.findUnique({ where: { id: auth.userId } });
   if (!caller || !hasPermission(caller, 'users')) return forbidden();
 
   const locationId = req.nextUrl.searchParams.get('locationId');
 
-  const where: any = {};
+  const where: any = { organizationId: orgId };
   // Non-franchisor_admin can only see users at or below their role level
   if (caller.role !== 'franchisor_admin') {
     const callerLevel = ROLE_HIERARCHY[caller.role] || 0;
@@ -62,9 +86,9 @@ export async function GET(req: NextRequest) {
     return uLevel <= callerLevel;
   });
 
-  // Get locations for the create form
+  // Get locations for the create form — scoped to org
   const locations = await prisma.location.findMany({
-    where: { active: true },
+    where: { active: true, organizationId: orgId },
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
   });
@@ -77,6 +101,11 @@ export async function POST(req: NextRequest) {
   const auth = getAuthUser(req);
   if (!auth) return unauthorized();
 
+  // Tenant isolation
+  const orgResult = getRequiredOrgId(req);
+  if (!orgResult) return forbidden();
+  const { orgId } = orgResult;
+
   const caller = await prisma.user.findUnique({ where: { id: auth.userId } });
   if (!caller || !hasPermission(caller, 'users')) return forbidden();
 
@@ -84,10 +113,12 @@ export async function POST(req: NextRequest) {
   const { action } = body;
 
   // ─── CREATE USER ───
+  // Admin provides email/name/role/locationId. System generates a temporary
+  // password and emails it. User is forced to change it on first login.
   if (action === 'create') {
-    const { email, password, name, phone, role, locationId } = body;
+    const { email, name, phone, role, locationId } = body;
 
-    if (!email || !password || !name || !role) {
+    if (!email || !name || !role) {
       return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
     }
 
@@ -102,7 +133,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'email_taken' }, { status: 409 });
     }
 
-    const passwordHash = bcrypt.hashSync(password, 10);
+    // Validate locationId belongs to org
+    if (locationId) {
+      const locationIds = await getLocationIdsForOrg(orgId);
+      if (!locationIds.includes(locationId)) {
+        return NextResponse.json({ error: 'location_not_in_org' }, { status: 403 });
+      }
+    }
+
+    const tempPassword = generateTempPassword();
+    const passwordHash = bcrypt.hashSync(tempPassword, 10);
+    const tempPasswordExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
@@ -111,7 +152,10 @@ export async function POST(req: NextRequest) {
         phone: phone || '',
         role,
         locationId: locationId || null,
+        organizationId: orgId,
         active: true,
+        mustChangePassword: true,
+        tempPasswordExpiresAt,
       },
       select: {
         id: true, email: true, name: true, phone: true, role: true,
@@ -121,6 +165,19 @@ export async function POST(req: NextRequest) {
     });
 
     logAudit({ userId: caller.id, action: 'create', entity: 'User', entityId: user.id, changes: { email: email.toLowerCase(), role, name } });
+
+    // Fire-and-forget invitation email with the temp password + expiry.
+    const org = await prisma.organization.findUnique({ where: { id: orgId }, select: { name: true } });
+    const loginUrl = buildPublicUrl(req, '/login');
+    sendEmployeeInviteEmail(user.email, {
+      name: user.name,
+      restaurantName: org?.name || 'BrizoApp',
+      role: user.role,
+      tempPassword,
+      loginUrl,
+      tempPasswordExpiresAt,
+    }).catch(() => {});
+
     return NextResponse.json({ user });
   }
 
@@ -134,6 +191,11 @@ export async function POST(req: NextRequest) {
 
     const target = await prisma.user.findUnique({ where: { id: userId } });
     if (!target) {
+      return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
+    }
+
+    // Tenant isolation: verify target belongs to same org
+    if (target.organizationId !== orgId) {
       return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
     }
 
@@ -187,6 +249,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
     }
 
+    // Tenant isolation: verify target belongs to same org
+    if (target.organizationId !== orgId) {
+      return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
+    }
+
     if (!canManageRole(caller.role, target.role)) {
       return NextResponse.json({ error: 'role_escalation' }, { status: 403 });
     }
@@ -211,6 +278,11 @@ export async function POST(req: NextRequest) {
 
     const target = await prisma.user.findUnique({ where: { id: userId } });
     if (!target) {
+      return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
+    }
+
+    // Tenant isolation: verify target belongs to same org
+    if (target.organizationId !== orgId) {
       return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
     }
 

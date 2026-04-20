@@ -8,23 +8,54 @@ datasource db {
 }
 
 // ═══════════════════════════════════════
+// MULTI-TENANT — Organization is the tenant boundary
+// ═══════════════════════════════════════
+
+model Organization {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  customDomain String?  @unique
+  brandingJson String   @default("{}")        // colors, logo, texts
+  modulesJson  String   @default("{}")        // enabled features (synced with addons)
+  active       Boolean  @default(true)
+  onboarded    Boolean  @default(false)          // flipped true once a tenant passes through the welcome wizard (or skips it)
+  createdAt    DateTime @default(now())
+
+  // ─── Subscription & Billing ───
+  subscriptionStatus   String    @default("trial")  // trial | active | past_due | cancelled | expired
+  planType             String?                       // starter | pro | custom (null during trial)
+  addons               String    @default("[]")      // JSON array: ["web", "kiosk", "kds", "analytics", "multiusers"]
+  trialEndsAt          DateTime?
+  cancelAt             DateTime?                     // set when user schedules cancel-at-period-end via Stripe portal
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?
+
+  locations     Location[]
+  users         User[]
+  orderChannels OrderChannel[]
+}
+
+// ═══════════════════════════════════════
 // MULTI-LOCATION / FRANCHISE
 // ═══════════════════════════════════════
 
 model Location {
-  id          String   @id @default(cuid())
-  name        String   // "2H Frites — La Louvière Centre"
-  slug        String   @unique
-  address     String
-  city        String
-  postalCode  String
-  phone       String
-  email       String
-  lat         Float?
-  lng         Float?
-  active      Boolean  @default(true)
-  settingsJson String  @default("{}") // hours, zones, fees as JSON
-  createdAt   DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String   // "2H Frites — La Louvière Centre"
+  slug           String   @unique
+  address        String
+  city           String
+  postalCode     String
+  phone          String
+  email          String
+  lat            Float?
+  lng            Float?
+  active         Boolean  @default(true)
+  settingsJson   String   @default("{}") // hours, zones, fees as JSON
+  createdAt      DateTime @default(now())
 
   users         User[]
   employees     Employee[]
@@ -43,6 +74,10 @@ model Location {
   signagePlaylists SignagePlaylist[]
   signageMedia     SignageMedia[]
 
+  // Menu catalog
+  menuCategories    MenuCategory[]
+  modifierGroups    ModifierGroup[]
+
   // New modules
   tables            FloorTable[]
   reservations      Reservation[]
@@ -59,19 +94,38 @@ model User {
   passwordHash String
   name         String
   phone        String
-  // Roles: franchisor_admin, franchisee_owner, location_manager, employe, livreur, client
-  role         String    @default("client")
-  active          Boolean   @default(true)
+  // Roles: platform_super_admin, franchisor_admin, franchisee_owner, location_manager, employe, livreur, client
+  role               String    @default("client")
+  active             Boolean   @default(true)
+  mustChangePassword Boolean   @default(false)
+  tempPasswordExpiresAt DateTime?                   // set on employee invite; login refused if elapsed
   avatarUrl       String?
   permissionsJson String    @default("{}")
   driverId        String?
-  locationId   String?
-  location     Location? @relation(fields: [locationId], references: [id])
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  locationId      String?
+  location        Location? @relation(fields: [locationId], references: [id])
   createdAt    DateTime  @default(now())
 
   employee  Employee?
   orders    Order[]
   auditLogs AuditLog[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+// One-time tokens for self-service password reset.
+// tokenHash = sha256(rawToken) so a DB leak can't be used to reset passwords.
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 // ═══════════════════════════════════════
@@ -167,6 +221,124 @@ model Task {
 }
 
 // ═══════════════════════════════════════
+// MENU CATALOG — Relational product engine
+// ═══════════════════════════════════════
+
+model MenuCategory {
+  id         String      @id @default(cuid())
+  locationId String?
+  location   Location?   @relation(fields: [locationId], references: [id])
+  parentId   String?
+  parent     MenuCategory? @relation("SubCategories", fields: [parentId], references: [id])
+  children   MenuCategory[] @relation("SubCategories")
+  slug       String
+  nameKey    String
+  icon       String      @default("🍽️")
+  imageUrl   String?     // Cloudinary public_id — preferred over icon in menu when set
+  sortOrder  Int         @default(0)
+  active     Boolean     @default(true)
+  builder    Boolean     @default(false)
+  note       String?     // "perIngredient" etc.
+  flatPrice  Float?      // if all items share one price
+
+  items MenuProduct[]
+
+  @@unique([locationId, slug])
+  @@index([locationId])
+  @@index([parentId])
+}
+
+model MenuProduct {
+  id          String       @id @default(cuid())
+  categoryId  String
+  category    MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name        String
+  nameKey     String?      // i18n key
+  descKey     String?      // i18n description key
+  price       Float?
+  active      Boolean      @default(true)
+  available   Boolean      @default(true)    // false = rupture de stock temporaire
+  visibleOnPos   Boolean   @default(true)
+  visibleOnWeb   Boolean   @default(true)
+  visibleOnKiosk Boolean   @default(true)
+  sortOrder   Int          @default(0)
+  tags        String       @default("[]")   // JSON: ["popular","spicy"]
+  allergens   String       @default("[]")   // JSON: [1,3,7]
+  subcategory String?
+  priceLabel  String?
+  imageUrl    String?
+
+  sizes          ProductSize[]
+  modifierLinks  ProductModifierGroup[]
+  builderConfig  BuilderConfig?
+  orderItems     OrderItem[]
+  recipe         Recipe?         @relation("ProductRecipe")
+
+  @@index([categoryId])
+}
+
+model ProductSize {
+  id        String      @id @default(cuid())
+  productId String
+  product   MenuProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sizeKey   String      // "petit", "moyen", "grand"
+  price     Float
+  sortOrder Int         @default(0)
+
+  @@unique([productId, sizeKey])
+}
+
+model ModifierGroup {
+  id         String     @id @default(cuid())
+  locationId String?
+  location   Location?  @relation(fields: [locationId], references: [id])
+  name       String     // "Sauces", "Supplements", "Boissons"
+  nameKey    String?    // i18n
+  minSelect  Int        @default(0)
+  maxSelect  Int        @default(1)
+  required   Boolean    @default(false)
+  sortOrder  Int        @default(0)
+
+  modifiers    Modifier[]
+  productLinks ProductModifierGroup[]
+
+  @@index([locationId])
+}
+
+model Modifier {
+  id        String        @id @default(cuid())
+  groupId   String
+  group     ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name      String
+  nameKey   String?
+  price     Float         @default(0)
+  active    Boolean       @default(true)
+  sortOrder Int           @default(0)
+
+  @@index([groupId])
+}
+
+model ProductModifierGroup {
+  id        String        @id @default(cuid())
+  productId String
+  product   MenuProduct   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  groupId   String
+  group     ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sortOrder Int           @default(0)
+
+  @@unique([productId, groupId])
+}
+
+model BuilderConfig {
+  id        String      @id @default(cuid())
+  productId String      @unique
+  product   MenuProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  basePrice Float
+  steps     String      // JSON: [{key, label, groupId, maxSelect, type, options}]
+  options   String?     // JSON: extra config (salt toggle, etc.)
+}
+
+// ═══════════════════════════════════════
 // ORDERS — with locationId
 // ═══════════════════════════════════════
 
@@ -208,15 +380,20 @@ model Order {
 }
 
 model OrderItem {
-  id         String @id @default(cuid())
+  id         String       @id @default(cuid())
   orderId    String
-  order      Order  @relation(fields: [orderId], references: [id])
+  order      Order        @relation(fields: [orderId], references: [id])
   menuItemId String
+  productId  String?
+  product    MenuProduct? @relation(fields: [productId], references: [id])
   name       String
   price      Float
   quantity   Int
   sizeKey    String?
   categoryId String
+  extras     String       @default("[]") // JSON: [{name, price}]
+  notes      String?      // "sans sel", "bien cuit"
+  discount   Float        @default(0)    // discount amount on this line
 
   @@index([orderId])
 }
@@ -516,12 +693,16 @@ model LoyaltyReward {
 // ═══════════════════════════════════════
 
 model OrderChannel {
-  id         String  @id @default(cuid())
-  name       String  // uber_eats, deliveroo, just_eat, website, phone
-  active     Boolean @default(true)
-  apiKey     String?
-  webhookUrl String?
-  commission Float   @default(0)
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String  // uber_eats, deliveroo, just_eat, website, phone
+  active         Boolean @default(true)
+  apiKey         String?
+  webhookUrl     String?
+  commission     Float   @default(0)
+
+  @@index([organizationId])
 }
 
 // ═══════════════════════════════════════
@@ -727,7 +908,9 @@ model PurchaseInvoiceLine {
 
 model Recipe {
   id         String       @id @default(cuid())
-  menuItemId String       @unique // references menu item ID from JSON menu
+  menuItemId String       @unique // legacy: references menu item ID from JSON menu
+  productId  String?      @unique
+  product    MenuProduct? @relation("ProductRecipe", fields: [productId], references: [id])
   name       String
   prepTime   Int?         // minutes
   notes      String       @default("")

@@ -9,7 +9,7 @@ const PLATFORMS = [
   { name: 'uber_eats', label: 'Uber Eats', icon: '🟢', commission: 30 },
   { name: 'deliveroo', label: 'Deliveroo', icon: '🔵', commission: 25 },
   { name: 'just_eat', label: 'Just Eat', icon: '🟠', commission: 20 },
-  { name: 'website', label: '2H Frites (site)', icon: '🍟', commission: 0 },
+  { name: 'website', label: 'Site web', icon: '🍟', commission: 0 },
   { name: 'phone', label: 'Téléphone', icon: '📞', commission: 0 },
 ];
 

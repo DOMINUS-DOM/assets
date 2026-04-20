@@ -7,8 +7,16 @@ function hash(password: string) { return bcryptjs.hashSync(password, 10); }
 async function main() {
   console.log('Seeding multi-location database...');
 
+  // ─── Organization ───
+  const org = await prisma.organization.upsert({
+    where: { slug: '2h-frites' },
+    update: {},
+    create: { id: 'org_2hfrites_default', name: '2H Frites Artisanales', slug: '2h-frites', customDomain: 'www.2hfrites.be' },
+  });
+
   // ─── Locations ───
   const loc1 = await prisma.location.create({ data: {
+    organizationId: org.id,
     name: '2H Frites — La Louvière Centre', slug: 'la-louviere-centre',
     address: 'Rue de la Chaussée 42', city: 'La Louvière', postalCode: '7100',
     phone: '+32 64 00 00 01', email: 'centre@2hfrites.be', lat: 50.479, lng: 4.186,
@@ -16,6 +24,7 @@ async function main() {
   }});
 
   const loc2 = await prisma.location.create({ data: {
+    organizationId: org.id,
     name: '2H Frites — Manage', slug: 'manage',
     address: 'Place Albert 1er 8', city: 'Manage', postalCode: '7170',
     phone: '+32 64 00 00 02', email: 'manage@2hfrites.be', lat: 50.503, lng: 4.234,
@@ -23,11 +32,11 @@ async function main() {
   }});
 
   // ─── Users with franchise roles ───
-  const admin = await prisma.user.create({ data: { email: 'patron@2hfrites.be', passwordHash: hash('patron123'), name: 'Hassan B.', phone: '+32 470 000 001', role: 'franchisor_admin' } });
-  const owner1 = await prisma.user.create({ data: { email: 'manager@2hfrites.be', passwordHash: hash('manager123'), name: 'Fatima L.', phone: '+32 470 000 002', role: 'location_manager', locationId: loc1.id } });
-  const emp1 = await prisma.user.create({ data: { email: 'employe@2hfrites.be', passwordHash: hash('employe123'), name: 'Youssef K.', phone: '+32 470 000 003', role: 'employe', locationId: loc1.id } });
-  const drv1u = await prisma.user.create({ data: { email: 'karim@2hfrites.be', passwordHash: hash('livreur123'), name: 'Karim B.', phone: '+32 470 123 456', role: 'livreur', locationId: loc1.id } });
-  const drv2u = await prisma.user.create({ data: { email: 'sophie@2hfrites.be', passwordHash: hash('livreur123'), name: 'Sophie M.', phone: '+32 471 234 567', role: 'livreur', locationId: loc2.id } });
+  const admin = await prisma.user.create({ data: { email: 'patron@2hfrites.be', passwordHash: hash('patron123'), name: 'Hassan B.', phone: '+32 470 000 001', role: 'franchisor_admin', organizationId: org.id } });
+  const owner1 = await prisma.user.create({ data: { email: 'manager@2hfrites.be', passwordHash: hash('manager123'), name: 'Fatima L.', phone: '+32 470 000 002', role: 'location_manager', locationId: loc1.id, organizationId: org.id } });
+  const emp1 = await prisma.user.create({ data: { email: 'employe@2hfrites.be', passwordHash: hash('employe123'), name: 'Youssef K.', phone: '+32 470 000 003', role: 'employe', locationId: loc1.id, organizationId: org.id } });
+  const drv1u = await prisma.user.create({ data: { email: 'karim@2hfrites.be', passwordHash: hash('livreur123'), name: 'Karim B.', phone: '+32 470 123 456', role: 'livreur', locationId: loc1.id, organizationId: org.id } });
+  const drv2u = await prisma.user.create({ data: { email: 'sophie@2hfrites.be', passwordHash: hash('livreur123'), name: 'Sophie M.', phone: '+32 471 234 567', role: 'livreur', locationId: loc2.id, organizationId: org.id } });
   await prisma.user.create({ data: { email: 'client@2hfrites.be', passwordHash: hash('client123'), name: 'Martin D.', phone: '+32 475 111 000', role: 'client' } });
 
   // ─── Employees ───

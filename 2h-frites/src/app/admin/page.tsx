@@ -8,7 +8,60 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatPrice } from '@/utils/format';
 import { api } from '@/lib/api';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import NavIcon from '@/components/admin/NavIcon';
+
+function OnboardingChecklist({ productCount }: { productCount: number }) {
+  const items = [
+    { label: 'Créer votre compte', done: true, href: null as string | null },
+    { label: 'Configurer votre menu', done: productCount >= 1, href: '/admin/menu' },
+    { label: 'Tester votre caisse', done: false, href: '/pos' },
+    { label: 'Personnaliser votre restaurant', done: false, href: '/admin/settings' },
+  ];
+  const completedCount = items.filter(i => i.done).length;
+
+  return (
+    <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-bold text-white">Démarrez votre restaurant</h2>
+        <span className="text-xs text-zinc-500">{completedCount}/{items.length}</span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden mb-5">
+        <div className="h-full bg-brand rounded-full transition-all duration-500" style={{ width: `${(completedCount / items.length) * 100}%` }} />
+      </div>
+
+      <div className="space-y-2">
+        {items.map((item, i) => (
+          <div key={i}>
+            {item.href && !item.done ? (
+              <Link href={item.href}
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800/50 transition-colors group">
+                <div className="w-5 h-5 rounded-full border-2 border-zinc-600 group-hover:border-brand shrink-0" />
+                <span className="text-sm text-white flex-1 group-hover:text-brand transition-colors">{item.label}</span>
+                <svg className="w-4 h-4 text-zinc-600 group-hover:text-brand transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </Link>
+            ) : (
+              <div className="flex items-center gap-3 p-3 rounded-xl">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${item.done ? 'bg-emerald-500' : 'border-2 border-zinc-600'}`}>
+                  {item.done && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                </div>
+                <span className={`text-sm flex-1 ${item.done ? 'text-zinc-500 line-through' : 'text-white'}`}>{item.label}</span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-zinc-800">
+        <Link href="/admin/welcome" className="text-xs text-brand hover:underline">
+          Reprendre l&apos;assistant de démarrage →
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 function StatCard({ label, value, icon, trend }: { label: string; value: string | number; icon: string; trend?: string }) {
   return (
@@ -26,10 +79,22 @@ function StatCard({ label, value, icon, trend }: { label: string; value: string 
 export default function AdminDashboard() {
   const { locationId, locationName, locations } = useLocation();
   const { user } = useAuth();
+  const router = useRouter();
+
+  // Platform super admin goes to dedicated dashboard
+  if (user?.role === 'platform_super_admin') {
+    router.replace('/admin/platform');
+    return null;
+  }
   const locParam = locationId ? `?locationId=${locationId}` : '';
   const { data: orders } = useApiData<any[]>(`/orders${locParam}`, []);
   const { data: staffData, refresh: refreshStaff } = useApiData<{ tasks: any[] }>(`/staff${locParam}`, { tasks: [] });
+  const { data: menuCategories } = useApiData<any[]>('/menu/v2?full=1', []);
   const { t } = useLanguage();
+
+  // Onboarding detection — API returns flat array of categories, each with `items` (products)
+  const productCount = (Array.isArray(menuCategories) ? menuCategories : []).reduce((sum: number, c: any) => sum + (c.items?.length || 0), 0);
+  const isNewRestaurant = orders.length === 0;
   const [quickTaskTitle, setQuickTaskTitle] = useState('');
 
   // Today's orders
@@ -60,13 +125,43 @@ export default function AdminDashboard() {
         </p>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        <StatCard icon="orders" label={t.ui.dash_ordersToday} value={todayOrders.length} />
-        <StatCard icon="payroll" label={t.ui.dash_revenueToday} value={`${formatPrice(revenue)} €`} />
-        <StatCard icon="analytics" label={t.ui.dash_avgTicket} value={`${formatPrice(avgTicket)} €`} />
-        <StatCard icon="kitchen" label={t.ui.dash_inProgress} value={activeOrders.length} />
-      </div>
+      {/* Welcome banner — prominently surface /admin/welcome when the setup is incomplete */}
+      {(productCount === 0 || orders.length === 0) && (
+        <Link
+          href="/admin/welcome"
+          className="flex items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-brand/20 via-brand/10 to-transparent border border-brand/30 hover:border-brand/50 transition-colors group"
+        >
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-semibold tracking-[0.15em] uppercase text-brand-light mb-1">
+              Complétez votre démarrage
+            </p>
+            <p className="text-sm font-bold text-white">
+              {productCount === 0
+                ? 'Configurez votre menu en 2 minutes avec nos modèles prêts à l\u2019emploi.'
+                : 'Lancez votre première commande pour débloquer analytics et rapports.'}
+            </p>
+          </div>
+          <span className="shrink-0 flex items-center gap-1 text-xs font-bold text-brand-light group-hover:text-brand transition-colors">
+            Ouvrir l&apos;assistant
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          </span>
+        </Link>
+      )}
+
+      {/* Onboarding checklist — shown when no orders yet */}
+      {isNewRestaurant && (
+        <OnboardingChecklist productCount={productCount} />
+      )}
+
+      {/* KPIs — hidden for new restaurants */}
+      {!isNewRestaurant && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <StatCard icon="orders" label={t.ui.dash_ordersToday} value={todayOrders.length} />
+          <StatCard icon="payroll" label={t.ui.dash_revenueToday} value={`${formatPrice(revenue)} €`} />
+          <StatCard icon="analytics" label={t.ui.dash_avgTicket} value={`${formatPrice(avgTicket)} €`} />
+          <StatCard icon="kitchen" label={t.ui.dash_inProgress} value={activeOrders.length} />
+        </div>
+      )}
 
       {/* Active orders requiring attention */}
       {activeOrders.length > 0 && (
@@ -182,25 +277,29 @@ export default function AdminDashboard() {
         );
       })()}
 
-      {/* Quick actions */}
+      {/* Quick actions — 5 core actions a restaurateur needs daily */}
       <div>
         <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">{t.ui.dash_quickAccess}</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           <Link href="/pos" className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center hover:bg-amber-500/15 transition-colors">
             <NavIcon name="payments" className="mx-auto text-amber-400 mb-1" />
             <p className="text-xs font-bold text-amber-400">{t.ui.dash_posCaisse}</p>
           </Link>
-          <Link href="/admin/kitchen" className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-center hover:border-zinc-700 transition-colors">
-            <NavIcon name="kitchen" className="mx-auto text-zinc-400 mb-1" />
-            <p className="text-xs font-medium text-zinc-300">{t.ui.dash_kitchen}</p>
+          <Link href="/admin/menu" className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-center hover:border-zinc-700 transition-colors">
+            <NavIcon name="menu" className="mx-auto text-zinc-400 mb-1" />
+            <p className="text-xs font-medium text-zinc-300">Menu</p>
           </Link>
           <Link href="/admin/orders" className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-center hover:border-zinc-700 transition-colors">
             <NavIcon name="orders" className="mx-auto text-zinc-400 mb-1" />
             <p className="text-xs font-medium text-zinc-300">{t.ui.dash_orders}</p>
           </Link>
-          <Link href="/admin/analytics" className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-center hover:border-zinc-700 transition-colors">
-            <NavIcon name="analytics" className="mx-auto text-zinc-400 mb-1" />
-            <p className="text-xs font-medium text-zinc-300">{t.ui.dash_analytics}</p>
+          <Link href="/admin/staff" className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-center hover:border-zinc-700 transition-colors">
+            <NavIcon name="staff" className="mx-auto text-zinc-400 mb-1" />
+            <p className="text-xs font-medium text-zinc-300">Staff</p>
+          </Link>
+          <Link href="/admin/settings" className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-center hover:border-zinc-700 transition-colors">
+            <NavIcon name="settings" className="mx-auto text-zinc-400 mb-1" />
+            <p className="text-xs font-medium text-zinc-300">Paramètres</p>
           </Link>
         </div>
       </div>
@@ -234,31 +333,30 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Latest orders */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">{t.ui.admin_latestOrders}</h2>
-          <Link href="/admin/orders" className="text-xs text-amber-400">{t.ui.admin_seeAll}</Link>
+      {/* Latest orders — hidden when empty */}
+      {orders.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">{t.ui.admin_latestOrders}</h2>
+            <Link href="/admin/orders" className="text-xs text-amber-400">{t.ui.admin_seeAll}</Link>
+          </div>
+          <div className="space-y-2">
+            {orders.slice(0, 5).map((o) => (
+              <Link key={o.id} href={`/admin/orders/detail?id=${o.id}`}
+                className="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50 hover:border-zinc-700 transition-colors">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">{o.orderNumber || o.id}</p>
+                  <p className="text-xs text-zinc-500">{o.customerName || '—'} — {o.type === 'pickup' ? '🏪' : '🛵'}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-bold text-amber-400">{formatPrice(o.total)} €</p>
+                  <p className="text-xs text-zinc-500">{t.ui[`status_${o.status}`] || o.status}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
-        <div className="space-y-2">
-          {orders.slice(0, 5).map((o) => (
-            <Link key={o.id} href={`/admin/orders/detail?id=${o.id}`}
-              className="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800/50 hover:border-zinc-700 transition-colors">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{o.orderNumber || o.id}</p>
-                <p className="text-xs text-zinc-500">{o.customerName || '—'} — {o.type === 'pickup' ? '🏪' : '🛵'}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm font-bold text-amber-400">{formatPrice(o.total)} €</p>
-                <p className="text-xs text-zinc-500">{t.ui[`status_${o.status}`] || o.status}</p>
-              </div>
-            </Link>
-          ))}
-          {orders.length === 0 && (
-            <p className="text-center text-zinc-500 py-8 text-sm">{t.ui.dash_noOrders}</p>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

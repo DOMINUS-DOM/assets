@@ -99,15 +99,15 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
             className={`p-3 rounded-xl border text-left transition-all active:scale-[0.97] ${
               isSelected
                 ? 'bg-amber-500/15 border-amber-500/50 ring-1 ring-amber-500/30'
-                : 'bg-zinc-900 border-zinc-800/50 hover:border-zinc-700'
+                : 'bg-white border-[#EDEBE7]/50 hover:border-[#EDEBE7]'
             }`}>
-            <p className={`text-sm font-medium ${isSelected ? 'text-amber-400' : 'text-white'}`}>
+            <p className={`text-sm font-medium ${isSelected ? 'text-[#B45309]' : 'text-[#1A1A1A]'}`}>
               {getItemName(item.id, item.name)}
             </p>
             {item.price != null && (
-              <p className="text-xs text-zinc-500 mt-0.5">+{formatPrice(item.price)} €</p>
+              <p className="text-xs text-[#8A8A8A] mt-0.5">+{formatPrice(item.price)} €</p>
             )}
-            {isSelected && <span className="text-amber-400 text-xs mt-1 block">✓</span>}
+            {isSelected && <span className="text-[#B45309] text-xs mt-1 block">✓</span>}
           </button>
         );
       })}
@@ -118,8 +118,8 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
     <button onClick={onToggle}
       className={`flex-1 p-4 rounded-xl border text-center transition-all active:scale-[0.97] ${
         active
-          ? 'bg-amber-500/15 border-amber-500/50 text-amber-400 font-bold'
-          : 'bg-zinc-900 border-zinc-800/50 text-zinc-400'
+          ? 'bg-amber-500/15 border-amber-500/50 text-[#B45309] font-bold'
+          : 'bg-white border-[#EDEBE7]/50 text-[#6B6B6B]'
       }`}>
       <span className="text-2xl block mb-1">{active ? '✓' : '✗'}</span>
       <span className="text-sm">{label}</span>
@@ -127,36 +127,36 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
   );
 
   return (
-    <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col">
-      <header className="sticky top-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-10">
+    <div className="fixed inset-0 z-50 bg-[#FAFAF8] flex flex-col">
+      <header className="sticky top-0 bg-[#FAFAF8]/95 backdrop-blur-md border-b border-[#EDEBE7]/50 px-4 py-3 z-10">
         <div className="flex items-center justify-between max-w-lg lg:max-w-5xl mx-auto">
-          <button onClick={onClose} className="text-zinc-400 text-sm">← {t.ui.bld_back || 'Retour'}</button>
-          <h1 className="text-sm font-bold text-white">\ud83e\udd56 {t.ui.bld_pf_title || 'Composer mon pain-frites'}</h1>
-          <span className="text-xs text-amber-400 font-bold">{formatPrice(totalPrice())} €</span>
+          <button onClick={onClose} className="text-[#6B6B6B] text-sm">← {t.ui.bld_back || 'Retour'}</button>
+          <h1 className="text-sm font-bold text-[#1A1A1A]">\ud83e\udd56 {t.ui.bld_pf_title || 'Composer mon pain-frites'}</h1>
+          <span className="text-xs text-[#B45309] font-bold">{formatPrice(totalPrice())} €</span>
         </div>
         <div className="flex gap-1 mt-2 max-w-lg lg:max-w-5xl mx-auto">
           {STEPS.map((s, i) => (
-            <div key={s} className={`flex-1 h-1 rounded-full transition-colors ${i <= stepIndex ? 'bg-amber-500' : 'bg-zinc-800'}`} />
+            <div key={s} className={`flex-1 h-1 rounded-full transition-colors ${i <= stepIndex ? 'bg-amber-500' : 'bg-[#F5F3EF]'}`} />
           ))}
         </div>
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 py-4 max-w-lg lg:max-w-5xl mx-auto w-full">
-        <h2 className="text-lg font-bold text-white mb-1">{stepIndex + 1}. {STEP_LABELS[step]}</h2>
+        <h2 className="text-lg font-bold text-[#1A1A1A] mb-1">{stepIndex + 1}. {STEP_LABELS[step]}</h2>
 
         {step === 'frites' && (
           <div className="space-y-4 mt-2">
-            <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
+            <div className="p-4 rounded-xl bg-white border border-[#EDEBE7]/50">
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-3xl">\ud83e\udd56\ud83c\udf5f</span>
                 <div>
-                  <p className="text-white font-bold">Pain + Frites</p>
-                  <p className="text-amber-400 font-bold text-lg">{formatPrice(BASE_PRICE)} €</p>
+                  <p className="text-[#1A1A1A] font-bold">Pain + Frites</p>
+                  <p className="text-[#B45309] font-bold text-lg">{formatPrice(BASE_PRICE)} €</p>
                 </div>
               </div>
-              <p className="text-xs text-zinc-500">{t.ui.bld_basePriceIncl}</p>
+              <p className="text-xs text-[#8A8A8A]">{t.ui.bld_basePriceIncl}</p>
             </div>
-            <p className="text-xs text-zinc-400 uppercase tracking-wider font-bold">{t.ui.bld_friesOptions}</p>
+            <p className="text-xs text-[#6B6B6B] uppercase tracking-wider font-bold">{t.ui.bld_friesOptions}</p>
             <div className="flex gap-3">
               <ToggleButton label={t.ui.bld_withSalt || 'Avec sel'} active={withSalt} onToggle={() => setWithSalt(!withSalt)} />
               <ToggleButton label={t.ui.bld_spicy || 'Épicées'} active={withSpice} onToggle={() => setWithSpice(!withSpice)} />
@@ -166,78 +166,78 @@ export default function PainFritesBuilder({ onClose, onAdd }: Props) {
 
         {step === 'meat' && (
           <>
-            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_optional}</p>
+            <p className="text-xs text-[#8A8A8A] mb-3">{t.ui.bld_optional}</p>
             {renderItemGrid(meatItems, meats, (item) => toggleSelection(item, meats, setMeats, 2))}
           </>
         )}
 
         {step === 'sauce' && (
           <>
-            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_optional}{sauceItems[0]?.price ? ` — ${formatPrice(sauceItems[0].price)}€ ${t.ui.bld_perSauce}` : ''}</p>
+            <p className="text-xs text-[#8A8A8A] mb-3">{t.ui.bld_optional}{sauceItems[0]?.price ? ` — ${formatPrice(sauceItems[0].price)}€ ${t.ui.bld_perSauce}` : ''}</p>
             {renderItemGrid(sauceItems, sauces, (item) => toggleSelection(item, sauces, setSauces, 2))}
           </>
         )}
 
         {step === 'toppings' && (
           <>
-            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_optional}</p>
+            <p className="text-xs text-[#8A8A8A] mb-3">{t.ui.bld_optional}</p>
             {renderItemGrid(toppingItems, toppings, (item) => toggleSelection(item, toppings, setToppings, 10))}
           </>
         )}
 
         {step === 'summary' && (
           <div className="space-y-3 mt-2">
-            <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-2">
+            <div className="p-4 rounded-xl bg-white border border-[#EDEBE7]/50 space-y-2">
               <div className="flex justify-between">
-                <span className="text-white font-medium">\ud83e\udd56\ud83c\udf5f Pain + Frites</span>
-                <span className="text-amber-400">{formatPrice(BASE_PRICE)} €</span>
+                <span className="text-[#1A1A1A] font-medium">\ud83e\udd56\ud83c\udf5f Pain + Frites</span>
+                <span className="text-[#B45309]">{formatPrice(BASE_PRICE)} €</span>
               </div>
-              <p className="text-xs text-zinc-500 ml-6">
+              <p className="text-xs text-[#8A8A8A] ml-6">
                 {withSalt ? (t.ui.bld_withSalt) : (t.ui.bld_noSalt)}{withSpice ? `, ${t.ui.bld_spicy}` : ''}
               </p>
-              {meats.length > 0 && <div className="border-t border-zinc-800/50 pt-1 mt-1" />}
+              {meats.length > 0 && <div className="border-t border-[#EDEBE7]/50 pt-1 mt-1" />}
               {meats.map((m) => (
                 <div key={m.id} className="flex justify-between text-sm">
-                  <span className="text-zinc-300">+ {getItemName(m.id, m.name)}</span>
-                  <span className="text-zinc-400">+{formatPrice(m.price || 0)} €</span>
+                  <span className="text-[#1A1A1A]">+ {getItemName(m.id, m.name)}</span>
+                  <span className="text-[#6B6B6B]">+{formatPrice(m.price || 0)} €</span>
                 </div>
               ))}
-              {sauces.length > 0 && <div className="border-t border-zinc-800/50 pt-1 mt-1" />}
+              {sauces.length > 0 && <div className="border-t border-[#EDEBE7]/50 pt-1 mt-1" />}
               {sauces.map((s) => (
                 <div key={s.id} className="flex justify-between text-sm">
-                  <span className="text-zinc-300">+ {getItemName(s.id, s.name)}</span>
-                  <span className="text-zinc-400">+{formatPrice(s.price || 0)} €</span>
+                  <span className="text-[#1A1A1A]">+ {getItemName(s.id, s.name)}</span>
+                  <span className="text-[#6B6B6B]">+{formatPrice(s.price || 0)} €</span>
                 </div>
               ))}
-              {toppings.length > 0 && <div className="border-t border-zinc-800/50 pt-1 mt-1" />}
+              {toppings.length > 0 && <div className="border-t border-[#EDEBE7]/50 pt-1 mt-1" />}
               {toppings.map((tp) => (
                 <div key={tp.id} className="flex justify-between text-sm">
-                  <span className="text-zinc-300">+ {getItemName(tp.id, tp.name)}</span>
-                  <span className="text-zinc-400">+{formatPrice(tp.price || 0)} €</span>
+                  <span className="text-[#1A1A1A]">+ {getItemName(tp.id, tp.name)}</span>
+                  <span className="text-[#6B6B6B]">+{formatPrice(tp.price || 0)} €</span>
                 </div>
               ))}
-              <div className="border-t border-zinc-700 pt-2 mt-2 flex justify-between">
-                <span className="text-white font-bold">{t.ui.bld_total}</span>
-                <span className="text-amber-400 font-bold text-lg">{formatPrice(totalPrice())} €</span>
+              <div className="border-t border-[#EDEBE7] pt-2 mt-2 flex justify-between">
+                <span className="text-[#1A1A1A] font-bold">{t.ui.bld_total}</span>
+                <span className="text-[#B45309] font-bold text-lg">{formatPrice(totalPrice())} €</span>
               </div>
             </div>
           </div>
         )}
       </main>
 
-      <footer className="sticky bottom-0 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/50 px-4 py-3">
+      <footer className="sticky bottom-0 bg-[#FAFAF8]/95 backdrop-blur-md border-t border-[#EDEBE7]/50 px-4 py-3">
         <div className="flex gap-3 max-w-lg lg:max-w-5xl mx-auto">
           {stepIndex > 0 && (
-            <button onClick={prevStep} className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">
+            <button onClick={prevStep} className="px-4 py-3 rounded-xl bg-[#F5F3EF] text-[#1A1A1A] font-medium text-sm flex-1">
               ← {t.ui.bld_previous}
             </button>
           )}
           {step === 'summary' ? (
-            <button onClick={handleAddToCart} className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
+            <button onClick={handleAddToCart} className="px-4 py-3 rounded-xl bg-[#1A1A1A] text-white font-bold text-sm flex-1 active:scale-[0.97]">
               {t.ui.bld_addToCart} — {formatPrice(totalPrice())} €
             </button>
           ) : (
-            <button onClick={nextStep} className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
+            <button onClick={nextStep} className="px-4 py-3 rounded-xl bg-[#1A1A1A] text-white font-bold text-sm flex-1 active:scale-[0.97]">
               {nextLabel()}
             </button>
           )}

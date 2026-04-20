@@ -1,11 +1,11 @@
 import { Category, MenuItem } from '@/types';
-import { categories as staticCategories } from '@/data/menu';
 
 let counter = 500;
 function genId(prefix: string) { return `${prefix}-${Date.now()}-${++counter}`; }
 
-// Start with static data, then load from API
-let categories: Category[] = JSON.parse(JSON.stringify(staticCategories));
+// Always start empty. The static 2H Frites menu was leaking to every new tenant
+// when their API returned []. Any caller must wait for loadFromApi() to populate.
+let categories: Category[] = [];
 let loaded = false;
 let listeners: (() => void)[] = [];
 function notify() { listeners.forEach((l) => l()); }
@@ -14,6 +14,7 @@ function notify() { listeners.forEach((l) => l()); }
 let currentLocationId: string | null = null;
 
 // Persist to API (fire-and-forget, debounced)
+// Still saves to v1 for backward compatibility; admin v2 uses direct API calls
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 function persistToApi() {
   if (saveTimer) clearTimeout(saveTimer);
@@ -31,21 +32,35 @@ function persistToApi() {
   }, 300);
 }
 
-// Load from API on first access
+// Load from API on first access — uses v2 (relational) with v1 fallback
+let loadingPromise: Promise<void> | null = null;
+
 function loadFromApi(locationId?: string | null) {
-  if (loaded && locationId === currentLocationId) return;
+  // Normalize undefined → null so `getCategories()` (no arg) matches `setLocationId(null)`.
+  // Without this, every render that calls getCategories triggered a fresh fetch and
+  // notify() loop, freezing the tab.
+  const normalized = locationId ?? null;
+  if (loaded && normalized === currentLocationId) return;
   loaded = true;
-  currentLocationId = locationId || null;
-  const locParam = locationId ? `?locationId=${locationId}` : '';
-  fetch(`/api/menu${locParam}`)
-    .then((r) => r.json())
-    .then((data: Category[]) => {
-      if (Array.isArray(data) && data.length > 0) {
-        categories = data;
-        notify();
-      }
+  currentLocationId = normalized;
+  const locParam = normalized ? `?locationId=${normalized}` : '';
+
+  // Prevent duplicate fetches
+  if (loadingPromise) return;
+
+  loadingPromise = fetch(`/api/menu/v2${locParam}`)
+    .then((r) => {
+      if (!r.ok) throw new Error('v2 failed');
+      return r.json();
     })
-    .catch((err) => { console.warn('menuStore: failed to load from API', err); });
+    .then((data: Category[]) => {
+      // Always accept the tenant-scoped response, even when empty. An empty array
+      // is the correct state for a new restaurant — never fall back to a static menu.
+      categories = Array.isArray(data) ? data : [];
+      notify();
+    })
+    .catch((err) => { console.warn('menuStore: failed to load from /api/menu/v2', err); })
+    .finally(() => { loadingPromise = null; });
 }
 
 export const menuStore = {

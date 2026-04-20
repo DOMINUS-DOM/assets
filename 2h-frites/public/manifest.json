@@ -1,16 +1,16 @@
 {
-  "name": "2H Frites Artisanales",
-  "short_name": "2H Frites",
-  "description": "Menu interactif — Les Deux Haine",
+  "name": "BrizoApp",
+  "short_name": "Brizo",
+  "description": "Plateforme SaaS pour restaurants",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#09090b",
-  "theme_color": "#09090b",
+  "background_color": "#fafbfc",
+  "theme_color": "#9f32fd",
   "orientation": "portrait",
-  "categories": ["food"],
+  "categories": ["food", "business"],
   "icons": [
     {
-      "src": "/favicon.png",
+      "src": "/brizo-favicon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

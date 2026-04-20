@@ -11,5 +11,10 @@ prisma/dev.db-journal
 /src/generated/prisma
 .next/
 .vercel
+.vercel-backup/
 .env.production
 .env*.local
+
+# One-off diagnostic & backup artifacts (never commit — may contain prod data)
+backup_*.json
+tmp-audit.ts

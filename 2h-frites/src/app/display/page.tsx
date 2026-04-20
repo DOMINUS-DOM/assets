@@ -36,7 +36,7 @@ export default function DisplayHomePage() {
         {/* Logo */}
         <div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="2H Frites Artisanales" className="h-24 w-auto mx-auto mb-2" />
+          <img src="/logo.png" alt="Restaurant" className="h-24 w-auto mx-auto mb-2" />
           <p className="text-zinc-500 text-sm mt-2">Affichage dynamique</p>
         </div>
 

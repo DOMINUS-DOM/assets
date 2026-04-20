@@ -10,7 +10,7 @@ type Tab = 'terms' | 'privacy' | 'cookies';
 export default function LegalPage() {
   const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>('terms');
-  const [biz, setBiz] = useState<any>({ name: '2H Frites', address: '', phone: '', email: '', vatNumber: '' });
+  const [biz, setBiz] = useState<any>({ name: 'Restaurant', address: '', phone: '', email: '', vatNumber: '' });
 
   useEffect(() => { api.get<any>('/settings').then(setBiz).catch(() => {}); }, []);
 

@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '2H Frites — Commander',
-  description: 'Borne de commande 2H Frites Artisanales',
+  title: 'Kiosk',
+  description: 'Borne de commande',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
 };
 

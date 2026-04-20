@@ -57,9 +57,9 @@ export default function OrdersPage() {
             className="flex items-center justify-between p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 hover:border-zinc-700 transition-colors">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-white">{o.id}</span>
+                <span className="text-sm font-bold text-white">{o.orderNumber || o.id}</span>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">
-                  {o.type === 'pickup' ? t.ui.admin_pickup : t.ui.admin_deliveryMode}
+                  {o.type === 'dine_in' ? 'Sur place' : o.type === 'pickup' ? t.ui.admin_pickup : t.ui.admin_deliveryMode}
                 </span>
               </div>
               <p className="text-xs text-zinc-500 mt-0.5">{o.customerName} — {o.customerPhone}</p>

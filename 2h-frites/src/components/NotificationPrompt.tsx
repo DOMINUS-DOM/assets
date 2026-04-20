@@ -39,21 +39,21 @@ export default function NotificationPrompt() {
 
   return (
     <div className="fixed bottom-20 left-4 right-4 max-w-lg mx-auto z-50 animate-slide-up">
-      <div className="p-4 rounded-2xl bg-zinc-900 border border-amber-500/20 shadow-lg shadow-black/50">
+      <div className="p-4 rounded-2xl bg-white border border-[#EDEBE7] shadow-[0_10px_30px_-10px_rgba(0,0,0,0.25)]">
         <div className="flex items-start gap-3">
           <span className="text-2xl mt-0.5">🔔</span>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-white">{t.ui.push_title}</p>
-            <p className="text-xs text-zinc-400 mt-1">{t.ui.push_desc}</p>
+            <p className="text-sm font-semibold text-[#1A1A1A]">{t.ui.push_title}</p>
+            <p className="text-xs text-[#6B6B6B] mt-1">{t.ui.push_desc}</p>
           </div>
         </div>
         <div className="flex gap-2 mt-3">
           <button onClick={handleAllow}
-            className="flex-1 py-2.5 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm active:scale-95">
+            className="flex-1 py-2.5 rounded-xl bg-[#1A1A1A] text-white font-semibold text-sm active:scale-95 hover:bg-black transition-colors">
             {t.ui.push_allow}
           </button>
           <button onClick={handleDismiss}
-            className="px-4 py-2.5 rounded-xl bg-zinc-800 text-zinc-400 text-sm">
+            className="px-4 py-2.5 rounded-xl bg-[#F5F3EF] border border-[#EDEBE7] text-[#6B6B6B] text-sm active:scale-95">
             {t.ui.push_later}
           </button>
         </div>

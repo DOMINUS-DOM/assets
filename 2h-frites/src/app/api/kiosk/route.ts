@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
+import { env } from '@/lib/env';
 
 // Server-side proxy for kiosk orders
 // The KIOSK_API_KEY stays server-side (not NEXT_PUBLIC_)
@@ -7,7 +8,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
 
   // Forward to orders API with kiosk key added server-side
-  const kioskKey = process.env.KIOSK_API_KEY || '';
+  const kioskKey = env.KIOSK_API_KEY;
 
   const baseUrl = req.nextUrl.origin;
   const res = await fetch(`${baseUrl}/api/orders`, {

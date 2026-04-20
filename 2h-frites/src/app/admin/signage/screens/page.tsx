@@ -260,7 +260,7 @@ export default function ScreensPage() {
                     rel="noopener noreferrer"
                     className="px-1.5 py-0.5 rounded bg-zinc-800 text-amber-400 font-mono text-[11px] hover:text-amber-300 hover:bg-zinc-700 transition-colors"
                   >
-                    2hfrites.be/display/{screen.code}
+                    brizoapp.com/display/{screen.code}
                   </a>
                 </div>
 

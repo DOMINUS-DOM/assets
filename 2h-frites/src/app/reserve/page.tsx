@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useModule, useTenant } from '@/contexts/TenantContext';
+import { FeatureDisabledPage } from '@/components/FeatureGate';
 
 // ─── Types ───
 
@@ -51,6 +53,9 @@ type Step = 'date' | 'time' | 'details' | 'confirm';
 
 export default function ReservePage() {
   const { t, locale } = useLanguage();
+  const { tenant } = useTenant();
+  const reservationsEnabled = useModule('reservations');
+  if (!reservationsEnabled) return <FeatureDisabledPage module="Réservations" />;
   const [step, setStep] = useState<Step>('date');
   const [locationId, setLocationId] = useState<string | null>(null);
   const [date, setDate] = useState(todayStr());
@@ -144,9 +149,11 @@ export default function ReservePage() {
       <header className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-lg sticky top-0 z-30">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/favicon.png" alt="2H" className="h-7 w-7 object-contain" />
-            <span className="font-bold text-sm">2H Frites</span>
+            {tenant?.branding?.faviconUrl || tenant?.branding?.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={tenant.branding.faviconUrl || tenant.branding.logoUrl} alt={tenant.branding.brandName || tenant.name || 'Restaurant'} className="h-7 w-7 object-contain" />
+            ) : null}
+            <span className="font-bold text-sm truncate max-w-[10rem]">{tenant?.branding?.brandName || tenant?.name || 'Restaurant'}</span>
           </Link>
           <span className="text-xs text-amber-400 font-medium">Reservation</span>
         </div>

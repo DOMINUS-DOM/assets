@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { categories as staticMenu } from '@/data/menu';
 import { getAuthUser, ADMIN_ROLES, forbidden, enforceLocation } from '@/lib/auth';
 
 // Menu key: global or per-location
@@ -9,21 +8,20 @@ function menuKey(locationId?: string | null): string {
   return locationId ? `menu-${locationId}` : 'menu';
 }
 
+// Legacy endpoint kept only for backward compatibility with persistToApi writes.
+// Reads NEVER fall back to a static or cross-tenant menu — return an empty array
+// instead so a new tenant sees an empty catalogue (primary reads go through
+// /api/menu/v2 which is fully tenant-scoped).
 export async function GET(req: NextRequest) {
   const locationId = req.nextUrl.searchParams.get('locationId');
 
-  // Try location-specific menu first, then global, then static
   if (locationId) {
     const locMenu = await prisma.setting.findUnique({ where: { key: menuKey(locationId) } });
     if (locMenu) return NextResponse.json(JSON.parse(locMenu.value));
   }
 
-  // Global menu
-  const row = await prisma.setting.findUnique({ where: { key: 'menu' } });
-  if (row) return NextResponse.json(JSON.parse(row.value));
-
-  // First time: return static menu data as default
-  return NextResponse.json(staticMenu);
+  // No location-specific menu — return empty, do not leak any global menu.
+  return NextResponse.json([]);
 }
 
 export async function POST(req: NextRequest) {

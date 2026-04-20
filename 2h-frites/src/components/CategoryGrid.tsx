@@ -22,7 +22,7 @@ export default function CategoryGrid({ onSelect }: CategoryGridProps) {
             key={cat.id}
             onClick={() => onSelect(cat.slug)}
             className="flex flex-col items-center gap-2 p-5 rounded-2xl bg-zinc-900 border border-zinc-800/50
-              hover:border-amber-500/30 hover:bg-zinc-800/80 transition-all active:scale-[0.97]
+              hover:border-brand/30 hover:bg-zinc-800/80 transition-all active:scale-[0.97]
               animate-slide-up"
             style={{ animationDelay: `${i * 40}ms`, animationFillMode: 'backwards' }}
           >

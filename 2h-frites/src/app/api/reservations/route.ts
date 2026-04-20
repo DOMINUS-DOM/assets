@@ -1,11 +1,17 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthUser, ADMIN_ROLES, unauthorized, forbidden, enforceLocation } from '@/lib/auth';
+import { getAuthUser, getRequiredOrgId, getLocationIdsForOrg, ADMIN_ROLES, unauthorized, forbidden, enforceLocation } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   const auth = getAuthUser(req);
   if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
+
+  // Tenant isolation
+  const orgResult = getRequiredOrgId(req);
+  if (!orgResult) return forbidden();
+  const { orgId } = orgResult;
+  const orgLocationIds = await getLocationIdsForOrg(orgId);
 
   const locationId = req.nextUrl.searchParams.get('locationId');
   const effectiveLocation = enforceLocation(auth, locationId);
@@ -14,7 +20,13 @@ export async function GET(req: NextRequest) {
   const to = req.nextUrl.searchParams.get('to');
 
   const where: any = {};
-  if (effectiveLocation) where.locationId = effectiveLocation;
+  if (effectiveLocation) {
+    // Verify the effective location belongs to the org
+    if (!orgLocationIds.includes(effectiveLocation)) return forbidden();
+    where.locationId = effectiveLocation;
+  } else {
+    where.locationId = { in: orgLocationIds };
+  }
   if (date) where.date = date;
   if (from || to) {
     where.date = {};
@@ -35,6 +47,12 @@ export async function POST(req: NextRequest) {
   const auth = getAuthUser(req);
   if (!auth || !ADMIN_ROLES.includes(auth.role)) return forbidden();
 
+  // Tenant isolation
+  const orgResult = getRequiredOrgId(req);
+  if (!orgResult) return forbidden();
+  const { orgId } = orgResult;
+  const orgLocationIds = await getLocationIdsForOrg(orgId);
+
   const body = await req.json();
   const { action } = body;
 
@@ -47,6 +65,11 @@ export async function POST(req: NextRequest) {
     const effectiveLocation = enforceLocation(auth, locationId);
     if (!effectiveLocation) {
       return NextResponse.json({ error: 'location_required' }, { status: 400 });
+    }
+
+    // Validate location belongs to org
+    if (!orgLocationIds.includes(effectiveLocation)) {
+      return NextResponse.json({ error: 'location_not_in_org' }, { status: 403 });
     }
 
     // Calculate endTime if not provided
@@ -96,6 +119,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
     }
 
+    // Tenant isolation: verify reservation belongs to org
+    const existing = await prisma.reservation.findUnique({ where: { id }, select: { locationId: true } });
+    if (!existing || !orgLocationIds.includes(existing.locationId)) {
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    }
+
     const reservation = await prisma.reservation.update({
       where: { id },
       data: { status },
@@ -123,6 +152,13 @@ export async function POST(req: NextRequest) {
   if (action === 'update') {
     const { id, ...fields } = body;
     delete fields.action;
+
+    // Tenant isolation: verify reservation belongs to org
+    const existingUpd = await prisma.reservation.findUnique({ where: { id }, select: { locationId: true } });
+    if (!existingUpd || !orgLocationIds.includes(existingUpd.locationId)) {
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    }
+
     const reservation = await prisma.reservation.update({
       where: { id },
       data: fields,
@@ -138,6 +174,12 @@ export async function POST(req: NextRequest) {
       where: { id },
       include: { tables: true },
     });
+
+    // Tenant isolation: verify reservation belongs to org
+    if (!existing || !orgLocationIds.includes(existing.locationId)) {
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    }
+
     if (existing) {
       const tableIds = existing.tables.map((rt) => rt.tableId);
       if (tableIds.length > 0) {
@@ -148,6 +190,39 @@ export async function POST(req: NextRequest) {
       }
     }
     await prisma.reservation.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'getSettings') {
+    const effectiveLocation = enforceLocation(auth, body.locationId);
+    if (!effectiveLocation) return NextResponse.json({ error: 'location_required' }, { status: 400 });
+    if (!orgLocationIds.includes(effectiveLocation)) return forbidden();
+    const location = await prisma.location.findUnique({ where: { id: effectiveLocation }, select: { settingsJson: true } });
+    const settings = (() => { try { return JSON.parse(location?.settingsJson || '{}'); } catch { return {}; } })();
+    return NextResponse.json(settings.reservations || {
+      enabled: false,
+      minPartySize: 1,
+      maxPartySize: 12,
+      slotDurationMinutes: 30,
+      minAdvanceHours: 2,
+      maxAdvanceDays: 30,
+      maxReservationsPerSlot: 3,
+      autoConfirm: true,
+      requirePhone: true,
+      closedDays: [],
+      customSlots: {},
+      confirmationMessage: '',
+    });
+  }
+
+  if (action === 'saveSettings') {
+    const effectiveLocation = enforceLocation(auth, body.locationId);
+    if (!effectiveLocation) return NextResponse.json({ error: 'location_required' }, { status: 400 });
+    if (!orgLocationIds.includes(effectiveLocation)) return forbidden();
+    const location = await prisma.location.findUnique({ where: { id: effectiveLocation }, select: { settingsJson: true } });
+    const settings = (() => { try { return JSON.parse(location?.settingsJson || '{}'); } catch { return {}; } })();
+    settings.reservations = body.settings;
+    await prisma.location.update({ where: { id: effectiveLocation }, data: { settingsJson: JSON.stringify(settings) } });
     return NextResponse.json({ ok: true });
   }
 

@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  /* ─── Brand color tokens (overridden per-tenant by TenantThemeProvider) ─── */
+  /* Values are R G B channels so Tailwind can compose opacity: bg-brand/50 */
+  :root {
+    --brand: 245 158 11;
+    --brand-light: 251 191 36;
+    --brand-dark: 217 119 6;
+  }
+
   html {
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
@@ -139,4 +147,25 @@
   animation-delay: 1.5s;
   opacity: 0;
   animation-fill-mode: forwards;
+}
+
+/* ─── Brizo platform animations ─── */
+@keyframes brizo-fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes brizo-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.brizo-animate {
+  opacity: 0;
+  animation: brizo-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.brizo-animate-delay-1 { animation-delay: 0.1s; }
+.brizo-animate-delay-2 { animation-delay: 0.2s; }
+.brizo-animate-delay-3 { animation-delay: 0.3s; }
+.brizo-animate-delay-4 { animation-delay: 0.4s; }
+.brizo-float {
+  animation: brizo-float 4s ease-in-out infinite;
 }

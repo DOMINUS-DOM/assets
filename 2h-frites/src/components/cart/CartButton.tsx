@@ -9,8 +9,7 @@ export default function CartButton() {
   return (
     <Link
       href="/cart"
-      className="relative w-10 h-10 flex items-center justify-center rounded-lg text-zinc-400
-        hover:text-white transition-colors active:scale-95"
+      className="relative w-10 h-10 flex items-center justify-center rounded-lg text-[#8A8A8A] hover:text-[#1A1A1A] transition-colors active:scale-95"
       aria-label="Cart"
     >
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -19,7 +18,7 @@ export default function CartButton() {
       </svg>
       {count > 0 && (
         <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center
-          rounded-full bg-amber-500 text-zinc-950 text-[10px] font-bold px-1">
+          rounded-full bg-[#1A1A1A] text-white text-[10px] font-bold px-1">
           {count}
         </span>
       )}

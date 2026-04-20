@@ -23,11 +23,10 @@ export default memo(function MenuItemCard({ item, categoryId, isFavorite, onTogg
   const description = item.descriptionKey ? getDescription(item.descriptionKey) : '';
 
   return (
-    <div className="flex items-start gap-3 p-4 rounded-xl bg-zinc-900 border border-zinc-800/50
-      hover:border-zinc-700 transition-colors animate-fade-in">
+    <div className="flex items-start gap-3 p-4 rounded-xl bg-white border border-[#EDEBE7] hover:border-[#D4D0C8] transition-colors animate-fade-in">
       <div className="flex-1 min-w-0">
         <div className="flex items-start gap-2">
-          <h3 className="text-sm font-semibold text-white leading-tight">{name}</h3>
+          <h3 className="text-sm font-semibold text-[#1A1A1A] leading-tight">{name}</h3>
           {item.tags && item.tags.length > 0 && (
             <div className="flex gap-1 shrink-0 flex-wrap">
               {item.tags.map((tag) => <Badge key={tag} tag={tag} />)}
@@ -35,7 +34,7 @@ export default memo(function MenuItemCard({ item, categoryId, isFavorite, onTogg
           )}
         </div>
         {description && (
-          <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">{description}</p>
+          <p className="text-xs text-[#6B6B6B] mt-1.5 leading-relaxed">{description}</p>
         )}
         {item.allergens && item.allergens.length > 0 && (
           <AllergenBadges allergenIds={item.allergens} />
@@ -43,10 +42,10 @@ export default memo(function MenuItemCard({ item, categoryId, isFavorite, onTogg
       </div>
       <div className="flex items-center gap-2.5 shrink-0">
         {item.price != null && (
-          <span className="text-sm font-bold text-amber-400">{formatPrice(item.price)} €</span>
+          <span className="text-sm font-bold text-[#1A1A1A] tabular-nums">{formatPrice(item.price)} €</span>
         )}
         {item.priceLabel && (
-          <span className="text-xs font-medium text-zinc-400 italic">{t.ui[item.priceLabel] || item.priceLabel}</span>
+          <span className="text-xs font-medium text-[#8A8A8A] italic">{t.ui[item.priceLabel] || item.priceLabel}</span>
         )}
         {item.price != null && (
           <AddToCartButton menuItemId={item.id} name={name} price={item.price} categoryId={categoryId} />

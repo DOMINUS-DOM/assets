@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { env } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,6 +50,6 @@ export async function GET() {
     responseMs: Date.now() - start,
     checks,
     version: process.env.npm_package_version || '1.0.0',
-    environment: process.env.NODE_ENV,
+    environment: env.NODE_ENV,
   }, { status: allOk ? 200 : 503 });
 }

@@ -10,7 +10,7 @@ export default function QRCodePage() {
   const [tableCount, setTableCount] = useState(10);
   const [showKiosk, setShowKiosk] = useState(false);
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.2hfrites.be';
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://brizoapp.com';
 
   // URLs to generate QR codes for
   const urls = [

@@ -32,20 +32,20 @@ export default function LanguageSelector() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700
+        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-[#EDEBE7] hover:border-[#1A1A1A]/30 text-[#1A1A1A]
           transition-colors text-sm font-medium active:scale-95"
         aria-label="Select language"
       >
         <span>{current.flag}</span>
         <span className="uppercase">{current.code}</span>
-        <svg className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className={`w-3 h-3 text-[#8A8A8A] transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 bg-zinc-800 border border-zinc-700 rounded-xl
-          shadow-xl overflow-hidden z-50 min-w-[160px] animate-scale-in">
+        <div className="absolute right-0 top-full mt-2 bg-white border border-[#EDEBE7] rounded-xl
+          shadow-lg overflow-hidden z-50 min-w-[160px] animate-scale-in">
           {locales.map((l) => (
             <button
               key={l.code}
@@ -54,11 +54,11 @@ export default function LanguageSelector() {
                 setOpen(false);
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors
-                ${l.code === locale ? 'bg-amber-500/10 text-amber-400' : 'hover:bg-zinc-700 text-zinc-300'}`}
+                ${l.code === locale ? 'bg-[#1A1A1A] text-white' : 'hover:bg-[#FAFAF8] text-[#1A1A1A]'}`}
             >
               <span>{l.flag}</span>
               <span>{l.label}</span>
-              {l.code === locale && <span className="ml-auto text-amber-400">✓</span>}
+              {l.code === locale && <span className="ml-auto">✓</span>}
             </button>
           ))}
         </div>

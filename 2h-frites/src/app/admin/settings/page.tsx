@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useApiData } from '@/hooks/useApiData';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { formatPrice } from '@/utils/format';
 
 const DAY_NAMES = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
@@ -14,6 +16,16 @@ type Tab = 'general' | 'hours' | 'delivery' | 'closedDays' | 'display';
 export default function SettingsPage() {
   const { t } = useLanguage();
   const { theme, setTheme } = useTheme();
+  const { tenant } = useTenant();
+  const router = useRouter();
+  const replayOnboarding = async () => {
+    if (!tenant?.id) return;
+    if (!confirm("Relancer l'assistant de démarrage ? Vous serez redirigé vers le wizard.")) return;
+    try {
+      await api.post('/organizations', { action: 'update', id: tenant.id, onboarded: false });
+      router.push('/admin/welcome');
+    } catch { /* noop */ }
+  };
   const [settings, setSettings] = useState<any>({});
   const [tab, setTab] = useState<Tab>('general');
   const [saved, setSaved] = useState(false);
@@ -45,8 +57,14 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white">{t.ui.set_title}</h1>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-white">{t.ui.set_title}</h1>
+          <button onClick={replayOnboarding}
+            className="text-[11px] font-medium px-2.5 py-1 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-300 hover:bg-zinc-700 transition-colors">
+            Relancer l'assistant
+          </button>
+        </div>
         {/* Quick toggle: accepting orders */}
         <button onClick={() => save({ acceptingOrders: !settings.acceptingOrders })}
           className={`px-4 py-2 rounded-xl font-bold text-sm active:scale-95 transition-all ${
@@ -64,6 +82,27 @@ export default function SettingsPage() {
           </button>
         ))}
       </div>
+
+      {/* Empty-state banner — surfaced when any critical public-facing field is missing.
+          These fields appear on receipts, online orders, and legal documents. */}
+      {(() => {
+        const missing: string[] = [];
+        if (!settings.name) missing.push('nom');
+        if (!settings.address) missing.push('adresse');
+        if (!settings.phone) missing.push('téléphone');
+        if (missing.length === 0) return null;
+        return (
+          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+            <span className="text-amber-400 text-lg leading-none mt-0.5">⚠️</span>
+            <div className="flex-1 text-sm text-amber-200">
+              <p className="font-semibold">Complétez vos informations restaurant</p>
+              <p className="text-xs text-amber-300/80 mt-1">
+                Champs manquants : <strong>{missing.join(', ')}</strong>. Ces infos apparaissent sur les tickets, la commande en ligne et les factures.
+              </p>
+            </div>
+          </div>
+        );
+      })()}
 
       {saved && <p className="text-emerald-400 text-sm text-center animate-fade-in">✅ {t.ui.set_saved}</p>}
 

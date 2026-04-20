@@ -209,7 +209,12 @@ export default function ReservationsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-xl font-bold text-white">{t.ui.res_admin_title}</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-white">{t.ui.res_admin_title}</h1>
+          <a href="/admin/reservations/settings" className="px-3 py-1 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400 text-xs hover:text-white transition-colors">
+            Configuration
+          </a>
+        </div>
         <div className="flex items-center gap-2">
           <button onClick={() => shiftDate(-1)} className="px-2.5 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white text-sm">&larr;</button>
           <input

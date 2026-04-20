@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser, ADMIN_ROLES, forbidden } from '@/lib/auth';
+import { env } from '@/lib/env';
 
 export async function POST(req: NextRequest) {
   const auth = getAuthUser(req);
@@ -13,7 +14,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'imageUrl_required' }, { status: 400 });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  // GEMINI_API_KEY is injected at runtime by Vercel from Dashboard env vars
+  const apiKey = env.GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: 'gemini_api_key_not_configured' }, { status: 500 });
   }

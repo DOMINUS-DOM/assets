@@ -14,7 +14,7 @@ export default function SearchBar({ value, onChange }: SearchBarProps) {
     <div className="relative px-4 mb-6">
       <div className="relative">
         <svg
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500"
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8A8A8A]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -31,16 +31,16 @@ export default function SearchBar({ value, onChange }: SearchBarProps) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={t.ui.search}
-          className="w-full pl-11 pr-10 py-3.5 rounded-xl bg-zinc-900 border border-zinc-800
-            text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-amber-500/50
-            focus:ring-1 focus:ring-amber-500/25 transition-colors"
+          className="w-full pl-11 pr-10 py-3.5 rounded-xl bg-white border border-[#EDEBE7]
+            text-[#1A1A1A] placeholder-[#B0ADA6] text-sm focus:outline-none focus:border-[#1A1A1A]/30
+            transition-colors"
           aria-label={t.ui.search}
         />
         {value && (
           <button
             onClick={() => onChange('')}
             className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center
-              rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors text-sm"
+              rounded-full bg-[#F5F3EF] text-[#8A8A8A] hover:text-[#1A1A1A] transition-colors text-sm"
             aria-label={t.ui.clearSearch}
           >
             ✕

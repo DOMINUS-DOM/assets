@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatPrice } from '@/utils/format';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -14,6 +15,7 @@ function DriverContent() {
   const { user } = useAuth();
   const [selectedDriver, setSelectedDriver] = useState('');
   const { t } = useLanguage();
+  const { tenant } = useTenant();
   const [tracking, setTracking] = useState(false);
   const [lastPos, setLastPos] = useState<{ lat: number; lng: number } | null>(null);
   const watchRef = useRef<number | null>(null);
@@ -83,12 +85,14 @@ function DriverContent() {
   const myDriver = drivers.find((d) => d.id === selectedDriver);
 
   return (
-    <div className="min-h-screen max-w-lg mx-auto pb-20 bg-zinc-950">
+    <div className="dark min-h-screen max-w-lg mx-auto pb-20 bg-zinc-950 text-white">
       <header className="sticky top-0 z-40 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50">
         <div className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/favicon.png" alt="2H" className="h-6 w-6 object-contain" />
+            {tenant?.branding?.faviconUrl || tenant?.branding?.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={tenant.branding.faviconUrl || tenant.branding.logoUrl} alt={tenant.branding.brandName || tenant.name || 'Restaurant'} className="h-6 w-6 object-contain" />
+            ) : null}
             <span className="text-sm font-bold text-white">{t.ui.driver_title}</span>
           </div>
           <div className="flex items-center gap-2">

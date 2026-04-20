@@ -93,15 +93,15 @@ export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
             className={`p-3 rounded-xl border text-left transition-all active:scale-[0.97] ${
               isSelected
                 ? 'bg-amber-500/15 border-amber-500/50 ring-1 ring-amber-500/30'
-                : 'bg-zinc-900 border-zinc-800/50 hover:border-zinc-700'
+                : 'bg-white border-[#EDEBE7]/50 hover:border-[#EDEBE7]'
             }`}>
-            <p className={`text-sm font-medium ${isSelected ? 'text-amber-400' : 'text-white'}`}>
+            <p className={`text-sm font-medium ${isSelected ? 'text-[#B45309]' : 'text-[#1A1A1A]'}`}>
               {getItemName(it.id, it.name)}
             </p>
             {it.price != null && (
-              <p className="text-xs text-zinc-500 mt-0.5">+{formatPrice(it.price)} €</p>
+              <p className="text-xs text-[#8A8A8A] mt-0.5">+{formatPrice(it.price)} €</p>
             )}
-            {isSelected && <span className="text-amber-400 text-xs mt-1 block">✓</span>}
+            {isSelected && <span className="text-[#B45309] text-xs mt-1 block">✓</span>}
           </button>
         );
       })}
@@ -109,17 +109,17 @@ export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
   );
 
   return (
-    <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col">
-      <header className="sticky top-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-10">
+    <div className="fixed inset-0 z-50 bg-[#FAFAF8] flex flex-col">
+      <header className="sticky top-0 bg-[#FAFAF8]/95 backdrop-blur-md border-b border-[#EDEBE7]/50 px-4 py-3 z-10">
         <div className="flex items-center justify-between max-w-lg lg:max-w-5xl mx-auto">
-          <button onClick={onClose} className="text-zinc-400 text-sm">← {t.ui.bld_back}</button>
-          <h1 className="text-sm font-bold text-white">🍔 {getItemName(item.id, item.name)}</h1>
-          <span className="text-xs text-amber-400 font-bold">{formatPrice(totalPrice())} €</span>
+          <button onClick={onClose} className="text-[#6B6B6B] text-sm">← {t.ui.bld_back}</button>
+          <h1 className="text-sm font-bold text-[#1A1A1A]">🍔 {getItemName(item.id, item.name)}</h1>
+          <span className="text-xs text-[#B45309] font-bold">{formatPrice(totalPrice())} €</span>
         </div>
         <div className="flex gap-1 mt-2 max-w-lg lg:max-w-5xl mx-auto">
           {STEPS.map((s, i) => (
             <div key={s} className={`flex-1 h-1 rounded-full transition-colors ${
-              i <= stepIndex ? 'bg-amber-500' : 'bg-zinc-800'
+              i <= stepIndex ? 'bg-amber-500' : 'bg-[#F5F3EF]'
             }`} />
           ))}
         </div>
@@ -129,78 +129,78 @@ export default function PainRondBuilder({ item, onClose, onAdd }: Props) {
         {/* Base info */}
         {step === 'sauce' && (
           <>
-            <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800/50 mb-4 flex items-center justify-between">
+            <div className="p-3 rounded-xl bg-white border border-[#EDEBE7]/50 mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-xl">🍔</span>
-                <span className="text-white font-medium">{getItemName(item.id, item.name)}</span>
+                <span className="text-[#1A1A1A] font-medium">{getItemName(item.id, item.name)}</span>
               </div>
-              <span className="text-amber-400 font-bold">{formatPrice(basePrice)} €</span>
+              <span className="text-[#B45309] font-bold">{formatPrice(basePrice)} €</span>
             </div>
-            <h2 className="text-lg font-bold text-white mb-1">{t.ui.bld_pr_sauce}</h2>
-            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_optional}{sauceItems[0]?.price ? ` — ${formatPrice(sauceItems[0].price)}€ ${t.ui.bld_perSauce}` : ''}</p>
+            <h2 className="text-lg font-bold text-[#1A1A1A] mb-1">{t.ui.bld_pr_sauce}</h2>
+            <p className="text-xs text-[#8A8A8A] mb-3">{t.ui.bld_optional}{sauceItems[0]?.price ? ` — ${formatPrice(sauceItems[0].price)}€ ${t.ui.bld_perSauce}` : ''}</p>
             {renderGrid(sauceItems, sauces, (it) => toggleSelection(it, sauces, setSauces, 2))}
           </>
         )}
 
         {step === 'toppings' && (
           <>
-            <h2 className="text-lg font-bold text-white mb-1">{t.ui.bld_pr_toppings}</h2>
-            <p className="text-xs text-zinc-500 mb-3">{t.ui.bld_optional}</p>
+            <h2 className="text-lg font-bold text-[#1A1A1A] mb-1">{t.ui.bld_pr_toppings}</h2>
+            <p className="text-xs text-[#8A8A8A] mb-3">{t.ui.bld_optional}</p>
             {renderGrid(toppingItems, toppings, (it) => toggleSelection(it, toppings, setToppings, 10))}
           </>
         )}
 
         {step === 'summary' && (
           <div className="space-y-3 mt-2">
-            <h2 className="text-lg font-bold text-white mb-1">{t.ui.bld_summary}</h2>
-            <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800/50 space-y-2">
+            <h2 className="text-lg font-bold text-[#1A1A1A] mb-1">{t.ui.bld_summary}</h2>
+            <div className="p-4 rounded-xl bg-white border border-[#EDEBE7]/50 space-y-2">
               <div className="flex justify-between">
-                <span className="text-white font-medium">🍔 {getItemName(item.id, item.name)}</span>
-                <span className="text-amber-400">{formatPrice(basePrice)} €</span>
+                <span className="text-[#1A1A1A] font-medium">🍔 {getItemName(item.id, item.name)}</span>
+                <span className="text-[#B45309]">{formatPrice(basePrice)} €</span>
               </div>
               {sauces.map((s) => (
                 <div key={s.id} className="flex justify-between text-sm">
-                  <span className="text-zinc-300">+ {getItemName(s.id, s.name)}</span>
-                  <span className="text-zinc-400">+{formatPrice(s.price || 0)} €</span>
+                  <span className="text-[#1A1A1A]">+ {getItemName(s.id, s.name)}</span>
+                  <span className="text-[#6B6B6B]">+{formatPrice(s.price || 0)} €</span>
                 </div>
               ))}
               {toppings.map((tp) => (
                 <div key={tp.id} className="flex justify-between text-sm">
-                  <span className="text-zinc-300">+ {getItemName(tp.id, tp.name)}</span>
-                  <span className="text-zinc-400">+{formatPrice(tp.price || 0)} €</span>
+                  <span className="text-[#1A1A1A]">+ {getItemName(tp.id, tp.name)}</span>
+                  <span className="text-[#6B6B6B]">+{formatPrice(tp.price || 0)} €</span>
                 </div>
               ))}
-              <div className="border-t border-zinc-700 pt-2 mt-2 flex justify-between">
-                <span className="text-white font-bold">{t.ui.bld_total}</span>
-                <span className="text-amber-400 font-bold text-lg">{formatPrice(totalPrice())} €</span>
+              <div className="border-t border-[#EDEBE7] pt-2 mt-2 flex justify-between">
+                <span className="text-[#1A1A1A] font-bold">{t.ui.bld_total}</span>
+                <span className="text-[#B45309] font-bold text-lg">{formatPrice(totalPrice())} €</span>
               </div>
             </div>
           </div>
         )}
       </main>
 
-      <footer className="sticky bottom-0 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/50 px-4 py-3">
+      <footer className="sticky bottom-0 bg-[#FAFAF8]/95 backdrop-blur-md border-t border-[#EDEBE7]/50 px-4 py-3">
         <div className="flex gap-3 max-w-lg lg:max-w-5xl mx-auto">
           {step === 'sauce' && (
             <button onClick={handleAddSimple}
-              className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">
+              className="px-4 py-3 rounded-xl bg-[#F5F3EF] text-[#1A1A1A] font-medium text-sm flex-1">
               {t.ui.bld_pr_noExtra}
             </button>
           )}
           {stepIndex > 0 && (
             <button onClick={prevStep}
-              className="px-4 py-3 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-sm flex-1">
+              className="px-4 py-3 rounded-xl bg-[#F5F3EF] text-[#1A1A1A] font-medium text-sm flex-1">
               ← {t.ui.bld_previous}
             </button>
           )}
           {step === 'summary' ? (
             <button onClick={handleAddToCart}
-              className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
+              className="px-4 py-3 rounded-xl bg-[#1A1A1A] text-white font-bold text-sm flex-1 active:scale-[0.97]">
               {t.ui.bld_addToCart} — {formatPrice(totalPrice())} €
             </button>
           ) : (
             <button onClick={nextStep}
-              className="px-4 py-3 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm flex-1 active:scale-[0.97]">
+              className="px-4 py-3 rounded-xl bg-[#1A1A1A] text-white font-bold text-sm flex-1 active:scale-[0.97]">
               {step === 'sauce' ? `${t.ui.bld_pr_toppingsNext} →` : `${t.ui.bld_pr_recapNext} →`}
             </button>
           )}

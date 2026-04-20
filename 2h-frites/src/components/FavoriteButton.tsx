@@ -27,7 +27,7 @@ export default function FavoriteButton({ isFavorite, onToggle, size = 'sm' }: Fa
     <button
       onClick={handleClick}
       className={`${sizeClass} relative flex items-center justify-center rounded-full transition-all
-        ${isFavorite ? 'text-red-500 scale-110' : 'text-zinc-500 hover:text-zinc-300'}
+        ${isFavorite ? 'text-red-600 scale-110' : 'text-[#8A8A8A] hover:text-[#1A1A1A]'}
         active:scale-75`}
       style={{ transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s' }}
       aria-label={isFavorite ? (t.ui.removeFavorite || 'Remove') : (t.ui.addFavorite || 'Add')}

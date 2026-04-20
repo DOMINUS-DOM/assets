@@ -6,8 +6,8 @@ import { CartItem } from '@/types/order';
 interface CartContextType {
   items: CartItem[];
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
-  removeItem: (menuItemId: string, sizeKey?: string) => void;
-  updateQuantity: (menuItemId: string, quantity: number, sizeKey?: string) => void;
+  removeItem: (menuItemId: string, sizeKey?: string, extras?: { name: string; price: number }[]) => void;
+  updateQuantity: (menuItemId: string, quantity: number, sizeKey?: string, extras?: { name: string; price: number }[]) => void;
   clearCart: () => void;
   total: number;
   count: number;
@@ -17,8 +17,13 @@ const CartContext = createContext<CartContextType | null>(null);
 
 const STORAGE_KEY = '2h-cart';
 
-function getKey(item: { menuItemId: string; sizeKey?: string }) {
-  return item.sizeKey ? `${item.menuItemId}__${item.sizeKey}` : item.menuItemId;
+function getKey(item: { menuItemId: string; sizeKey?: string; extras?: { name: string; price: number }[] }) {
+  const base = item.sizeKey ? `${item.menuItemId}__${item.sizeKey}` : item.menuItemId;
+  // Include extras in key so "Frites M Sel" and "Frites M Epice" are separate items
+  if (item.extras?.length) {
+    return `${base}__${item.extras.map((e) => e.name).join('_')}`;
+  }
+  return base;
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -50,13 +55,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const removeItem = useCallback((menuItemId: string, sizeKey?: string) => {
-    const key = sizeKey ? `${menuItemId}__${sizeKey}` : menuItemId;
+  const removeItem = useCallback((menuItemId: string, sizeKey?: string, extras?: { name: string; price: number }[]) => {
+    const key = getKey({ menuItemId, sizeKey, extras });
     setItems((prev) => prev.filter((i) => getKey(i) !== key));
   }, []);
 
-  const updateQuantity = useCallback((menuItemId: string, quantity: number, sizeKey?: string) => {
-    const key = sizeKey ? `${menuItemId}__${sizeKey}` : menuItemId;
+  const updateQuantity = useCallback((menuItemId: string, quantity: number, sizeKey?: string, extras?: { name: string; price: number }[]) => {
+    const key = getKey({ menuItemId, sizeKey, extras });
     if (quantity <= 0) {
       setItems((prev) => prev.filter((i) => getKey(i) !== key));
     } else {

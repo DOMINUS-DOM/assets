@@ -1,18 +1,17 @@
-const CACHE_NAME = '2h-frites-v4';
-const API_CACHE = '2h-api-v2';
+const CACHE_NAME = 'brizo-v4';
+const API_CACHE = '2h-api-v3';
 const OFFLINE_QUEUE_KEY = '2h-offline-queue';
 
 // Static assets to pre-cache
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
-  '/favicon.png',
-  '/logo.png',
 ];
 
 // API routes to cache (stale-while-revalidate)
 const CACHEABLE_API = [
   '/api/menu',
+  '/api/menu/v2',
   '/api/settings',
 ];
 
@@ -42,6 +41,17 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
+  // Admin + billing + Stripe flows: always go to network, never cache.
+  // These screens reflect live DB state (subscription, plan) — staleness = revenue/UX bugs.
+  if (
+    url.pathname.startsWith('/admin') ||
+    url.pathname.startsWith('/api/stripe') ||
+    url.pathname.startsWith('/api/organizations') ||
+    url.pathname.startsWith('/_next/static/chunks/app/admin')
+  ) {
+    return; // let the browser handle it without SW interception
+  }
+
   // POST to /api/orders — queue offline if network fails
   if (url.pathname === '/api/orders' && event.request.method === 'POST') {
     event.respondWith(handleOrderPost(event.request));
@@ -54,13 +64,37 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Auth & Tenant API: never cache, never intercept — let it pass through directly
+  if (url.pathname === '/api/auth' || url.pathname === '/api/tenant') {
+    return; // SW does NOT call event.respondWith → browser handles natively
+  }
+
   // Other API routes: network-first with timeout
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirstWithTimeout(event.request, 5000));
+    event.respondWith(networkFirstWithTimeout(event.request, 8000));
     return;
   }
 
-  // Static/pages: cache-first, network fallback
+  // Page navigations: network-first (Next.js App Router needs correct HTML per route)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      }).catch(() => {
+        // Offline: try cached version of this specific page, then fall back to /
+        return caches.match(event.request).then((cached) => {
+          return cached || caches.match('/') || new Response('Offline', { status: 503 });
+        });
+      })
+    );
+    return;
+  }
+
+  // Static assets (JS, CSS, images): cache-first, network fallback
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
@@ -71,9 +105,6 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       }).catch(() => {
-        if (event.request.mode === 'navigate') {
-          return caches.match('/') || new Response('Offline', { status: 503 });
-        }
         return new Response('Offline', { status: 503 });
       });
     })
@@ -197,9 +228,16 @@ async function flushOfflineQueue() {
   }
 }
 
-// Listen for online event to flush queue
+// Listen for messages from client
 self.addEventListener('message', (event) => {
   if (event.data === 'FLUSH_OFFLINE_QUEUE') {
     flushOfflineQueue();
+  }
+  if (event.data?.type === 'FLUSH_OFFLINE_QUEUE') {
+    flushOfflineQueue();
+  }
+  // Force update check
+  if (event.data === 'CHECK_UPDATE') {
+    self.registration.update();
   }
 });

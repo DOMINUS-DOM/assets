@@ -62,10 +62,11 @@ export default function PaymentsPage() {
 
   const ic = 'px-3 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm focus:outline-none focus:border-amber-500/50';
 
+  // The invoices tab is hidden until PDF generation + storage are implemented.
+  // Current code exposed a "Générez..." placeholder + two `alert('TODO')` buttons.
   const TABS: { key: Tab; label: string }[] = [
     { key: 'report', label: t.ui.pmt_report },
     { key: 'transactions', label: t.ui.pmt_transactions },
-    { key: 'invoices', label: t.ui.pmt_invoices },
   ];
 
   return (
@@ -174,12 +175,8 @@ export default function PaymentsPage() {
                   <p className={`text-sm font-bold ${txn.status === 'refunded' ? 'text-red-400 line-through' : 'text-amber-400'}`}>
                     {formatPrice(txn.amount)} €
                   </p>
-                  {txn.status === 'completed' && (
-                    <button onClick={() => alert('Refund — TODO: integrate with payment API')}
-                      className="text-[10px] text-zinc-600 hover:text-red-400 transition-colors mt-1">
-                      {t.ui.pmt_refund}
-                    </button>
-                  )}
+                  {/* Refund button hidden until Stripe refund API is wired. A visible button that
+                      fires alert('TODO') destroys trust — better to expose nothing. */}
                 </div>
               </div>
             );

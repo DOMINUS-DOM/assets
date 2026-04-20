@@ -3,10 +3,13 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useTenant } from '@/contexts/TenantContext';
 
 function DisplayOrdersContent() {
   const searchParams = useSearchParams();
   const siteId = searchParams.get('site');
+  const { tenant } = useTenant();
+  const displayName = tenant?.branding?.brandName || tenant?.name || 'Restaurant';
   const [orders, setOrders] = useState<any[]>([]);
   const [time, setTime] = useState(new Date());
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -47,8 +50,13 @@ function DisplayOrdersContent() {
       {/* Header */}
       <div className="flex items-center justify-between px-8 py-4 bg-zinc-900 border-b border-zinc-800">
         <div className="flex items-center gap-4">
-          <span className="text-4xl">🍟</span>
-          <h1 className="text-2xl font-extrabold"><span className="text-amber-400">2H</span> Frites</h1>
+          {tenant?.branding?.logoUrl || tenant?.branding?.faviconUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={tenant.branding.logoUrl || tenant.branding.faviconUrl} alt={displayName} className="h-12 w-auto object-contain" />
+          ) : (
+            <span className="text-4xl">🍽️</span>
+          )}
+          <h1 className="text-2xl font-extrabold text-white truncate max-w-[20rem]">{displayName}</h1>
         </div>
         <p className="text-3xl font-bold text-amber-400 tabular-nums">
           {time.toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' })}
@@ -102,7 +110,7 @@ function DisplayOrdersContent() {
 
       {/* Bottom bar */}
       <div className="px-8 py-2 bg-zinc-900 border-t border-zinc-800 text-center">
-        <p className="text-xs text-zinc-500">Commandez sur 2hfrites.be 🍟</p>
+        <p className="text-xs text-zinc-500">Commandez en ligne</p>
       </div>
     </div>
   );

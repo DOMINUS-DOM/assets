@@ -5,7 +5,7 @@ import { Tag } from '@/types';
 import { useLanguage } from '@/i18n/LanguageContext';
 
 const tagConfig: Record<Tag, { bg: string; text: string; icon: string }> = {
-  popular: { bg: 'bg-amber-500/20', text: 'text-amber-400', icon: '★' },
+  popular: { bg: 'bg-brand/20', text: 'text-brand-light', icon: '★' },
   vegetarian: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', icon: '🌿' },
   spicy: { bg: 'bg-red-500/20', text: 'text-red-400', icon: '🌶️' },
   new: { bg: 'bg-blue-500/20', text: 'text-blue-400', icon: '✦' },

@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '2H Frites — Caisse',
-  description: 'Point de vente 2H Frites Artisanales',
+  title: 'Caisse POS',
+  description: 'Point de vente',
 };
 
 export default function POSLayout({ children }: { children: React.ReactNode }) {

@@ -40,15 +40,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SafeUser | null>(null);
   const [loaded, setLoaded] = useState(false);
 
-  // Restore session on mount
+  // Restore session on mount — try cookie (cross-subdomain) or localStorage token
   useEffect(() => {
     const restore = async () => {
-      try {
-        const token = localStorage.getItem(TOKEN_KEY);
-        if (token) {
-          const { user } = await api.post<{ user: SafeUser }>('/auth', { action: 'me' });
-          setUser(user);
+      const hasToken = !!localStorage.getItem(TOKEN_KEY);
+
+      if (!hasToken) {
+        // No localStorage token — still try the API (cookie is HttpOnly, can't check client-side)
+        // but use a short timeout to avoid blocking the page
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 3000);
+          const res = await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'me' }),
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.user) setUser(data.user);
+          }
+        } catch {
+          // No cookie session either — that's fine
         }
+        setLoaded(true);
+        return;
+      }
+
+      try {
+        const { user } = await api.post<{ user: SafeUser }>('/auth', { action: 'me' });
+        setUser(user);
       } catch {
         localStorage.removeItem(TOKEN_KEY);
       }
@@ -79,8 +103,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     localStorage.removeItem(TOKEN_KEY);
+    // Clear server-side session cookie
+    try { await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'logout' }) }); } catch {}
     setUser(null);
   }, []);
 

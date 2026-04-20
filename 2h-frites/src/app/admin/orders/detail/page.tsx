@@ -36,14 +36,18 @@ function OrderDetail() {
 
   if (!order) return <p className="text-center text-zinc-500 py-20">{t.ui.order_notFound}</p>;
 
-  const next = order.type === 'pickup' && order.status === 'ready' ? 'picked_up' : (NEXT_STATUS as any)[order.status];
+  // For pickup and dine_in, "ready" means handed to the customer at the counter — close the order.
+  // Only real deliveries transition ready → delivering.
+  const next = (order.type === 'pickup' || order.type === 'dine_in') && order.status === 'ready'
+    ? 'picked_up'
+    : (NEXT_STATUS as any)[order.status];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <Link href="/admin/orders" className="text-xs text-amber-400">← {t.ui.admin_orders}</Link>
-          <h1 className="text-xl font-bold text-white mt-1">{order.id}</h1>
+          <h1 className="text-xl font-bold text-white mt-1">{order.orderNumber || order.id}</h1>
         </div>
         <span className="text-sm px-3 py-1.5 rounded-full bg-zinc-800 text-zinc-300">{t.ui[`status_${order.status}`]}</span>
       </div>

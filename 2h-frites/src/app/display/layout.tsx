@@ -1,13 +1,13 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '2H Frites — Affichage',
-  description: 'Affichage dynamique 2H Frites Artisanales',
+  title: 'Affichage',
+  description: 'Affichage dynamique',
 };
 
 export default function DisplayLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-zinc-950 overflow-hidden cursor-none select-none">
+    <div className="dark min-h-screen bg-zinc-950 text-white overflow-hidden cursor-none select-none">
       {children}
     </div>
   );

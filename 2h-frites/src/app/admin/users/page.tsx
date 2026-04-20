@@ -67,9 +67,9 @@ export default function UsersPage() {
   const [showPerms, setShowPerms] = useState<UserRow | null>(null);
   const [showResetPw, setShowResetPw] = useState<UserRow | null>(null);
 
-  // Create form
+  // Create form — password is generated server-side and emailed to the invitee.
   const [createForm, setCreateForm] = useState({
-    name: '', email: '', password: '', phone: '', role: 'employe', locationId: '',
+    name: '', email: '', phone: '', role: 'employe', locationId: '',
   });
   const [createError, setCreateError] = useState('');
 
@@ -127,7 +127,7 @@ export default function UsersPage() {
     try {
       await api.post('/users', { action: 'create', ...createForm, locationId: createForm.locationId || null });
       setShowCreate(false);
-      setCreateForm({ name: '', email: '', password: '', phone: '', role: 'employe', locationId: '' });
+      setCreateForm({ name: '', email: '', phone: '', role: 'employe', locationId: '' });
       refresh();
     } catch (err: any) {
       const code = err?.error || 'error';
@@ -395,6 +395,9 @@ export default function UsersPage() {
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowCreate(false)} />
           <div className="relative bg-zinc-900 rounded-2xl border border-zinc-800 w-full max-w-md p-6 space-y-4 animate-slide-up max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-bold text-white">Nouvel utilisateur</h2>
+            <p className="text-xs text-zinc-400 -mt-2">
+              Un email d&apos;invitation avec un mot de passe temporaire sera envoy\u00e9. L&apos;utilisateur devra le changer \u00e0 sa premi\u00e8re connexion.
+            </p>
 
             <form onSubmit={handleCreate} className="space-y-3">
               <div>
@@ -406,11 +409,6 @@ export default function UsersPage() {
                 <label className="text-xs text-zinc-400 block mb-1">Email *</label>
                 <input className={ic} type="email" required value={createForm.email}
                   onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} />
-              </div>
-              <div>
-                <label className="text-xs text-zinc-400 block mb-1">Mot de passe *</label>
-                <input className={ic} type="password" required minLength={6} value={createForm.password}
-                  onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} />
               </div>
               <div>
                 <label className="text-xs text-zinc-400 block mb-1">T\u00e9l\u00e9phone</label>

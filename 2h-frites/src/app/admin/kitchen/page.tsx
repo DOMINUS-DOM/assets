@@ -56,23 +56,57 @@ function KDSContent() {
     return (
       <div className={`p-4 rounded-xl border ${color} space-y-2`}>
         <div className="flex items-center justify-between">
-          <span className="text-lg font-extrabold text-white">{order.id}</span>
+          <span className="text-lg font-extrabold text-white">{order.orderNumber || order.id}</span>
           <span className={`text-xs font-mono ${mins > 15 ? 'text-red-400 animate-pulse' : 'text-zinc-500'}`}>{mins} min</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-zinc-400">
           <span>{order.type === 'pickup' ? '🏪' : '🛵'}</span>
           <span>{order.customerName || '—'}</span>
-          {order.pickupTime && <span className="text-amber-400">🕐 {order.pickupTime}</span>}
+          {order.pickupTime && <span className="text-brand-light">🕐 {order.pickupTime}</span>}
         </div>
-        <div className="space-y-1">
-          {(order.items || []).map((item: any, i: number) => (
-            <div key={i} className="flex items-center justify-between text-sm">
-              <span className="text-white">{item.quantity}× {item.name}{item.sizeKey ? ` (${item.sizeKey})` : ''}</span>
-            </div>
-          ))}
+        <div className="space-y-2">
+          {(order.items || []).map((item: any, i: number) => {
+            // Parse extras from JSON field or from name parentheses (legacy)
+            let extras: { name: string; price: number }[] = [];
+            try {
+              const raw = typeof item.extras === 'string' ? JSON.parse(item.extras) : item.extras;
+              if (Array.isArray(raw) && raw.length > 0) extras = raw;
+            } catch {}
+
+            // Fallback: parse extras from name if enclosed in parentheses
+            let displayName = item.name;
+            if (extras.length === 0 && item.name?.includes('(')) {
+              const match = item.name.match(/^(.+?)\s*\((.+)\)$/);
+              if (match) {
+                displayName = match[1].trim();
+                extras = match[2].split(',').map((s: string) => ({ name: s.trim(), price: 0 }));
+              }
+            }
+
+            const isComposed = extras.length > 0;
+
+            return (
+              <div key={i} className={`rounded-lg ${isComposed ? 'bg-zinc-800/30 p-2' : ''}`}>
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-bold text-white">{item.quantity}×</span>
+                  <span className="text-base font-bold text-white">{displayName}</span>
+                </div>
+                {extras.length > 0 && (
+                  <div className="ml-6 mt-1 space-y-0.5">
+                    {extras.map((extra: any, j: number) => (
+                      <div key={j} className="flex items-center gap-1.5 text-sm">
+                        <span className="text-brand">→</span>
+                        <span className="text-zinc-300">{extra.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
         <button onClick={() => advance(order.id, order.status)}
-          className="w-full py-2.5 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm active:scale-95 transition-transform mt-2">
+          className="w-full py-2.5 rounded-xl bg-brand text-zinc-950 font-bold text-sm active:scale-95 transition-transform mt-2">
           {order.status === 'received' ? `👨‍🍳 ${t.ui.kds_startPrep}` :
            order.status === 'preparing' ? `✅ ${t.ui.kds_markReady}` :
            order.type === 'pickup' ? `🤝 ${t.ui.kds_markPickedUp}` : `🛵 ${t.ui.kds_sendDelivery}`}
@@ -90,7 +124,7 @@ function KDSContent() {
         <h1 className="text-xl font-bold text-white">👨‍🍳 {t.ui.kds_title}</h1>
         <div className="flex items-center gap-3 text-sm">
           <span className="px-3 py-1 rounded-full bg-blue-500/15 text-blue-400">{received.length} {t.ui.kds_new}</span>
-          <span className="px-3 py-1 rounded-full bg-amber-500/15 text-amber-400">{preparing.length} {t.ui.kds_cooking}</span>
+          <span className="px-3 py-1 rounded-full bg-brand/15 text-brand-light">{preparing.length} {t.ui.kds_cooking}</span>
           <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400">{ready.length} {t.ui.kds_ready}</span>
         </div>
       </div>
@@ -107,9 +141,9 @@ function KDSContent() {
 
         {/* Preparing */}
         <div>
-          <h2 className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-3">👨‍🍳 {t.ui.kds_cooking} ({preparing.length})</h2>
+          <h2 className="text-xs font-bold text-brand-light uppercase tracking-wider mb-3">👨‍🍳 {t.ui.kds_cooking} ({preparing.length})</h2>
           <div className="space-y-3">
-            {preparing.map((o) => <OrderCard key={o.id} order={o} color="bg-amber-500/5 border-amber-500/20" />)}
+            {preparing.map((o) => <OrderCard key={o.id} order={o} color="bg-brand/5 border-brand/20" />)}
             {preparing.length === 0 && <p className="text-zinc-600 text-sm text-center py-8">{t.ui.kds_empty}</p>}
           </div>
         </div>

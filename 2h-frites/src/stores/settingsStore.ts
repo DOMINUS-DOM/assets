@@ -13,19 +13,14 @@ const DEFAULT_HOURS: BusinessHours[] = [
   { day: 6, open: '11:00', close: '23:00', closed: false }, // Samedi
 ];
 
-const DEFAULT_ZONES: DeliveryZone[] = [
-  { id: 'zone-1', name: 'La Louvière centre', postalCodes: ['7100'], fee: 2.50, minOrder: 12, active: true },
-  { id: 'zone-2', name: 'Haine-Saint-Paul / Haine-Saint-Pierre', postalCodes: ['7100', '7101'], fee: 3.00, minOrder: 15, active: true },
-  { id: 'zone-3', name: 'Manage / Fayt-lez-Manage', postalCodes: ['7170', '7171'], fee: 4.00, minOrder: 18, active: true },
-  { id: 'zone-4', name: 'Binche', postalCodes: ['7130'], fee: 5.00, minOrder: 20, active: false },
-];
+const DEFAULT_ZONES: DeliveryZone[] = [];
 
 const DEFAULT_SETTINGS: BusinessSettings = {
-  name: 'Les Deux Haine — 2H Frites Artisanales',
-  address: 'La Louvière, Belgique',
-  phone: '+32 64 00 00 00',
-  email: 'contact@2hfrites.be',
-  vatNumber: 'BE0123.456.789',
+  name: '',
+  address: '',
+  phone: '',
+  email: '',
+  vatNumber: '',
   currency: '€',
   vatRate: 0.06,
   vatRateDrinks: 0.21,
@@ -35,7 +30,7 @@ const DEFAULT_SETTINGS: BusinessSettings = {
   acceptingOrders: true,
   hours: DEFAULT_HOURS,
   deliveryZones: DEFAULT_ZONES,
-  closedDates: ['2026-12-25', '2027-01-01'],
+  closedDates: [],
 };
 
 let settings: BusinessSettings = { ...DEFAULT_SETTINGS };

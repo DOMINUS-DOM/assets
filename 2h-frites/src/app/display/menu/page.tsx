@@ -3,10 +3,13 @@
 import { useState, useEffect } from 'react';
 import { menuStore } from '@/stores/menuStore';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { formatPrice } from '@/utils/format';
 
 export default function DisplayMenuPage() {
   const { getCategory, getItemName } = useLanguage();
+  const { tenant } = useTenant();
+  const displayName = tenant?.branding?.brandName || tenant?.name || 'Restaurant';
   const [categories, setCategories] = useState(menuStore.getCategories());
   const [activeIndex, setActiveIndex] = useState(0);
   const [time, setTime] = useState(new Date());
@@ -37,10 +40,14 @@ export default function DisplayMenuPage() {
       {/* Header bar */}
       <div className="flex items-center justify-between px-8 py-4 bg-zinc-900 border-b border-zinc-800">
         <div className="flex items-center gap-4">
-          <span className="text-4xl">🍟</span>
+          {tenant?.branding?.logoUrl || tenant?.branding?.faviconUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={tenant.branding.logoUrl || tenant.branding.faviconUrl} alt={displayName} className="h-12 w-auto object-contain" />
+          ) : (
+            <span className="text-4xl">🍽️</span>
+          )}
           <div>
-            <h1 className="text-2xl font-extrabold"><span className="text-amber-400">2H</span> Frites Artisanales</h1>
-            <p className="text-xs text-zinc-500">Les Deux Haine</p>
+            <h1 className="text-2xl font-extrabold text-white truncate max-w-[20rem]">{displayName}</h1>
           </div>
         </div>
         <div className="text-right">
@@ -96,7 +103,7 @@ export default function DisplayMenuPage() {
       {/* Bottom promo bar */}
       <div className="px-8 py-3 bg-amber-500 text-zinc-950 text-center">
         <p className="text-lg font-bold animate-pulse">
-          🎁 Commandez en ligne sur 2hfrites.be — Retrait ou livraison ! 🛵
+          🎁 Commandez en ligne — Retrait ou livraison !
         </p>
       </div>
     </div>

@@ -49,23 +49,22 @@ export default function CategoryView({ category, isFavorite, onToggleFavorite }:
   if (category.slug === 'pains-ronds' || category.slug === 'grillades') {
     return (
       <div className="px-4 pb-8">
-        <p className="text-xs text-zinc-500 mb-4">Cliquez pour personnaliser avec sauces et garnitures.</p>
+        <p className="text-xs text-[#8A8A8A] mb-4">Cliquez pour personnaliser avec sauces et garnitures.</p>
         <div className="space-y-2">
           {filteredItems.map((item) => (
             <button key={item.id} onClick={() => setBuilderItem(item)}
-              className="w-full flex items-center justify-between p-4 rounded-xl bg-zinc-900 border border-zinc-800/50
-                hover:border-zinc-700 transition-colors text-left active:scale-[0.98]">
+              className="w-full flex items-center justify-between p-4 rounded-xl bg-white border border-[#EDEBE7] hover:border-[#D4D0C8] transition-colors text-left active:scale-[0.98]">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white">{getItemName(item.id, item.name)}</p>
+                <p className="text-sm font-semibold text-[#1A1A1A]">{getItemName(item.id, item.name)}</p>
                 {item.tags && item.tags.length > 0 && (
                   <div className="flex gap-1 mt-1">{item.tags.map((tag) => <Badge key={tag} tag={tag} />)}</div>
                 )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {item.price != null && (
-                  <span className="text-sm font-bold text-amber-400">{item.price.toFixed(2)} €</span>
+                  <span className="text-sm font-bold text-[#1A1A1A] tabular-nums">{item.price.toFixed(2)} €</span>
                 )}
-                <span className="text-zinc-500 text-lg">→</span>
+                <span className="text-[#8A8A8A] text-lg">→</span>
               </div>
             </button>
           ))}
@@ -92,8 +91,8 @@ export default function CategoryView({ category, isFavorite, onToggleFavorite }:
           if (subItems.length === 0) return null;
           return (
             <div key={sub}>
-              <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <span className="w-8 h-px bg-amber-500/30" />
+              <h3 className="text-sm font-bold text-brand-light uppercase tracking-wider mb-3 flex items-center gap-2">
+                <span className="w-8 h-px bg-brand/30" />
                 {getSubcategory(sub)}
               </h3>
               <div className="space-y-2">
@@ -119,9 +118,9 @@ export default function CategoryView({ category, isFavorite, onToggleFavorite }:
     <div className="px-4 pb-8">
       {/* Note for supplements */}
       {category.note && (
-        <div className="flex items-center gap-2 p-3 mb-4 rounded-xl bg-zinc-900 border border-zinc-800/50">
-          <span className="text-amber-400 text-sm">ℹ️</span>
-          <span className="text-sm text-zinc-400">{t.ui[category.note]}</span>
+        <div className="flex items-center gap-2 p-3 mb-4 rounded-xl bg-white border border-[#EDEBE7]">
+          <span className="text-[#F59E0B] text-sm">ℹ️</span>
+          <span className="text-sm text-[#6B6B6B]">{t.ui[category.note]}</span>
         </div>
       )}
 
@@ -132,8 +131,8 @@ export default function CategoryView({ category, isFavorite, onToggleFavorite }:
           className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4
             transition-colors active:scale-95 ${
               vegFilter
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                : 'bg-zinc-900 text-zinc-400 border border-zinc-800'
+                ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30'
+                : 'bg-white text-[#6B6B6B] border border-[#EDEBE7]'
             }`}
         >
           <span>🌿</span>

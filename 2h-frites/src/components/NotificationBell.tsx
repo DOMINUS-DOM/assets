@@ -66,7 +66,7 @@ export default function NotificationBell() {
             <span className="text-sm font-bold text-white">{t.ui.notif_title}</span>
             {unread > 0 && (
               <button onClick={async () => { await api.post('/notifications', { action: 'markAllRead' }); setNotifications((n) => n.map((x) => ({ ...x, read: true }))); setUnread(0); }}
-                className="text-xs text-amber-400 hover:text-amber-300">{t.ui.notif_markAll}</button>
+                className="text-xs text-brand-light hover:text-amber-300">{t.ui.notif_markAll}</button>
             )}
           </div>
           {notifications.length === 0 ? (
@@ -87,7 +87,7 @@ export default function NotificationBell() {
                         </div>
                         <p className="text-xs text-zinc-500 truncate">{n.message}</p>
                       </div>
-                      {!n.read && <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 mt-1.5" />}
+                      {!n.read && <span className="w-2 h-2 rounded-full bg-brand-light shrink-0 mt-1.5" />}
                     </div>
                   </Link>
                 ) : (
@@ -100,7 +100,7 @@ export default function NotificationBell() {
                       </div>
                       <p className="text-xs text-zinc-500 truncate">{n.message}</p>
                     </div>
-                    {!n.read && <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 mt-1.5" />}
+                    {!n.read && <span className="w-2 h-2 rounded-full bg-brand-light shrink-0 mt-1.5" />}
                   </div>
                 )}
               </div>

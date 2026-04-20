@@ -1,44 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useTenant } from '@/contexts/TenantContext';
 
 export default function Hero() {
   const { t } = useLanguage();
-  const [sloganIndex, setSloganIndex] = useState(0);
-  const [fade, setFade] = useState(true);
+  const { tenant } = useTenant();
 
-  const slogans = [
-    t.ui.slogan,
-    t.ui.slogan2,
-    t.ui.slogan3,
-    t.ui.slogan4,
-  ];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFade(false);
-      setTimeout(() => {
-        setSloganIndex((i) => (i + 1) % slogans.length);
-        setFade(true);
-      }, 300);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [slogans.length]);
+  const displayName = tenant?.branding?.brandName || tenant?.name || '';
+  const tagline = tenant?.branding?.tagline || t.ui.slogan;
 
   return (
-    <section className="text-center py-8 px-4">
+    <section className="text-center py-10 px-4">
       <div className="mb-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="2H Frites Artisanales" className="h-20 w-auto mx-auto" />
+        {tenant?.branding?.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={tenant.branding.logoUrl} alt={displayName || 'Restaurant'} className="h-20 w-auto mx-auto object-contain" />
+        ) : displayName ? (
+          <h1 className="text-[32px] font-extrabold text-[#1A1A1A] tracking-[-0.02em] leading-tight">{displayName}</h1>
+        ) : null}
       </div>
-      <p
-        className={`text-zinc-400 text-sm mt-3 max-w-xs mx-auto transition-opacity duration-300 ${
-          fade ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
-        {slogans[sloganIndex]}
-      </p>
+      {tagline && (
+        <p className="text-[#6B6B6B] text-[14px] mt-2 max-w-xs mx-auto leading-relaxed">{tagline}</p>
+      )}
     </section>
   );
 }
