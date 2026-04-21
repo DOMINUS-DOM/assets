@@ -94,7 +94,7 @@ Après le blocker #3, zod garantit la présence des variables critiques. Certain
 
 1. **Rate limiting** — aucun middleware rate-limit sur `/api/auth` login. Brute force possible. Sprint sécu séparé.
 2. **Validation d'input** — pas de zod/yup sur les bodies d'API (sauf env maintenant). `body.action`, `body.id`, etc. sont lus en direct. Surface injection limitée par Prisma mais à durcir.
-3. **Tests d'isolation tenant** — 6 fichiers smoke tests existants, zéro test cross-tenant. Ajoutés partiellement à la fin des blockers.
+3. **Tests d'isolation tenant** — voir la section « Correction 2026-04-20 (soir) — tests isolation multi-tenant reconstruits » en fin de fichier. Reconstruits de façon permanente après qu'un premier probe jetable ait été supprimé pendant la remediation du blocker #2.
 4. **40+ `as any` dans les handlers** — dette typing accumulée, à réduire progressivement.
 5. **`tenant.ts` fallback `__default__`** — déjà listé au §Fallbacks.
 
@@ -186,3 +186,32 @@ ALTER TABLE "OrderChannel" DROP COLUMN "organizationId";
 **Comportement réel** : les vars ajoutées via `vercel env add` retournent vide dans `vercel env pull` pendant une fenêtre de propagation non documentée (probablement plusieurs heures). **Builds Vercel et runtime Functions les consomment correctement pendant cette fenêtre** — le build brizo de cette session a bien lu `CRON_SECRET` via le validator zod sans échec, preuve que la valeur est bien servie au buildtime malgré l'`env pull` empty.
 
 **Implication pratique** : ne pas se fier à `vercel env pull` juste après un `env add` pour valider qu'une var est bien en place. Utiliser `vercel env ls` (qui retourne `Encrypted` immédiatement) + un build test si doute. À re-vérifier dans 24h : les 3 vars devraient alors pull `present`.
+
+---
+
+## Correction 2026-04-20 (soir) — tests isolation multi-tenant reconstruits
+
+Contrairement à ce que la version précédente de NOTES_AUDIT laissait entendre (notamment « ajoutés partiellement à la fin des blockers »), les tests d'isolation multi-tenant du blocker #2 avaient été écrits sous forme de probe jetable (`src/__tests__/_probe.test.ts`), exécutés une fois pour valider la migration `OrderChannel.organizationId`, puis **supprimés** conformément à l'intention "DELETE after validation" marquée dans le commentaire d'en-tête. Ils n'existaient plus dans le repo au moment du deploy prod — seuls les 6 smoke tests originaux tournaient.
+
+Reconstruction permanente effectuée dans cette session :
+
+- **`src/__tests__/_helpers/multi-tenant.ts`** — helpers factorisés :
+  - `mkTestOrg(suffix)` → crée Organization + Location + patron User + OrderChannel + token HMAC. Slug `test-iso-${suffix}-${timestamp}`.
+  - `cleanupTestOrgs()` — supprime tout ce qui match `slug.startsWith('test-iso-')`, sans filtre d'âge. Appelé en beforeAll + afterAll.
+  - `mkReq(url, opts?)` — wrapper `new NextRequest(url, opts)` avec typage `ConstructorParameters<typeof NextRequest>[1]`.
+  - `withAuth(token)` — retourne `{ authorization: Bearer ${token} }`. Bearer plutôt que cookie, cohérent avec `getAuthUser()` qui accepte les deux.
+  - `forgeToken(payload, secret)` — ré-implémente le HMAC-SHA256 de `src/lib/auth.ts` pour tester que l'ancien fallback `'dev-only-secret-not-for-prod'` (retiré au blocker #1) est bien rejeté.
+
+- **`src/__tests__/multi-tenant-isolation.test.ts`** — 4 tests permanents :
+  1. GET `/api/channels` isolation : admin A et admin B ne voient que leur propre channel, aucune intersection.
+  2. POST `incomingOrder` avec `locationId` foreign → 404, aucun Order créé sur la location de l'autre tenant.
+  3. Token forgé avec `'dev-only-secret-not-for-prod'` → 403 strict, body ne leak aucun channel.
+  4. POST `toggle` cross-tenant → 404, `channel.active` inchangé en DB.
+
+- **`src/__tests__/onboarding-menu.test.ts`** — 5 tests sur `/api/onboarding/menu` (blocker #4) : create sur location vierge (200), create sur location avec menu (409 `menu_already_exists`, rien n'est ajouté), replace (wipe complet + reseed, modifier groups supprimés), skip (no-op), GET status (reflet exact de l'état DB).
+
+Ces tests tournent désormais contre la branche Neon `test` à chaque `pnpm test`, détectent toute régression d'isolation tenant, et constituent le filet permanent prévu par le blocker #6 de l'audit initial. Total suite : 58 tests (49 unit existants + 4 isolation + 5 onboarding-menu).
+
+**Ajustements jest collatéraux** liés à cette reconstruction :
+- `testPathIgnorePatterns` ajout de `/src/__tests__/_helpers/` pour que Jest ne traite pas `multi-tenant.ts` comme un fichier de test.
+- `jest.setTimeout(30000)` en tête des 2 fichiers qui touchent la DB — les roundtrips Neon + bcrypt dépassent le défaut de 5s.
