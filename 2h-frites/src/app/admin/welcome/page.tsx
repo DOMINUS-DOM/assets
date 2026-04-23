@@ -382,13 +382,17 @@ export default function WelcomePage() {
   };
 
   const saveHoursAndModes = async () => {
+    // Ship the settings object FLAT — /api/settings persists the body verbatim
+    // and /admin/settings reads it flat. Wrapping in { action, settings } (as
+    // previous code did) caused the reload on /admin/settings to show an empty
+    // hours table (see BUG_DIAGNOSIS_SETTINGS_2026-04-22 §4.2).
     const settings = {
       hours: Object.entries(hours).map(([day, h]) => ({ day: Number(day), open: h.open, close: h.close, closed: h.closed })),
       acceptPickup: pickup,
       acceptDelivery: delivery,
       acceptDineIn: dineIn,
     };
-    try { await api.post('/settings', { action: 'update', settings }); } catch { /* settings endpoint may swallow unknown fields — not critical */ }
+    await api.post('/settings', settings);
     // Service modes → organization modules
     if (tenant?.id) {
       const next = { ...(tenant.modules || {}), delivery };
