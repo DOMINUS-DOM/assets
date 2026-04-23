@@ -2,6 +2,7 @@
 
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useTenant, useIsDemo } from '@/contexts/TenantContext';
+import { getCloudinaryUrl } from '@/lib/cloudinaryUrl';
 import LanguageSelector from './LanguageSelector';
 import CartButton from './cart/CartButton';
 import UserMenu from './auth/UserMenu';
@@ -54,7 +55,7 @@ export default function Header({ view, categoryName, onBack, onFavorites, onRepl
               {tenant?.branding?.logoUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={tenant.branding.logoUrl}
+                  src={getCloudinaryUrl(tenant.branding.logoUrl, 'admin-preview') || undefined}
                   alt={tenant.branding.brandName || tenant.name || 'Restaurant'}
                   className="h-7 w-7 object-contain shrink-0"
                 />

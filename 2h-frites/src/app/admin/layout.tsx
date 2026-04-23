@@ -13,6 +13,7 @@ import TrialExpiredGate from '@/components/TrialExpiredGate';
 import { useTenant } from '@/contexts/TenantContext';
 import { useLocation } from '@/contexts/LocationContext';
 import NavIcon from '@/components/admin/NavIcon';
+import { getCloudinaryUrl } from '@/lib/cloudinaryUrl';
 
 // ─── Nav groups ───
 interface NavItem {
@@ -223,7 +224,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
         <Link href="/admin" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
           {tenant?.branding?.faviconUrl || tenant?.branding?.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={tenant.branding.faviconUrl || tenant.branding.logoUrl} alt={tenant.branding.brandName || tenant.name || 'Restaurant'} className="h-8 w-8 object-contain" />
+            <img src={getCloudinaryUrl(tenant.branding.faviconUrl || tenant.branding.logoUrl, 'admin-preview') || undefined} alt={tenant.branding.brandName || tenant.name || 'Restaurant'} className="h-8 w-8 object-contain" />
           ) : null}
           <div>
             <p className="font-bold text-sm text-white truncate max-w-[12rem]">{tenant?.branding?.brandName || tenant?.name || 'Restaurant'} Admin</p>
