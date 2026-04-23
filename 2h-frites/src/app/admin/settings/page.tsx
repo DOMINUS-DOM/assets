@@ -29,6 +29,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<any>({});
   const [tab, setTab] = useState<Tab>('general');
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [newDate, setNewDate] = useState('');
   const [zoneForm, setZoneForm] = useState({ name: '', postalCodes: '', fee: '3', minOrder: '15' });
   const [showZoneForm, setShowZoneForm] = useState(false);
@@ -39,12 +40,28 @@ export default function SettingsPage() {
 
   const ic = 'w-full px-3 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm focus:outline-none focus:border-amber-500/50';
 
-  const save = (data: Partial<any>) => {
+  // Persist a settings patch. Keep the optimistic setSettings so the UI
+  // stays snappy, but ONLY claim "saved" once the POST actually succeeds.
+  // Previous implementation fired setSaved(true) unconditionally after a
+  // silent .catch(() => {}), which lied to the user when the save failed
+  // (no token, rate-limit, network drop, etc.).
+  const save = async (data: Partial<any>) => {
     const updated = { ...settings, ...data };
     setSettings(updated);
-    api.post('/settings', updated).catch(() => {});
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+    setSaveError(null);
+    try {
+      await api.post('/settings', updated);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    } catch (e: any) {
+      // Surface the failure so the user isn't misled. api.ts attaches _status.
+      const status = e?._status;
+      setSaveError(
+        status === 401 || status === 403
+          ? 'Session expirée ou permissions insuffisantes — reconnectez-vous.'
+          : 'Impossible d\'enregistrer. Vérifiez votre connexion et réessayez.'
+      );
+    }
   };
 
   const TABS: { key: Tab; label: string }[] = [
@@ -104,7 +121,8 @@ export default function SettingsPage() {
         );
       })()}
 
-      {saved && <p className="text-emerald-400 text-sm text-center animate-fade-in">✅ {t.ui.set_saved}</p>}
+      {saved && !saveError && <p className="text-emerald-400 text-sm text-center animate-fade-in">✅ {t.ui.set_saved}</p>}
+      {saveError && <p className="text-red-400 text-sm text-center animate-fade-in">⚠️ {saveError}</p>}
 
       {/* ─── GENERAL ─── */}
       {tab === 'general' && (
