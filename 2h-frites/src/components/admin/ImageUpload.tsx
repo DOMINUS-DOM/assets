@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCloudinaryUrl } from '@/lib/cloudinaryUrl';
 
 interface Props {
@@ -9,6 +9,15 @@ interface Props {
   kind: 'products' | 'categories'; // which subfolder to upload into
   disabled?: boolean;
   label?: string;                   // small label above the zone
+  /**
+   * Optional callback fired whenever the uploading state flips. Parent uses
+   * this to gate "Next"/"Save" buttons so the user can't advance past a
+   * save-point while an upload is still in flight (race: onChange would
+   * land AFTER the parent has already persisted without the public_id).
+   * Only consumed by sites where the save is batched at a navigation point
+   * (e.g. the wizard). Sites that save inline via onChange don't need it.
+   */
+  onUploadingChange?: (isUploading: boolean) => void;
 }
 
 type State =
@@ -27,9 +36,17 @@ const ACCEPT = 'image/jpeg,image/png,image/webp';
  * handler; the parent persists via menuApi so we stay un-opinionated about
  * where the row lives.
  */
-export default function ImageUpload({ value, onChange, kind, disabled, label }: Props) {
+export default function ImageUpload({ value, onChange, kind, disabled, label, onUploadingChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<State>({ phase: 'idle' });
+
+  // Fire the uploading-state callback whenever we flip in/out of the
+  // 'uploading' phase. Kept as an effect (not inline with setState) so the
+  // parent sees the change on the next commit, matching React's flush order.
+  useEffect(() => {
+    if (!onUploadingChange) return;
+    onUploadingChange(state.phase === 'uploading');
+  }, [state.phase, onUploadingChange]);
   const hasImage = !!value;
   const displayUrl = state.phase === 'local-preview' || state.phase === 'uploading'
     ? state.objectUrl

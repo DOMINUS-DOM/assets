@@ -278,6 +278,7 @@ export default function WelcomePage() {
   const [brandName, setBrandName] = useState(tenant?.name || '');
   const [tagline, setTagline] = useState('');
   const [logoPublicId, setLogoPublicId] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [primaryColor, setPrimaryColor] = useState<string>('#F59E0B');
 
   // Step 2 — menu
@@ -481,7 +482,7 @@ export default function WelcomePage() {
           <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-5 space-y-5">
             <div>
               <label className="text-[11px] font-semibold tracking-wide text-zinc-400 uppercase mb-2 block">Logo (optionnel)</label>
-              <ImageUpload kind="categories" value={logoPublicId} onChange={setLogoPublicId} />
+              <ImageUpload kind="categories" value={logoPublicId} onChange={setLogoPublicId} onUploadingChange={setLogoUploading} />
             </div>
             <div>
               <label className="text-[11px] font-semibold tracking-wide text-zinc-400 uppercase mb-2 block">Nom du restaurant *</label>
@@ -525,9 +526,12 @@ export default function WelcomePage() {
 
           {error && <p className="text-sm text-red-400">{error}</p>}
 
-          <button onClick={goToStep2} disabled={busy || !brandName.trim()}
+          {/* Gate Suivant while the logo upload is in flight — otherwise
+              saveBranding reads a stale null logoPublicId and the save
+              persists without the logo (confirmed race, 2026-04-22 diag). */}
+          <button onClick={goToStep2} disabled={busy || logoUploading || !brandName.trim()}
             className="w-full py-3.5 rounded-xl bg-brand text-zinc-950 font-bold text-sm disabled:opacity-50 active:scale-[0.98] transition-transform">
-            {busy ? 'Enregistrement…' : 'Suivant →'}
+            {busy ? 'Enregistrement…' : logoUploading ? 'Upload du logo…' : 'Suivant →'}
           </button>
         </div>
       )}
